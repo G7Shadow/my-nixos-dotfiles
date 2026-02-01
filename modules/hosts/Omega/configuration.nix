@@ -1,7 +1,11 @@
-{ inputs, self, ... }: {
+{
+  inputs,
+  self,
+  ...
+}: {
   flake.nixosConfigurations.Omega = inputs.nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs self; };
-    
+    specialArgs = {inherit inputs self;};
+
     modules = [
       self.nixosModules.hostOmega
       inputs.home-manager.nixosModules.home-manager
@@ -9,14 +13,15 @@
         home-manager = {
           useGlobalPkgs = true;
           useUserPackages = true;
-          extraSpecialArgs = { inherit inputs self; };
-          
+          backupFileExtension = "backup";
+          extraSpecialArgs = {inherit inputs self;};
+
           users.jeremyl = {
             imports = [
               self.homeModules.base
               self.homeModules.programs
             ];
-            
+
             home = {
               username = "jeremyl";
               homeDirectory = "/home/jeremyl";
@@ -27,7 +32,7 @@
     ];
   };
 
-  flake.nixosModules.hostOmega = { pkgs, ... }: {
+  flake.nixosModules.hostOmega = {pkgs, ...}: {
     boot = {
       loader.systemd-boot.enable = true;
       loader.efi.canTouchEfiVariables = true;
@@ -46,7 +51,7 @@
     users.users.jeremyl = {
       isNormalUser = true;
       description = "Jeremy Lee";
-      extraGroups = [ "networkmanager" "wheel" ];
+      extraGroups = ["networkmanager" "wheel"];
       shell = pkgs.zsh;
     };
 
@@ -59,8 +64,6 @@
     nixpkgs.config.allowUnfree = true;
 
     environment.systemPackages = with pkgs; [
-      neovim
-      git
       tree
     ];
 
