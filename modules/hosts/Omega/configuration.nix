@@ -57,7 +57,6 @@
 
     programs.zsh.enable = true;
 
-    # Fixed: Use new option names
     services.displayManager.gdm.enable = true;
     services.desktopManager.gnome.enable = true;
 

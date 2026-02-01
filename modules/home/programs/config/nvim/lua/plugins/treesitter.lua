@@ -1,38 +1,64 @@
-return { -- Highlight, edit, and navigate code
+return {
   'nvim-treesitter/nvim-treesitter',
-  build = ':TSUpdate',
-  main = 'nvim-treesitter.configs', -- Sets main module to use for opts
-  -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
-  opts = {
-    ensure_installed = {
-      "bash",
-      "c",
-      "cpp",
-      "c_sharp",
-      "css",
-      "html",
-      "java",
-      "javascript",
-      "lua",
-      "json",
-      "python",
-      "nix",
-      "hyprlang",
-      "qmljs"
-    },
-    -- Autoinstall languages that are not installed
-    auto_install = false,
-    highlight = {
-      enable = true,
-      -- Some languages depend on vim's regex highlighting system (such as Ruby) for indent rules.
-      --  If you are experiencing weird indenting issues, add the language to
-      --  the list of additional_vim_regex_highlighting and disabled languages for indent.
-    },
+  dependencies = {
+    'nvim-treesitter/nvim-treesitter-textobjects',
   },
-  -- There are additional nvim-treesitter modules that you can use to interact
-  -- with nvim-treesitter. You should go explore a few and see what interests you:
-  --
-  --    - Incremental selection: Included, see `:help nvim-treesitter-incremental-selection-mod`
-  --    - Show your current context: https://github.com/nvim-treesitter/nvim-treesitter-context
-  --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
+  build = ':TSUpdate',
+  event = { "BufReadPre", "BufNewFile" },
+  config = function()
+    require('nvim-treesitter.configs').setup({
+      ensure_installed = {
+        "bash",
+        "c",
+        "cpp",
+        "c_sharp",
+        "css",
+        "html",
+        "java",
+        "javascript",
+        "lua",
+        "json",
+        "python",
+        "nix",
+        "hyprlang",
+        "qmljs"
+      },
+      auto_install = false,
+      highlight = {
+        enable = true,
+      },
+      indent = {
+        enable = true,
+      },
+      textobjects = {
+        select = {
+          enable = true,
+          lookahead = true,
+          keymaps = {
+            ["af"] = "@function.outer",
+            ["if"] = "@function.inner",
+            ["ac"] = "@class.outer",
+            ["ic"] = { query = "@class.inner", desc = "Select inner part of a class region" },
+            ["ao"] = "@comment.outer",
+            ["as"] = { query = "@local.scope", query_group = "locals", desc = "Select language scope" },
+          },
+          selection_modes = {
+            ['@parameter.outer'] = 'v',
+            ['@function.outer'] = 'V',
+            ['@class.outer'] = '<c-v>',
+          },
+          include_surrounding_whitespace = true,
+        },
+        swap = {
+          enable = true,
+          swap_next = {
+            ["<leader>a"] = { query = "@parameter.inner", desc = "Swap with next parameter" },
+          },
+          swap_previous = {
+            ["<leader>A"] = "@parameter.inner",
+          },
+        },
+      },
+    })
+  end,
 }
