@@ -11,7 +11,17 @@
           useUserPackages = true;
           extraSpecialArgs = { inherit inputs self; };
           
-          users.jeremyl = self.homeConfigurations."jeremyl@Omega";
+          users.jeremyl = {
+            imports = [
+              self.homeModules.base
+              self.homeModules.programs
+            ];
+            
+            home = {
+              username = "jeremyl";
+              homeDirectory = "/home/jeremyl";
+            };
+          };
         };
       }
     ];
@@ -42,10 +52,9 @@
 
     programs.zsh.enable = true;
 
-    services.xserver = {
-      displayManager.gdm.enable = true;
-      desktopManager.gnome.enable = true;
-    };
+    # Fixed: Use new option names
+    services.displayManager.gdm.enable = true;
+    services.desktopManager.gnome.enable = true;
 
     nixpkgs.config.allowUnfree = true;
 
