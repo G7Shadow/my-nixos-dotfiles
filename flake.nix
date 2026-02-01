@@ -1,0 +1,27 @@
+{
+  description = "Omega NixOS Configuration";
+
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    flake-parts.url = "github:hercules-ci/flake-parts";
+    import-tree.url = "github:vic/import-tree";
+
+    home-manager = {
+      url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    nix-index-database = {
+      url = "github:Mic92/nix-index-database";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    zen-browser.url = "github:0xc000022070/zen-browser-flake";
+  };
+
+outputs =
+    inputs:
+    inputs.flake-parts.lib.mkFlake { inherit inputs; }
+      # Imports all of the top-level modules (the files under `./modules`)
+      (inputs.import-tree ./modules);
+}
