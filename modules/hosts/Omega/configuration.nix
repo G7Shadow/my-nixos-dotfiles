@@ -8,8 +8,7 @@
 
     modules = [
       self.nixosModules.hostOmega
-      self.nixosModules.hyprland
-      self.nixosModules.auto-cpufreg
+      self.nixosModules.system
       inputs.home-manager.nixosModules.home-manager
       {
         home-manager = {
@@ -37,8 +36,17 @@
   flake.nixosModules.hostOmega = {pkgs, ...}: {
     boot = {
       loader.systemd-boot.enable = true;
+      loader.systemd-boot.configurationLimit = 5;
+      loader.timeout = 60;
       loader.efi.canTouchEfiVariables = true;
     };
+
+    nix.gc = {
+      dates = "weekly";
+      options = "--delete-older-than 14d";
+    };
+
+    nix.optimise.automatic = true;
 
     networking.hostName = "Omega";
     networking.networkmanager.enable = true;
@@ -67,6 +75,19 @@
     environment.systemPackages = with pkgs; [
       tree
     ];
+
+    # Additional optimizations for Ryzen mobile + Vega
+    hardware.cpu.amd.updateMicrocode = true;
+
+    hardware.graphics = {
+      enable = true;
+      enable32Bit = true;
+      extraPackages = with pkgs; [
+        rocmPackages.clr.icd
+        libva
+        libva-vdpau-driver
+      ];
+    };
 
     nix.settings.experimental-features = ["nix-command" "flakes"];
 
