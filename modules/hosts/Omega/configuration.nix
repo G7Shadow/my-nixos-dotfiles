@@ -8,6 +8,8 @@
 
     modules = [
       self.nixosModules.hostOmega
+      self.nixosModules.hyprland
+      self.nixosModules.auto-cpufreg
       inputs.home-manager.nixosModules.home-manager
       {
         home-manager = {

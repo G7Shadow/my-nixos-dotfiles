@@ -19,9 +19,7 @@
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
   };
 
-outputs =
-    inputs:
-    inputs.flake-parts.lib.mkFlake { inherit inputs; }
-      # Imports all of the top-level modules (the files under `./modules`)
-      (inputs.import-tree ./modules);
+  outputs = inputs:
+    inputs.flake-parts.lib.mkFlake {inherit inputs;}
+    (inputs.import-tree ./modules);
 }
