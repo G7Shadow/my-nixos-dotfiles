@@ -1,6 +1,6 @@
 return {
     'nvim-telescope/telescope.nvim',
-    tag = '0.1.8',
+    branch = 'master',
     dependencies = {
         "nvim-lua/plenary.nvim",
         { "nvim-telescope/telescope-fzf-native.nvim", build = "make" },
@@ -15,9 +15,14 @@ return {
                 path_display = { "smart" },
                 mappings = {
                     i = {
-                        ["<C-k>"] = actions.move_selection_previous, -- move to prev result
-                        ["<C-j>"] = actions.move_selection_next,     -- move to next result
+                        ["<C-k>"] = actions.move_selection_previous,
+                        ["<C-j>"] = actions.move_selection_next,
                     },
+                },
+                -- Completely disable treesitter highlighting in previewer
+                -- This prevents the ft_to_lang error
+                preview = {
+                    treesitter = false,
                 },
             },
         })
@@ -25,7 +30,7 @@ return {
         telescope.load_extension("fzf")
 
         -- set keymaps
-        local keymap = vim.keymap -- for conciseness
+        local keymap = vim.keymap
 
         keymap.set("n", "<leader>ff", "<cmd>Telescope find_files<cr>", { desc = "Fuzzy find files in cwd" })
         keymap.set("n", "<leader>fr", "<cmd>Telescope oldfiles<cr>", { desc = "Fuzzy find recent files" })
