@@ -1,6 +1,6 @@
 {config, ...}: {
   # Automatically collect all system modules
-  flake.nixosModules.settings = {
+  flake.nixosModules.system = {
     imports = builtins.attrValues (
       builtins.removeAttrs config.flake.nixosModules [
         "system"
