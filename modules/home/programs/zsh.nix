@@ -1,8 +1,11 @@
 {
-  flake.homeModules.zsh = { pkgs, ... }: {
+  flake.homeModules.zsh = {pkgs, ...}: {
     programs.zsh = {
       enable = true;
-      autosuggestion.enable = true;
+      autosuggestion = {
+        enable = true;
+        strategy = ["history"];
+      };
       syntaxHighlighting.enable = true;
       enableCompletion = true;
 
