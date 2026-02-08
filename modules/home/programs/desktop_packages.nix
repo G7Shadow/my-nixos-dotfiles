@@ -45,6 +45,7 @@
       obs-studio
       feh
       nautilus
+      mesa
 
       # Desktop tools (Wayland environment)
       waybar

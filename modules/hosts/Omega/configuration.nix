@@ -34,6 +34,12 @@
   };
 
   flake.nixosModules.hostOmega = {pkgs, ...}: {
+    imports = [
+      # Add disko here
+      inputs.disko.nixosModules.disko
+      self.diskoConfigurations.hostOmega
+    ];
+
     boot = {
       loader.systemd-boot.enable = true;
       loader.systemd-boot.configurationLimit = 5;
