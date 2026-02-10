@@ -56,8 +56,6 @@
       swaynotificationcenter
       wl-clipboard
       cava
-      nwg-look
-      gamemode
       mangohud
       inputs.zen-browser.packages.${stdenv.hostPlatform.system}.default
       vesktop
