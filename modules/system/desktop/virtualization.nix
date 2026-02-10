@@ -7,13 +7,7 @@
         package = pkgs.qemu_kvm;
         runAsRoot = true;
         swtpm.enable = true;  # TPM support for Windows 11
-        ovmf = {
-          enable = true;
-          packages = [(pkgs.OVMF.override {
-            secureBoot = true;      # Secure Boot for Windows 11
-            tpmSupport = true;       # TPM 2.0 for Windows 11
-          }).fd];
-        };
+        # OVMF is now automatically available, no need to configure it
       };
     };
 
