@@ -17,6 +17,11 @@
     };
 
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
+
+    disko = {
+      url = "github:nix-community/disko";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = inputs:

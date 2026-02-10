@@ -88,6 +88,9 @@
 
       # Editors
       vscode
+
+      # Virtualization
+      virt-manager
     ];
   };
 }
