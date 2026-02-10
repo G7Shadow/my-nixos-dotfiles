@@ -71,6 +71,8 @@
       nerd-fonts.jetbrains-mono
       adwaita-icon-theme
       nwg-look
+      libsForQt5.qt5ct
+      kdePackages.qt6ct
 
       # Misc
       playerctl

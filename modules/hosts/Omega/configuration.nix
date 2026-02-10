@@ -8,8 +8,6 @@
 
     modules = [
       self.nixosModules.hostOmega
-      self.nixosModules.system
-      inputs.home-manager.nixosModules.home-manager
       {
         home-manager = {
           useGlobalPkgs = true;
@@ -35,6 +33,8 @@
 
   flake.nixosModules.hostOmega = {pkgs, ...}: {
     imports = [
+      self.nixosModules.system
+      inputs.home-manager.nixosModules.home-manager
     ];
 
     boot = {
