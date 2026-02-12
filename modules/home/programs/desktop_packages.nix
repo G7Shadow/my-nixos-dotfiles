@@ -69,6 +69,7 @@
       nerd-fonts.jetbrains-mono
       adwaita-icon-theme
       nwg-look
+      adw-gtk3
       libsForQt5.qt5ct
       kdePackages.qt6ct
 
