@@ -1,8 +1,8 @@
 {
-  flake.homeModules.git = { pkgs, ... }: {
+  flake.homeModules.git = {pkgs, ...}: {
     programs.git = {
       enable = true;
-      
+
       settings = {
         user.name = "G7Shadow";
         user.email = "l.jeremy.822001@gmail.com";

@@ -1,9 +1,8 @@
 {
-  flake.homeModules.dotfiles = { config, ... }: 
-  let
+  flake.homeModules.dotfiles = {config, ...}: let
     dotfiles = "${config.home.homeDirectory}/my-nixos-dotfiles/modules/home/programs/config";
     create_symlink = path: config.lib.file.mkOutOfStoreSymlink path;
-    
+
     configs = {
       hypr = "hypr";
       rofi = "rofi";
@@ -12,10 +11,11 @@
       matugen = "matugen";
       nvim = "nvim";
       tmux = "tmux";
+      spicetify = "spicetify";
     };
-  in
-  {
-    xdg.configFile = builtins.mapAttrs
+  in {
+    xdg.configFile =
+      builtins.mapAttrs
       (name: subpath: {
         source = create_symlink "${dotfiles}/${subpath}";
         recursive = true;

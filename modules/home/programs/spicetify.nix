@@ -4,17 +4,17 @@
     inputs,
     ...
   }: let
-    spicePkgs = inputs.spicetify-nix.legacyPackages.${pkgs.system};
+    spicePkgs = inputs.spicetify-nix.legacyPackages.${pkgs.stdenv.hostPlatform.system};
   in {
     imports = [inputs.spicetify-nix.homeManagerModules.default];
 
     programs.spicetify = {
       enable = true;
 
-      # We'll use a custom theme that Matugen will populate
-      theme = spicePkgs.themes.Sleek;
+      # Use Sleek theme
+      theme = spicePkgs.themes.sleek;
 
-      # Optional: Enable extensions you want
+      # Enable extensions
       enabledExtensions = with spicePkgs.extensions; [
         adblock
         hidePodcasts
