@@ -32,11 +32,6 @@
         # Other useful aliases
         cat = "bat";
         cd = "z";
-
-        # NixOS shortcuts
-        nrs = "sudo nixos-rebuild switch --flake ~/my-nixos-dotfiles#Omega";
-        nrt = "sudo nixos-rebuild test --flake ~/my-nixos-dotfiles#Omega";
-        nfu = "nix flake update";
       };
 
       initContent = ''

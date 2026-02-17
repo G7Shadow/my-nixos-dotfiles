@@ -44,6 +44,13 @@
       loader.efi.canTouchEfiVariables = true;
     };
 
+    programs.nh = {
+      enable = true;
+      clean.enable = true;
+      clean.extraArgs = "--keep-since 4d --keep 3";
+      flake = "/home/jeremyl/my-nixos-dotfiles";
+    };
+
     nix.gc = {
       dates = "weekly";
       options = "--delete-older-than 14d";
@@ -96,6 +103,11 @@
       fwupd.enable = true;
       fstrim.enable = true;
       dbus.enable = true;
+    };
+
+    programs.steam = {
+      enable = true;
+      extraCompatPackages = [pkgs.proton-ge-bin];
     };
 
     nix.settings.experimental-features = ["nix-command" "flakes"];

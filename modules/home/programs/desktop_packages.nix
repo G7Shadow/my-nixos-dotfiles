@@ -14,6 +14,7 @@
       nodejs
       unzip
       git
+      curl
       jq
       docker
 
@@ -59,7 +60,6 @@
       mangohud
       inputs.zen-browser.packages.${stdenv.hostPlatform.system}.default
       vesktop
-      spotify
       netflix
 
       # Theming
