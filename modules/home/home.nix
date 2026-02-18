@@ -30,10 +30,6 @@
           username = "jeremyl";
           homeDirectory = "/home/jeremyl";
         };
-
-        home.packages = with inputs.nixpkgs.legacyPackages.x86_64-linux; [
-          # Add your packages here
-        ];
       }
     ];
   };

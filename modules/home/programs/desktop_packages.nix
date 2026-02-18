@@ -61,9 +61,9 @@
       inputs.zen-browser.packages.${stdenv.hostPlatform.system}.default
       vesktop
       netflix
+      spotify
 
       # Theming
-      pywal
       matugen
       bibata-cursors
       nerd-fonts.jetbrains-mono
