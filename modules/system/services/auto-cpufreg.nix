@@ -9,8 +9,8 @@
       settings = {
         # Performance mode when on battery
         battery = {
-          governor = "performance";
-          turbo = "auto";
+          governor = "balanced";
+          turbo = "never";
         };
 
         # Performance mode when plugged in

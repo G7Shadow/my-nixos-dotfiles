@@ -199,13 +199,6 @@ vim.lsp.config['html'] = {
   },
 }
 
--- Qml
-
-vim.lsp.config['qmlls'] = {
-  cmd = { 'qmlls' },
-  filetypes = { 'qml', 'qmljs' },
-  root_markers = { '.git' },
-}
 
 --------------------------------------------------------------------------------
 -- 4. Enable Servers
@@ -217,4 +210,3 @@ vim.lsp.enable('pyright')
 vim.lsp.enable('nil_ls')
 vim.lsp.enable('hyprls')
 vim.lsp.enable('html')
-vim.lsp.enable('qmlls')
