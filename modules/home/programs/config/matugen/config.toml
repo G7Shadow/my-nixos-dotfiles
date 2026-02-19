@@ -45,6 +45,11 @@ post_hook = 'kill -SIGUSR1 $(pgrep kitty)'
 #output_path = '~/.cache/wal/colors.json'
 #post_hook = 'pywalfox update'
 
+[templates.spotify]
+input_path = '~/.config/matugen/templates/spicetify-sleek-colors.ini'
+output_path = '~/.config/spicetify/Themes/Sleek/color.ini'
+post_hook = 'spicetify watch -s 2>&1 | sed "/Reloaded Spotify/q"'
+
 [templates.vesktop]
 input_path = '~/.config/matugen/templates/midnight-discord.css'
 output_path = '~/.config/vesktop/themes/midnight-discord.css' 

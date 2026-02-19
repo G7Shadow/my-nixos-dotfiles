@@ -60,8 +60,9 @@
       mangohud
       inputs.zen-browser.packages.${stdenv.hostPlatform.system}.default
       vesktop
-      netflix
+      spicetify-cli
       spotify
+      netflix
 
       # Theming
       matugen
