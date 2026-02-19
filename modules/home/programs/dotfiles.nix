@@ -11,7 +11,6 @@
       matugen = "matugen";
       nvim = "nvim";
       tmux = "tmux";
-      spicetify = "spicetify";
     };
   in {
     xdg.configFile =

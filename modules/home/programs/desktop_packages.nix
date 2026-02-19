@@ -61,7 +61,6 @@
       inputs.zen-browser.packages.${stdenv.hostPlatform.system}.default
       vesktop
       spicetify-cli
-      spotify
       netflix
 
       # Theming
