@@ -8,11 +8,26 @@
         package = pkgs.bibata-cursors;
         size = 24;
       };
+
+      font = {
+        name = "Noto Sans";
+        size = 11;
+      };
     };
 
     qt = {
       enable = true;
       platformTheme.name = "qt5ct";
+    };
+
+    fonts.fontconfig = {
+      enable = true;
+      defaultFonts = {
+        monospace = ["JetBrainsMono Nerd Font Mono"];
+        sansSerif = ["Noto Sans"];
+        serif = ["Noto Serif"];
+        emoji = ["Noto Color Emoji"];
+      };
     };
 
     xdg.configFile."gtk-3.0/gtk.css".text = ''
