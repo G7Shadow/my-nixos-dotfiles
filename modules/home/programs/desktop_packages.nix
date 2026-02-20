@@ -19,7 +19,6 @@
       docker
 
       # Terminals & CLI utilities
-      alacritty
       kitty
       htop
       btop
@@ -62,12 +61,14 @@
       vesktop
       spicetify-cli
       netflix
+      localsend
 
       # Theming
       matugen
       bibata-cursors
       nerd-fonts.jetbrains-mono
       adwaita-icon-theme
+      adwsteamgtk
       nwg-look
       adw-gtk3
       libsForQt5.qt5ct
@@ -88,7 +89,7 @@
       pyright
 
       # Editors
-      vscode
+      vscodium
 
       # Virtualization
       virt-manager

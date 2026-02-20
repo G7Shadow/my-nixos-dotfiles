@@ -1,5 +1,5 @@
 {...}: {
-  flake.nixosModules.auto-cpufreg = {
+  flake.nixosModules.auto-cpufreq = {
     pkgs,
     config,
     ...
@@ -7,15 +7,12 @@
     services.auto-cpufreq = {
       enable = true;
       settings = {
-        # Performance mode when on battery
         battery = {
-          governor = "balanced";
+          governor = "powersave";
           turbo = "never";
         };
-
-        # Performance mode when plugged in
         charger = {
-          governor = "performance";
+          governor = "schedutil";
           turbo = "auto";
         };
       };

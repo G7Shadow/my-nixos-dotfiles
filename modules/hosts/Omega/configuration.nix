@@ -86,9 +86,6 @@
       tree
     ];
 
-    # Additional optimizations for Ryzen mobile + Vega
-    hardware.cpu.amd.updateMicrocode = true;
-
     hardware.graphics = {
       enable = true;
       enable32Bit = true;
@@ -106,6 +103,8 @@
       enable = true;
       extraCompatPackages = [pkgs.proton-ge-bin];
     };
+
+    programs.gamemode.enable = true;
 
     nix.settings.experimental-features = ["nix-command" "flakes"];
 

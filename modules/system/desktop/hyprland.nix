@@ -6,8 +6,9 @@
       xwayland.enable = true;
     };
 
-    # Required for Hyprland
+    # Enable polkit and dbus for desktop functionality
     security.polkit.enable = true;
+    services.dbus.enable = true;
 
     # XDG portal configuration
     xdg.portal = {
