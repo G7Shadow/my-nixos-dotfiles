@@ -8,11 +8,6 @@
         package = pkgs.bibata-cursors;
         size = 24;
       };
-
-      font = {
-        name = "Noto Sans";
-        size = 11;
-      };
     };
 
     qt = {
