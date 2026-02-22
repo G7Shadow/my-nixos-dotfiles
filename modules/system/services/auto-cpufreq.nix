@@ -8,11 +8,11 @@
       enable = true;
       settings = {
         battery = {
-          governor = "powersave";
+          governor = "schedutil";
           turbo = "never";
         };
         charger = {
-          governor = "schedutil";
+          governor = "performance";
           turbo = "auto";
         };
       };

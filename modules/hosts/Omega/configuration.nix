@@ -42,6 +42,7 @@
       loader.systemd-boot.configurationLimit = 5;
       loader.timeout = 60;
       loader.efi.canTouchEfiVariables = true;
+      kernelParams = ["amdgpu.ppfeaturemask=0xffffffff"];
     };
 
     programs.nh = {

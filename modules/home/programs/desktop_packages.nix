@@ -32,6 +32,7 @@
       eza
       fd
       tmux
+      ryzenadj
 
       # Media & system utilities
       libva
