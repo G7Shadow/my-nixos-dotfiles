@@ -40,10 +40,10 @@ input_path = '~/.config/matugen/templates/kitty-colors.conf'
 output_path = '~/.config/kitty/colors.conf'
 post_hook = 'kill -SIGUSR1 $(pgrep kitty)'
 
-#[templates.pywalfox]
-#input_path = '~/.config/matugen/templates/pywalfox-colors.json'
-#output_path = '~/.cache/wal/colors.json'
-#post_hook = 'pywalfox update'
+[templates.pywalfox]
+input_path = '~/.config/matugen/templates/pywalfox-colors.json'
+output_path = '~/.cache/wal/colors.json'
+post_hook = 'pywalfox update'
 
 [templates.spotify]
 input_path = '~/.config/matugen/templates/spicetify.ini'

@@ -33,10 +33,14 @@
       fd
       tmux
       ryzenadj
+      radeontop
 
       # Media & system utilities
       libva
       libva-utils
+      libvdpau
+      libvdpau-va-gl # bridges VDPAU → VA-API for AMD
+      libva-vdpau-driver
       brightnessctl
       lm_sensors
       ffmpeg
@@ -74,7 +78,7 @@
       adw-gtk3
       libsForQt5.qt5ct
       kdePackages.qt6ct
-
+      pywalfox-native
       # Misc
       playerctl
       nitch
@@ -88,9 +92,6 @@
       nil
       hyprls
       pyright
-
-      # Editors
-      vscodium
 
       # Virtualization
       virt-manager
