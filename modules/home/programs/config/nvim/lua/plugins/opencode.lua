@@ -33,8 +33,5 @@ return {
     vim.keymap.set('n', '+', '<C-a>', { desc = 'Increment', noremap = true })
     vim.keymap.set('n', '-', '<C-x>', { desc = 'Decrement', noremap = true })
 
-    -- Run calculator
-    vim.keymap.set('n', '<leader>c', function() vim.cmd('terminal python /home/jeremyl/nixos-dotfiles/calculator.py') end,
-      { desc = 'Run calculator' })
   end,
 }

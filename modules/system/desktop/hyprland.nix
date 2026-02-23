@@ -1,19 +1,16 @@
-{...}: {
-  flake.nixosModules.hyprland = {pkgs, ...}: {
-    # Enable Hyprland
+{ ... }: {
+  flake.nixosModules.hyprland = { pkgs, ... }: {
     programs.hyprland = {
-      enable = true;
+      enable         = true;
       xwayland.enable = true;
     };
 
-    # Enable polkit and dbus for desktop functionality
     security.polkit.enable = true;
-    services.dbus.enable = true;
+    services.dbus.enable   = true;
 
-    # XDG portal configuration
     xdg.portal = {
-      enable = true;
-      extraPortals = [pkgs.xdg-desktop-portal-gtk];
+      enable       = true;
+      extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
     };
   };
 }

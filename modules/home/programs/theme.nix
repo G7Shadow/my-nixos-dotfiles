@@ -1,12 +1,11 @@
-{
-  flake.homeModules.theme = {pkgs, ...}: {
+{ self, ... }: {
+  flake.homeModules.theme = { pkgs, ... }: {
     gtk = {
       enable = true;
-
       cursorTheme = {
-        name = "Bibata-Modern-Classic";
+        name    = "Bibata-Modern-Classic";
         package = pkgs.bibata-cursors;
-        size = 24;
+        size    = 24;
       };
     };
 
@@ -18,11 +17,19 @@
     fonts.fontconfig = {
       enable = true;
       defaultFonts = {
-        monospace = ["JetBrainsMono Nerd Font Mono"];
-        sansSerif = ["Noto Sans"];
-        serif = ["Noto Serif"];
-        emoji = ["Noto Color Emoji"];
+        monospace = [ "JetBrainsMono Nerd Font Mono" ];
+        sansSerif = [ "Noto Sans" ];
+        serif     = [ "Noto Serif" ];
+        emoji     = [ "Noto Color Emoji" ];
       };
+    };
+
+    home.pointerCursor = {
+      name    = "Bibata-Modern-Classic";
+      package = pkgs.bibata-cursors;
+      size    = 24;
+      gtk.enable = true;
+      x11.enable = true;
     };
 
     xdg.configFile."gtk-3.0/gtk.css".text = ''
@@ -68,13 +75,5 @@
       underline_shortcut=1
       wheel_scroll_lines=3
     '';
-
-    home.pointerCursor = {
-      name = "Bibata-Modern-Classic";
-      package = pkgs.bibata-cursors;
-      size = 24;
-      gtk.enable = true;
-      x11.enable = true;
-    };
   };
 }

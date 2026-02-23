@@ -1,30 +1,32 @@
-{
-  inputs,
-  config,
-  ...
-}: {
-  # Define reusable base module
+{ inputs, self, ... }: {
+  # Base module: minimum required for any home-manager user
   flake.homeModules.base = {
     home.stateVersion = "25.05";
     programs.home-manager.enable = true;
   };
 
-  # Automatically collect all homeModules defined in programs/
-  flake.homeModules.programs = {
-    imports = builtins.attrValues (
-      builtins.removeAttrs config.flake.homeModules ["base" "programs"]
-    );
+  # Desktop profile: all programs a desktop user needs
+  # Import this in any user that needs a full desktop environment
+  flake.homeModules.profile-desktop = {
+    imports = with self.homeModules; [
+      base
+      desktop-packages
+      dotfiles
+      git
+      neovim
+      theme
+      vscodium
+      zsh
+    ];
   };
 
-  # Define the actual home configuration for standalone use
+  # Standalone home-manager configuration (used with `home-manager switch`)
+  # Uses the same profile as the NixOS-integrated config
   flake.homeConfigurations."jeremyl@Omega" = inputs.home-manager.lib.homeManagerConfiguration {
     pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux;
-
-    extraSpecialArgs = {inherit inputs;};
-
+    extraSpecialArgs = { inherit inputs self; };
     modules = [
-      inputs.self.homeModules.base
-      inputs.self.homeModules.programs
+      self.homeModules.profile-desktop
       {
         home = {
           username = "jeremyl";

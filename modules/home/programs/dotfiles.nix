@@ -1,24 +1,21 @@
-{
-  flake.homeModules.dotfiles = {config, ...}: let
+{ self, ... }: {
+  flake.homeModules.dotfiles = { config, ... }: let
     dotfiles = "${config.home.homeDirectory}/my-nixos-dotfiles/modules/home/programs/config";
-    create_symlink = path: config.lib.file.mkOutOfStoreSymlink path;
+    symlink = path: config.lib.file.mkOutOfStoreSymlink path;
 
-    configs = {
-      hypr = "hypr";
-      rofi = "rofi";
-      waybar = "waybar";
-      kitty = "kitty";
-      matugen = "matugen";
-      nvim = "nvim";
-      tmux = "tmux";
+    link = subpath: {
+      source    = symlink "${dotfiles}/${subpath}";
+      recursive = true;
     };
   in {
-    xdg.configFile =
-      builtins.mapAttrs
-      (name: subpath: {
-        source = create_symlink "${dotfiles}/${subpath}";
-        recursive = true;
-      })
-      configs;
+    xdg.configFile = {
+      hypr    = link "hypr";
+      rofi    = link "rofi";
+      waybar  = link "waybar";
+      kitty   = link "kitty";
+      matugen = link "matugen";
+      nvim    = link "nvim";
+      tmux    = link "tmux";
+    };
   };
 }

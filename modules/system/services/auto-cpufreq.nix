@@ -1,23 +1,20 @@
-{...}: {
-  flake.nixosModules.auto-cpufreq = {
-    pkgs,
-    config,
-    ...
-  }: {
+{ ... }: {
+  flake.nixosModules.auto-cpufreq = { ... }: {
     services.auto-cpufreq = {
-      enable = true;
+      enable   = true;
       settings = {
         battery = {
           governor = "schedutil";
-          turbo = "never";
+          turbo    = "never";
         };
         charger = {
           governor = "performance";
-          turbo = "auto";
+          turbo    = "auto";
         };
       };
     };
 
+    # Disable the competing power daemon
     services.power-profiles-daemon.enable = false;
   };
 }

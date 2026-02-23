@@ -1,9 +1,9 @@
-{
-  flake.homeModules.neovim = {pkgs, ...}: {
+{ self, ... }: {
+  flake.homeModules.neovim = { pkgs, ... }: {
     programs.neovim = {
-      enable = true;
-      viAlias = true;
-      vimAlias = true;
+      enable        = true;
+      viAlias       = true;
+      vimAlias      = true;
       defaultEditor = true;
     };
   };

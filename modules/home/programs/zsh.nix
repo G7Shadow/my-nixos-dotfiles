@@ -1,21 +1,21 @@
-{
-  flake.homeModules.zsh = {pkgs, ...}: {
+{ self, ... }: {
+  flake.homeModules.zsh = { pkgs, ... }: {
     programs.zsh = {
-      enable = true;
-      autosuggestion = {
-        enable = true;
-        strategy = ["history"];
+      enable            = true;
+      autosuggestion    = {
+        enable   = true;
+        strategy = [ "history" ];
       };
       syntaxHighlighting.enable = true;
-      enableCompletion = true;
+      enableCompletion          = true;
 
       shellAliases = {
-        # Basic
-        v = "nvim";
-        t = "tmux";
+        # Quick launchers
+        v  = "nvim";
+        t  = "tmux";
         ta = "tmux attach || tmux new";
 
-        # Git aliases
+        # Git
         gs = "git status";
         ga = "git add";
         gc = "git commit";
@@ -29,46 +29,45 @@
         la = "eza -la --icons";
         lt = "eza --tree --icons";
 
-        # Other useful aliases
+        # Better defaults
         cat = "bat";
-        cd = "z";
+        cd  = "z";
       };
 
       initContent = ''
-        # Only run nitch in interactive, non-tmux shells
+        # Show system info once per shell, only outside tmux
         if command -v nitch &> /dev/null && [ -z "$TMUX" ] && [ -z "$NITCH_RAN" ]; then
           export NITCH_RAN=1
           nitch
         fi
 
-        # Fast directory jumping
         eval "$(zoxide init zsh)"
       '';
     };
 
     programs.fzf = {
-      enable = true;
+      enable              = true;
       enableZshIntegration = true;
     };
 
     programs.zoxide = {
-      enable = true;
+      enable               = true;
       enableZshIntegration = true;
     };
 
     programs.starship = {
-      enable = true;
+      enable               = true;
       enableZshIntegration = true;
       settings = {
         command_timeout = 500;
-        scan_timeout = 10;
+        scan_timeout    = 10;
       };
     };
 
     programs.direnv = {
-      enable = true;
+      enable               = true;
       enableZshIntegration = true;
-      nix-direnv.enable = true;
+      nix-direnv.enable    = true;
     };
   };
 }

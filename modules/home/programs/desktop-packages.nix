@@ -1,5 +1,5 @@
-{
-  flake.homeModules.desktop_packages = {
+{ self, ... }: {
+  flake.homeModules.desktop-packages = {
     pkgs,
     inputs,
     ...
@@ -39,7 +39,7 @@
       libva
       libva-utils
       libvdpau
-      libvdpau-va-gl # bridges VDPAU → VA-API for AMD
+      libvdpau-va-gl
       libva-vdpau-driver
       brightnessctl
       lm_sensors
@@ -52,7 +52,7 @@
       nautilus
       mesa
 
-      # Desktop tools (Wayland environment)
+      # Desktop tools (Wayland)
       waybar
       hyprpaper
       wlogout
@@ -79,6 +79,7 @@
       libsForQt5.qt5ct
       kdePackages.qt6ct
       pywalfox-native
+
       # Misc
       playerctl
       nitch
