@@ -1,5 +1,6 @@
 return {
   "goolord/alpha-nvim",
+  cond = not vim.g.vscode,
   event = "VimEnter",
   config = function()
     local alpha = require("alpha")

@@ -64,5 +64,11 @@
         scan_timeout = 10;
       };
     };
+
+    programs.direnv = {
+      enable = true;
+      enableZshIntegration = true;
+      nix-direnv.enable = true;
+    };
   };
 }
