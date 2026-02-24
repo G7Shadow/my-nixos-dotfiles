@@ -1,31 +1,26 @@
-{ inputs, self, ... }: {
-
+{
+  inputs,
+  self,
+  ...
+}: {
   flake.nixosConfigurations.Omega = inputs.nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs self; };
+    specialArgs = {inherit inputs self;};
 
     modules = [
-      # 1. Hardware (disk layout, kernel modules, CPU microcode)
-      self.nixosModules.hardware-Omega
-
-      # 2. Host-specific system settings
-      self.nixosModules.host-Omega
-
-      # 3. System feature set (audio, hyprland, auto-cpufreq, virtualization)
+      self.nixosModules.hostOmega
       self.nixosModules.profile-desktop
-
-      # 4. Home-manager integration
       inputs.home-manager.nixosModules.home-manager
       {
         home-manager = {
-          useGlobalPkgs        = true;
-          useUserPackages      = true;
-          backupFileExtension  = "backup";
-          extraSpecialArgs     = { inherit inputs self; };
+          useGlobalPkgs = true;
+          useUserPackages = true;
+          backupFileExtension = "backup";
+          extraSpecialArgs = {inherit inputs self;};
 
           users.jeremyl = {
-            imports = [ self.homeModules.profile-desktop ];
+            imports = [self.homeModules.profile-desktop];
             home = {
-              username    = "jeremyl";
+              username = "jeremyl";
               homeDirectory = "/home/jeremyl";
             };
           };
@@ -34,87 +29,84 @@
     ];
   };
 
-  # Host-specific system configuration
-  # Hardware is in hardware-configuration.nix (separate module)
-  flake.nixosModules.host-Omega = { pkgs, ... }: {
+  flake.nixosModules.host-Omega = {pkgs, ...}: {
     boot = {
-      loader.systemd-boot.enable           = true;
+      loader.systemd-boot.enable = true;
       loader.systemd-boot.configurationLimit = 5;
-      loader.timeout                        = 60;
-      loader.efi.canTouchEfiVariables       = true;
-      kernelParams                          = [ "amdgpu.ppfeaturemask=0xffffffff" ];
+      loader.timeout = 60;
+      loader.efi.canTouchEfiVariables = true;
+      kernelParams = ["amdgpu.ppfeaturemask=0xffffffff"];
     };
 
     programs.nh = {
-      enable      = true;
-      clean.enable    = true;
+      enable = true;
+      clean.enable = true;
       clean.extraArgs = "--keep-since 4d --keep 3";
-      flake           = "/home/jeremyl/my-nixos-dotfiles";
+      flake = "/home/jeremyl/my-nixos-dotfiles";
     };
 
     nix = {
       gc = {
-        dates   = "weekly";
+        dates = "weekly";
         options = "--delete-older-than 14d";
       };
-      optimise.automatic          = true;
-      settings.experimental-features = [ "nix-command" "flakes" ];
+      optimise.automatic = true;
+      settings.experimental-features = ["nix-command" "flakes"];
     };
 
     networking = {
-      hostName           = "Omega";
+      hostName = "Omega";
       networkmanager.enable = true;
     };
 
-    time.timeZone      = "America/Jamaica";
+    time.timeZone = "America/Jamaica";
     i18n.defaultLocale = "en_US.UTF-8";
 
     services.xserver.xkb = {
-      layout  = "us";
+      layout = "us";
       variant = "";
     };
 
     users.users.jeremyl = {
-      isNormalUser  = true;
-      description   = "Jeremy Lee";
-      extraGroups   = [ "networkmanager" "wheel" ];
-      shell         = pkgs.zsh;
+      isNormalUser = true;
+      description = "Jeremy Lee";
+      extraGroups = ["networkmanager" "wheel"];
+      shell = pkgs.zsh;
     };
 
     programs.zsh.enable = true;
 
-    services.displayManager.gdm.enable      = true;
-    services.desktopManager.gnome.enable    = true;
+    services.displayManager.gdm.enable = true;
+    services.desktopManager.gnome.enable = true;
 
     nixpkgs.config.allowUnfree = true;
 
-    environment.systemPackages = with pkgs; [ tree ];
+    environment.systemPackages = with pkgs; [tree];
 
     hardware.graphics = {
-      enable      = true;
+      enable = true;
       enable32Bit = true;
     };
 
     services = {
       flatpak.enable = true;
-      fwupd.enable   = true;
-      fstrim.enable  = true;
-      dbus.enable    = true;
+      fwupd.enable = true;
+      fstrim.enable = true;
+      dbus.enable = true;
     };
 
     zramSwap = {
-      enable    = true;
+      enable = true;
       algorithm = "zstd";
     };
 
     programs.steam = {
-      enable              = true;
-      extraCompatPackages = [ pkgs.proton-ge-bin ];
+      enable = true;
+      extraCompatPackages = [pkgs.proton-ge-bin];
     };
 
     programs.gamemode.enable = true;
 
     system.stateVersion = "25.05";
   };
-
 }
