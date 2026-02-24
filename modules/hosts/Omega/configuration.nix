@@ -4,13 +4,13 @@
     specialArgs = { inherit inputs self; };
 
     modules = [
-      # 1. Hardware + host settings (merged from hardware-configuration.nix and configuration.nix)
+      # 1. Hardware + host settings (merged from hardware-configuration.nix, disko.nix, and configuration.nix)
       self.nixosModules.hostOmega
 
       # 2. System feature set (audio, hyprland, auto-cpufreq, virtualization)
       self.nixosModules.profile-desktop
 
-      # 4. Home-manager integration
+      # 3. Home-manager integration
       inputs.home-manager.nixosModules.home-manager
       {
         home-manager = {
