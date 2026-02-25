@@ -1,4 +1,4 @@
-{ self, ... }: {
+{self, ...}: {
   flake.homeModules.desktop-packages = {
     pkgs,
     inputs,
@@ -50,6 +50,7 @@
       obs-studio
       feh
       nautilus
+      file-roller
       mesa
 
       # Desktop tools (Wayland)

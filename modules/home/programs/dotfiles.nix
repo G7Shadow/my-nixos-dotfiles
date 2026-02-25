@@ -13,10 +13,10 @@
       tmux = "tmux";
     };
   in {
-    xdg.configFile =
-      builtins.mapAttrs
+    home.file = builtins.mapAttrs
       (name: subpath: {
         source = create_symlink "${dotfiles}/${subpath}";
+        target = ".config/${name}";
       })
       configs;
   };
