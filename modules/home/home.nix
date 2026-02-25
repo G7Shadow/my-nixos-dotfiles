@@ -19,7 +19,6 @@
       git
       neovim
       theme
-      spicetify
       vscodium
       zsh
     ];

@@ -73,7 +73,6 @@
       inputs.zen-browser.packages.${stdenv.hostPlatform.system}.default
       vesktop
       spotify
-      spicetify-cli
       netflix
       localsend
 
