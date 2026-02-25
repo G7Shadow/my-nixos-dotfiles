@@ -48,7 +48,7 @@ post_hook = 'pywalfox update'
 [templates.spotify]
 input_path = '~/.config/matugen/templates/spicetify.ini'
 output_path = '~/.config/spicetify/Themes/Sleek/color.ini'
-post_hook = 'spicetify apply && flatpak run com.spotify.Client --remote-debugging-port=9222 --remote-allow-origins="*" &'
+post_hook = 'spicetify apply && spotify &'
 
 [templates.vesktop]
 input_path = '~/.config/matugen/templates/midnight-discord.css'
