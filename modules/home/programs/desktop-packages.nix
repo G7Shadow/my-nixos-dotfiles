@@ -9,6 +9,11 @@
       alejandra
       cmake
       gcc
+      (python3.withPackages (ps:
+        with ps; [
+          pygobject3
+          gst-python
+        ]))
       opencode
       gnumake
       nodejs
@@ -56,6 +61,8 @@
       # Desktop tools (Wayland)
       waybar
       hyprpaper
+      hyprlock
+      hypridle
       wlogout
       rofi
       swww
@@ -65,6 +72,7 @@
       mangohud
       inputs.zen-browser.packages.${stdenv.hostPlatform.system}.default
       vesktop
+      spotify
       spicetify-cli
       netflix
       localsend

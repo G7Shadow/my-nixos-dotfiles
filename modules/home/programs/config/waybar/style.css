@@ -1,68 +1,89 @@
-@import "colors.css";
+@import 'colors/matugen.css';
 
 * {
     border: none;
-    border-radius: 8;
-    font-family: "JetBrainsMono Nerd Font", sans-serif;
+    border-radius: 0;
+    font-family: "Adwaita Sans", "JetBrainsMono Nerd Font Propo", Roboto, Helvetica, Arial, sans-serif;
+    font-weight: 600;
     font-size: 16px;
     min-height: 0;
+    border-radius: 50px;
 }
 
 window#waybar {
-    background: @background;
-    color: @on_surface;
+    background: transparent;
 }
 
-#custom-nixos {
-    padding: 0 12px;
+tooltip {
+    background: @surface;
+    border: 1px solid rgba(100, 114, 125, 0.5);
+}
+
+tooltip label {
+    color: white;
+}
+
+.modules-left {
+    margin-left: 15px;
+}
+
+.modules-right {
+    margin-right: 15px;
+}
+
+#custom-launcher,
+#clock,
+#workspaces,
+#custom-notification,
+#custom-media,
+#pulseaudio,
+#battery,
+#network {
+    background-color: #121212;
+    margin-right: 10px;
+    padding: 0 10px;
+    background-color: @surface;
     color: @primary;
-    font-size: 1.5rem;
+}
+
+#workspaces {
+    padding: 8px 5px;
+    border-radius: 16px;
+    background-color: @surface;
+    color: @primary;
 }
 
 #workspaces button {
-    padding: 0 10px;
-    color: @on_surface;
-    background: @surface_container;
-    margin: 2px;
-    border-radius: 8px;
+    padding: 0px 6px;
+    margin: 0px 3px;
+    border-radius: 50px;
+    color: transparent;
+    transition: all 0.3s ease-in-out;
+    background-color: @on_secondary;
 }
 
 #workspaces button.active {
-    background: @primary;
-    color: @on_primary;
+    background-color: @primary;
+    color: @surface;
+    min-width: 50px;
+    transition: all 0.3s ease-in-out;
+    font-size: 13px;
+    border-radius: 5px;
 }
 
 #workspaces button:hover {
-    background: alpha(@primary, 0.3);
+    background-color: @secondary;
+    color: @surface;
+    border-radius: 16px;
+    min-width: 50px;
+    background-size: 400% 400%;
 }
 
-#clock,
-#battery,
-#pulseaudio,
-#network {
-    padding: 0 12px;
-    margin: 2px;
-    border-radius: 8px;
-    background: @surface_container;
-    color: @on_surface;
-}
-
-#battery.charging {
-    color: @secondary;
-}
-
-#battery.warning:not(.charging) {
-    color: @tertiary;
-}
-
-#battery.critical:not(.charging) {
-    color: @error;
-}
-
-#pulseaudio.muted {
-    color: alpha(@on_surface, 0.5);
-}
-
-#network.disconnected {
-    color: @error;
+#workspaces button.urgent {
+    background-color: @error;
+    color: @surface;
+    border-radius: 16px;
+    min-width: 50px;
+    background-size: 400% 400%;
+    transition: all 0.3s ease-in-out;
 }
