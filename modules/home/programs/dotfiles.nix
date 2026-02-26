@@ -8,13 +8,14 @@
       rofi = "rofi";
       waybar = "waybar";
       kitty = "kitty";
-      swaync = "swaync"
+      swaync = "swaync";
       matugen = "matugen";
       nvim = "nvim";
       tmux = "tmux";
     };
   in {
-    home.file = builtins.mapAttrs
+    home.file =
+      builtins.mapAttrs
       (name: subpath: {
         source = create_symlink "${dotfiles}/${subpath}";
         target = ".config/${name}";
