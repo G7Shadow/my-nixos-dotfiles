@@ -8,6 +8,7 @@
       rofi = "rofi";
       waybar = "waybar";
       kitty = "kitty";
+      swaync = "swaync"
       matugen = "matugen";
       nvim = "nvim";
       tmux = "tmux";

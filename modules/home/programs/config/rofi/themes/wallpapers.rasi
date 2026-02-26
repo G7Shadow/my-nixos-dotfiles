@@ -1,0 +1,152 @@
+/*****----- Configuration -----*****/
+configuration {
+    modi:                       "drun";
+    show-icons:                 true;
+    display-drun:               " Wallpapers";
+    drun-display-format:        "{name}";
+    font:                       "SF Pro Text Medium 12";
+}
+/*****----- Global Properties -----*****/
+@import                          "../colors/matugen.rasi"
+/*****----- Main Window -----*****/
+window {
+    transparency:                "real";
+    location:                    center;
+    anchor:                      center;
+    fullscreen:                  false;
+    width:                       1200px;
+    height:                      380px;
+    x-offset:                    0px;
+    y-offset:                    0px;
+    enabled:                     true;
+    margin:                      0px;
+    padding:                     0px;
+    border:                      1px solid;
+    border-radius:               20px;
+    border-color:                @outline;
+    background-color:            @surface;
+    cursor:                      "default";
+}
+/*****----- Main Box -----*****/
+mainbox {
+    enabled:                     true;
+    spacing:                     20px;
+    margin:                      0px;
+    padding:                     30px;
+    border:                      0px solid;
+    border-radius:               0px;
+    border-color:                @primary;
+    background-color:            transparent;
+    children:                    [ "inputbar", "listview" ];
+}
+/*****----- Inputbar -----*****/
+inputbar {
+    enabled:                     true;
+    spacing:                     15px;
+    margin:                      0px;
+    padding:                     15px 20px;
+    border:                      0px;
+    border-radius:               15px;
+    border-color:                @primary;
+    background-color:            @surface-variant;
+    text-color:                  @on-surface;
+    children:                    [ "prompt", "entry" ];
+}
+prompt {
+    enabled:                     true;
+    padding:                     0px;
+    background-color:            transparent;
+    text-color:                  @primary;
+}
+entry {
+    enabled:                     true;
+    background-color:            transparent;
+    text-color:                  @on-surface;
+    cursor:                      text;
+    placeholder:                 "Search wallpapers...";
+    placeholder-color:           @outline;
+}
+/*****----- Listview -----*****/
+listview {
+    enabled:                     true;
+    columns:                     4;
+    lines:                       2;
+    cycle:                       true;
+    dynamic:                     true;
+    scrollbar:                   false;
+    layout:                      vertical;
+    reverse:                     false;
+    fixed-height:                true;
+    fixed-columns:               true;
+
+    spacing:                     15px;
+    margin:                      0px;
+    padding:                     0px;
+    border:                      0px solid;
+    border-radius:               0px;
+    border-color:                @primary;
+    background-color:            transparent;
+    text-color:                  @on-surface;
+    cursor:                      "default";
+}
+scrollbar {
+    handle-width:                8px;
+    handle-color:                @primary;
+    border-radius:               4px;
+    background-color:            @surface-variant;
+}
+/*****----- Elements -----*****/
+element {
+    enabled:                     true;
+    spacing:                     10px;
+    margin:                      0px;
+    padding:                     15px;
+    border:                      2px solid;
+    border-radius:               15px;
+    border-color:                transparent;
+    background-color:            @surface-variant;
+    text-color:                  @on-surface;
+    orientation:                 vertical;
+    cursor:                      pointer;
+}
+element normal.normal {
+    background-color:            @surface-variant;
+    text-color:                  @on-surface;
+    border-color:                transparent;
+}
+element selected.normal {
+    background-color:            @secondary-container;
+    text-color:                  @on-secondary-container;
+    border-color:                @primary;
+}
+element-icon {
+    background-color:            transparent;
+    text-color:                  inherit;
+    size:                        180px;
+    cursor:                      inherit;
+    border-radius:               10px;
+}
+element-text {
+    background-color:            transparent;
+    text-color:                  inherit;
+    highlight:                   inherit;
+    cursor:                      inherit;
+    vertical-align:              0.5;
+    horizontal-align:            0.5;
+}
+/*****----- Message -----*****/
+error-message {
+    padding:                     30px;
+    border:                      0px solid;
+    border-radius:               15px;
+    border-color:                @primary;
+    background-color:            @surface;
+    text-color:                  @on-surface;
+}
+textbox {
+    background-color:            transparent;
+    text-color:                  @on-surface;
+    vertical-align:              0.5;
+    horizontal-align:            0.5;
+    highlight:                   none;
+}
