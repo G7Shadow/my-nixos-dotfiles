@@ -23,8 +23,8 @@ window {
     padding:                     0px;
     border:                      1px solid;
     border-radius:               20px;
-    border-color:                @outline;
-    background-color:            @surface;
+    border-color:                @outline-variant;
+    background-color:            @surface-container-lowest;
     cursor:                      "default";
 }
 /*****----- Main Box -----*****/
@@ -48,7 +48,7 @@ inputbar {
     border:                      0px;
     border-radius:               15px;
     border-color:                @primary;
-    background-color:            @surface-variant;
+    background-color:            @surface-container;
     text-color:                  @on-surface;
     children:                    [ "prompt", "entry" ];
 }
@@ -64,7 +64,7 @@ entry {
     text-color:                  @on-surface;
     cursor:                      text;
     placeholder:                 "Search wallpapers...";
-    placeholder-color:           @outline;
+    placeholder-color:           @on-surface-variant;
 }
 /*****----- Listview -----*****/
 listview {
@@ -78,7 +78,6 @@ listview {
     reverse:                     false;
     fixed-height:                true;
     fixed-columns:               true;
-
     spacing:                     15px;
     margin:                      0px;
     padding:                     0px;
@@ -93,7 +92,7 @@ scrollbar {
     handle-width:                8px;
     handle-color:                @primary;
     border-radius:               4px;
-    background-color:            @surface-variant;
+    background-color:            @surface-container;
 }
 /*****----- Elements -----*****/
 element {
@@ -104,19 +103,19 @@ element {
     border:                      2px solid;
     border-radius:               15px;
     border-color:                transparent;
-    background-color:            @surface-variant;
+    background-color:            @surface-container;
     text-color:                  @on-surface;
     orientation:                 vertical;
     cursor:                      pointer;
 }
 element normal.normal {
-    background-color:            @surface-variant;
+    background-color:            @surface-container;
     text-color:                  @on-surface;
     border-color:                transparent;
 }
 element selected.normal {
-    background-color:            @secondary-container;
-    text-color:                  @on-secondary-container;
+    background-color:            @primary-container;
+    text-color:                  @on-primary-container;
     border-color:                @primary;
 }
 element-icon {
@@ -140,7 +139,7 @@ error-message {
     border:                      0px solid;
     border-radius:               15px;
     border-color:                @primary;
-    background-color:            @surface;
+    background-color:            @surface-container-lowest;
     text-color:                  @on-surface;
 }
 textbox {

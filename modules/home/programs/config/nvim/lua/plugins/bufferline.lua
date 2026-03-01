@@ -1,6 +1,6 @@
 return {
   "akinsho/bufferline.nvim",
-  cond = not vim.g.vscode,
+  event = "BufReadPost",  -- lazy-load: only after a file is opened
   dependencies = { "nvim-tree/nvim-web-devicons" },
   version = "*",
   opts = {

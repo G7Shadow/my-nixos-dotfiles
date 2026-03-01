@@ -6,7 +6,7 @@ configuration {
 /*****----- Global Properties -----*****/
 @import "~/.config/rofi/colors/matugen.rasi"
 * {
-    background-color:           transparent;
+    background-color:           @surface-container-lowest;
     text-color:                 @on-surface;
     margin:                     0px;
     padding:                    0px;
@@ -21,8 +21,8 @@ window {
     width:                      500px;
     border:                     1px solid;
     border-radius:              15px;
-    border-color:               @outline;
-    background-color:           @surface;
+    border-color:               @outline-variant;
+    background-color:           @surface-container-lowest;
     cursor:                     "default";
 }
 /*****----- Main Box -----*****/
@@ -41,7 +41,7 @@ inputbar {
     border:                     2px solid;
     border-radius:              15px;
     border-color:               @outline-variant;
-    background-color:           @surface;
+    background-color:           @surface-container;
     text-color:                 @on-surface;
     children:                   [ "prompt", "entry" ];
 }
@@ -56,7 +56,7 @@ entry {
     text-color:                 @on-surface;
     cursor:                     text;
     placeholder:                "Search...";
-    placeholder-color:          @outline;
+    placeholder-color:          @on-surface-variant;
 }
 /*****----- Listview -----*****/
 listview {
@@ -70,7 +70,6 @@ listview {
     reverse:                    false;
     fixed-height:               false;
     fixed-columns:              true;
-
     spacing:                    8px;
     margin:                     0px;
     padding:                    0px;
@@ -100,12 +99,12 @@ element normal.active {
     text-color:                 @tertiary;
 }
 element selected.normal {
-    background-color:           @surface-variant;
-    text-color:                 @primary;
+    background-color:           @primary-container;
+    text-color:                 @on-primary-container;
 }
 element selected.active {
-    background-color:           @surface-variant;
-    text-color:                 @primary;
+    background-color:           @primary-container;
+    text-color:                 @on-primary-container;
 }
 element alternate.normal {
     background-color:           transparent;
@@ -152,6 +151,6 @@ error-message {
     padding:                    20px;
     border:                     0px solid;
     border-radius:              15px;
-    background-color:           @surface;
+    background-color:           @surface-container-lowest;
     text-color:                 @on-surface;
 }

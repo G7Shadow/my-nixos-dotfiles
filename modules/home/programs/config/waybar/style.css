@@ -15,12 +15,14 @@ window#waybar {
 }
 
 tooltip {
-    background: @surface;
-    border: 1px solid rgba(100, 114, 125, 0.5);
+    background: @surface_container_high;
+    border: 1px solid @outline_variant;
+    border-radius: 12px;
+    color: @on_surface;
 }
 
 tooltip label {
-    color: white;
+    color: @on_surface;
 }
 
 .modules-left {
@@ -39,18 +41,58 @@ tooltip label {
 #pulseaudio,
 #battery,
 #network {
-    background-color: #121212;
+    background-color: @surface_container;
+    color: @on_surface;
     margin-right: 10px;
     padding: 0 10px;
-    background-color: @surface;
+}
+
+#custom-launcher {
     color: @primary;
+    font-size: 20px;
+    padding: 0 14px;
+}
+
+#clock {
+    color: @primary;
+}
+
+#custom-notification {
+    color: @on_surface_variant;
+}
+
+#custom-media {
+    color: @secondary;
+}
+
+#pulseaudio {
+    color: @tertiary;
+}
+
+#battery {
+    color: @on_surface;
+}
+
+#battery.charging {
+    color: @primary;
+}
+
+#battery.warning:not(.charging) {
+    color: @error;
+}
+
+#network {
+    color: @on_surface_variant;
+}
+
+#network.disconnected {
+    color: @error;
 }
 
 #workspaces {
     padding: 8px 5px;
     border-radius: 16px;
-    background-color: @surface;
-    color: @primary;
+    background-color: @surface_container;
 }
 
 #workspaces button {
@@ -59,12 +101,12 @@ tooltip label {
     border-radius: 50px;
     color: transparent;
     transition: all 0.3s ease-in-out;
-    background-color: @on_secondary;
+    background-color: @surface_container_high;
 }
 
 #workspaces button.active {
-    background-color: @primary;
-    color: @surface;
+    background-color: @primary_container;
+    color: @on_primary_container;
     min-width: 50px;
     transition: all 0.3s ease-in-out;
     font-size: 13px;
@@ -72,18 +114,16 @@ tooltip label {
 }
 
 #workspaces button:hover {
-    background-color: @secondary;
-    color: @surface;
+    background-color: @secondary_container;
+    color: @on_secondary_container;
     border-radius: 16px;
     min-width: 50px;
-    background-size: 400% 400%;
 }
 
 #workspaces button.urgent {
     background-color: @error;
-    color: @surface;
+    color: @on_error;
     border-radius: 16px;
     min-width: 50px;
-    background-size: 400% 400%;
-    transition: all 0.3s ease-in-out;
+    transition: all 0.1s ease-in-out;
 }

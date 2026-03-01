@@ -82,7 +82,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
         and not client.supports_method('textDocument/willSaveWaitUntil')
     then
       vim.api.nvim_create_autocmd('BufWritePre', {
-        group = vim.api.nvim_create_augroup('my.lsp.format', { clear = false }),
+        group = vim.api.nvim_create_augroup('my.lsp.format.' .. buf, { clear = true }),
         buffer = buf,
         callback = function()
           vim.lsp.buf.format({ bufnr = buf, id = client.id, timeout_ms = 1000 })
@@ -120,7 +120,7 @@ vim.lsp.config['cssls'] = {
   filetypes = { 'css', 'scss', 'less' },
   root_markers = { 'package.json', '.git' },
   settings = {
-    css = { validate = true },
+    css  = { validate = true },
     scss = { validate = true },
     less = { validate = true },
   },
@@ -131,8 +131,10 @@ vim.lsp.config['ts_ls'] = {
   cmd = { 'typescript-language-server', '--stdio' },
   root_markers = { 'package.json', 'tsconfig.json', 'jsconfig.json', '.git' },
   filetypes = {
-    'javascript', 'javascriptreact', 'javascript.jsx',
-    'typescript', 'typescriptreact', 'typescript.tsx',
+    'javascript',
+    'javascriptreact',
+    'typescript',
+    'typescriptreact',
   },
   settings = {
     completions = {
@@ -189,7 +191,7 @@ vim.lsp.config['hyprls'] = {
 -- Html
 vim.lsp.config['html'] = {
   cmd = { 'vscode-html-language-server', '--stdio' },
-  filetypes = { 'html', 'templ' },
+  filetypes = { 'html' },
   root_markers = { 'package.json', '.git' },
   settings = {},
   init_options = {
@@ -199,6 +201,17 @@ vim.lsp.config['html'] = {
   },
 }
 
+-- QML
+vim.lsp.config['qmlls'] = {
+  cmd = { 'qmlls', '--build-dir', '/nix/store' },
+  filetypes = { 'qml' },
+  root_markers = { 'CMakeLists.txt', '.git' },
+  settings = {
+    qmlls = {
+      useQmlImportPathEnv = true,
+    },
+  },
+}
 
 --------------------------------------------------------------------------------
 -- 4. Enable Servers
@@ -210,3 +223,5 @@ vim.lsp.enable('pyright')
 vim.lsp.enable('nil_ls')
 vim.lsp.enable('hyprls')
 vim.lsp.enable('html')
+vim.lsp.enable('qmlls')
+

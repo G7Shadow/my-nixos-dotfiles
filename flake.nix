@@ -7,6 +7,10 @@
     import-tree.url = "github:vic/import-tree";
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
     nix-vscode-extensions.url = "github:nix-community/nix-vscode-extensions";
+    quickshell = {
+      url = "git+https://git.outfoxxed.me/outfoxxed/quickshell";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     home-manager = {
       url = "github:nix-community/home-manager";

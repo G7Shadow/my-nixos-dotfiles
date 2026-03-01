@@ -1,7 +1,7 @@
-@import "colors/colors.css";
+@import "../matugen/colors.css";
 
 * {
-  color: @fg;
+  color: @on_surface;
   all: unset;
   font-size: 16px;
   font-family: "SF Pro Display", "JetBrainsMono Nerd Font Propo";
@@ -9,15 +9,14 @@
   font-weight: 500;
 }
 
-/* Avoid the annoying background */
 .blank-window {
   background: transparent;
 }
 
 .control-center {
-  background: alpha(@bg1, 0.6);
+  background: alpha(@surface_container, 0.6);
   border-radius: 10px;
-  border: 1px solid @bg4;
+  border: 1px solid @outline_variant;
   box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.6);
   margin: 18px;
   padding: 21px;
@@ -25,16 +24,16 @@
 
 .control-center .notification-row .notification-background,
 .control-center .notification-row .notification-background .notification.critical {
-  background-color: @bg1;
-  color: @fg;
-  border: 1px solid @bg4;
+  background-color: @surface_container_low;
+  color: @on_surface;
+  border: 1px solid @outline_variant;
   border-radius: 15px;
   margin: 19px 0px 0px 0px;
   padding: 5px;
 }
 
 .control-center .notification-row .notification-background .notification.critical {
-  color: @red;
+  color: @error;
 }
 
 .control-center .notification-row .notification-background .notification .notification-content {
@@ -46,21 +45,20 @@
 }
 
 .control-center .notification-row .notification-background .notification>*:last-child>* .notification-action {
-  background: alpha(@bg2, 0.6);
-  color: @fg;
+  background: alpha(@surface_container_high, 0.6);
+  color: @on_surface;
   border-radius: 12px;
   margin: 6px;
 }
 
 .control-center .notification-row .notification-background .notification>*:last-child>* .notification-action:hover {
-  background: @blue;
+  background: @primary;
 }
 
 .control-center .notification-row .notification-background .notification>*:last-child>* .notification-action:active {
-  background-color: @blue;
+  background-color: @primary;
 }
 
-/* Buttons */
 .control-center .notification-row .notification-background .close-button {
   background: transparent;
   color: transparent;
@@ -74,17 +72,17 @@
 
 .notification-group-headers {
   margin: 15px 0 0 0;
-  color: @fg;
+  color: @on_surface;
 }
 
 .notification-group-icon {
-  color: @fg;
+  color: @on_surface;
 }
 
 .notification-group-collapse-button,
 .notification-group-close-all-button {
   background: transparent;
-  color: @fg;
+  color: @on_surface;
   margin: 15px 0 0 0;
   border-radius: 6px;
   padding: 4px;
@@ -92,47 +90,44 @@
 
 .notification-group-collapse-button:hover,
 .notification-group-close-all-button:hover {
-  background: @red;
+  background: @error;
 }
 
-/* WIDGETS --------------------------------------------------------------------------- */
+/* WIDGETS */
 
-/* Label widget */
 .widget-label {
   margin: 6px;
-  color: @blue;
+  color: @primary;
 }
 
 .widget-title {
-  color: @fg;
+  color: @on_surface;
   font-size: 1.2em;
   margin: 6px;
 }
 
-/* Notification clear button */
 .widget-title button {
-  background: @bg3;
+  background: @surface_container_high;
   border-radius: 6px;
   padding: 4px 16px;
 }
 
 .widget-title button:hover {
-  background-color: @bg4;
+  background-color: @surface_container_highest;
 }
 
 .widget-title button:active {
-  background-color: @grey0;
+  background-color: @outline_variant;
 }
 
-/* Do not disturb */
 .widget-dnd {
-  color: @fg;
+  color: @on_surface;
   margin: 6px;
   font-size: 1.2rem;
 }
 
 .widget-dnd>switch {
-  background: @bg2;
+  background: @surface_container_high;
   font-size: initial;
   border-radius: 8px;
   box-shadow: none;
@@ -140,30 +135,29 @@
 }
 
 .widget-dnd>switch:hover {
-  background: @bg3;
+  background: @surface_container_highest;
 }
 
 .widget-dnd>switch:checked {
-  background: @blue;
+  background: @primary;
 }
 
 .widget-dnd>switch:checked:hover {
-  background: @purple;
+  background: @tertiary;
 }
 
 .widget-dnd>switch slider {
-  background: @bg4;
+  background: @surface_bright;
   border-radius: 6px;
 }
 
-/* Buttons menu */
 .widget-buttons-grid {
   font-size: x-large;
   padding: 6px 2px;
   margin: 6px;
   border-radius: 12px;
-  background: alpha(@bg2, 0.4);
-  color: @fg;
+  background: alpha(@surface_container_high, 0.4);
+  color: @on_surface;
 }
 
 .widget-buttons-grid>flowbox>flowboxchild>button {
@@ -174,18 +168,17 @@
 }
 
 .widget-buttons-grid>flowbox>flowboxchild>button:hover {
-  background: @bg4;
+  background: @surface_container_highest;
 }
 
 .widget-buttons-grid>flowbox>flowboxchild>button.toggle:checked {
-  background: @blue;
+  background: @primary;
 }
 
 .widget-buttons-grid>flowbox>flowboxchild>button.toggle:checked label {
-  color: @bg1;
+  color: @on_primary;
 }
 
-/* Volume & Backlight Widget */
 progressbar,
 progress,
 trough {
@@ -195,14 +188,14 @@ trough {
 
 trough highlight {
   padding: 4px;
-  background: @blue;
+  background: @primary;
   border-radius: 20px;
   box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.5);
 }
 
 trough highlight:hover {
   padding: 4px;
-  background: @purple;
+  background: @tertiary;
   border-radius: 20px;
   box-shadow: 0px 0px 5px rgba(0, 0, 0, 1);
 }
@@ -220,7 +213,7 @@ trough slider:hover {
 .widget-volume,
 .widget-backlight {
   background: transparent;
-  color: @fg;
+  color: @on_surface;
   border-radius: 6px;
   margin: 10px 6px;
 }

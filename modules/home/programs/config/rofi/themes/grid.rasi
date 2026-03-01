@@ -11,24 +11,21 @@ configuration {
 @import "~/.config/rofi/colors/matugen.rasi"
 
 * {
-  bg:     @surface;
-  fg:     @on-surface;
-  accent: @primary;
-  background-color: @bg;
-  text-color:       @fg;
+  background-color: @surface;
+  text-color:       @on-surface;
 }
 
 window {
   border: 1px solid;
-  border-color: @outline;
+  border-color: @outline-variant;
   border-radius: 7px;
   width: 40%;
-  background-color: @surface;
+  background-color: @surface-container-lowest;
   text-color: @on-surface;
 }
 
 prompt {
-  background-color: @surface-variant;
+  background-color: @surface-container;
   enabled: true;
   padding: 0.5% 32px 0% -0.5%;
   text-color: @primary;
@@ -36,8 +33,8 @@ prompt {
 
 entry {
   placeholder: "Search";
-  background-color: @surface-variant;
-  placeholder-color: @outline;
+  background-color: @surface-container;
+  placeholder-color: @on-surface-variant;
   expand: true;
   padding: 0.15% 0% 0% 0%;
   text-color: @on-surface;
@@ -45,7 +42,7 @@ entry {
 
 inputbar {
   children: [ prompt, entry ];
-  background-color: @surface-variant;
+  background-color: @surface-container;
   expand: false;
   border-radius: 6px;
   margin: 0%;
@@ -91,7 +88,7 @@ element-text, element-icon {
 }
 
 element selected {
-  background-color: @primary;
+  background-color: @primary-container;
   border-radius: 6px;
-  text-color: @on-primary;
+  text-color: @on-primary-container;
 }

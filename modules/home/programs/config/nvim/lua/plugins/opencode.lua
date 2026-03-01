@@ -1,24 +1,33 @@
 return {
   "NickvanDyke/opencode.nvim",
   dependencies = {
-    -- Recommended for `ask()` and `select()`.
-    -- Required for `snacks` provider.
     ---@module 'snacks' <- Loads `snacks.nvim` types for configuration intellisense.
-    { "folke/snacks.nvim", opts = { input = {}, picker = {}, terminal = {} } },
+    {
+      "folke/snacks.nvim",
+      opts = {
+        input = {},
+        picker = {},
+        terminal = {},
+        -- Replaces vim.notify with a nice floating notification system
+        notifier = {
+          enabled = true,
+          timeout = 3000,
+        },
+        -- Smooth scrolling (replaces default jump scrolling)
+        scroll = { enabled = true },
+      },
+    },
   },
   config = function()
     ---@type opencode.Opts
     vim.g.opencode_opts = {
-      -- Your configuration, if any — see `lua/opencode/config.lua`, or "goto definition".
       provider = {
         enabled = "tmux",
       },
     }
-
-    -- Required for `opts.events.reload`.
+  
     vim.o.autoread = true
 
-    -- Recommended/example keymaps.
     vim.keymap.set({ "n", "x" }, "<C-a>", function() require("opencode").ask("@this: ", { submit = true }) end,
       { desc = "Ask opencode" })
     vim.keymap.set({ "n", "x" }, "<C-x>", function() require("opencode").select() end,
@@ -29,9 +38,7 @@ return {
       { desc = "opencode half page up" })
     vim.keymap.set("n", "<S-C-d>", function() require("opencode").command("session.half.page.down") end,
       { desc = "opencode half page down" })
-    -- You may want these if you stick with the opinionated "<C-a>" and "<C-x>" above — otherwise consider "<leader>o".
     vim.keymap.set('n', '+', '<C-a>', { desc = 'Increment', noremap = true })
     vim.keymap.set('n', '-', '<C-x>', { desc = 'Decrement', noremap = true })
-
   end,
 }

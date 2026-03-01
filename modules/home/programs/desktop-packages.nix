@@ -2,6 +2,7 @@
   flake.homeModules.desktop-packages = {
     pkgs,
     inputs,
+    lib,
     ...
   }: {
     home.packages = with pkgs; [
@@ -14,6 +15,11 @@
           pygobject3
           gst-python
         ]))
+      inputs.quickshell.packages.${pkgs.stdenv.hostPlatform.system}.default
+      qt6.qtsvg
+      qt6.qtimageformats
+      qt6.qtmultimedia
+      qt6.qt5compat
       opencode
       gnumake
       nodejs
@@ -99,6 +105,8 @@
       lua-language-server
       typescript-language-server
       nil
+      qt6.qtdeclarative
+      qt6.qttools
       hyprls
       pyright
 
