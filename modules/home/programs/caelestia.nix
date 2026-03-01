@@ -6,7 +6,7 @@
     ...
   }: {
     imports = [
-      inputs.caelestia-shell.homeModules.default
+      inputs.caelestia-shell.homeManagerModules.default
     ];
 
     xdg.configFile."caelestia/config.json".text = builtins.toJSON {
