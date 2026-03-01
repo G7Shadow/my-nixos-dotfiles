@@ -10,6 +10,7 @@
       desktop-packages
       dotfiles
       git
+      caelestia
       neovim
       theme
       vscodium
