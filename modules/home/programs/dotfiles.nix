@@ -5,7 +5,7 @@
 
     configs = {
       hypr = "hypr";
-      quickshell = "quickshell";
+      ags = "ags";
       rofi = "rofi";
       waybar = "waybar";
       kitty = "kitty";

@@ -10,9 +10,9 @@
       desktop-packages
       dotfiles
       git
-      caelestia
       neovim
       theme
+      ags
       vscodium
       zsh
     ];
