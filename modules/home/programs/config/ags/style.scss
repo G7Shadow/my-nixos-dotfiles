@@ -1,66 +1,20 @@
-@import "file:///home/jeremyl/.config/swaync/matugen/colors.css";
-
-* {
-  font-family: "Adwaita Sans", "JetBrainsMono Nerd Font Propo";
-  font-weight: 600;
-  font-size: 16px;
-}
+// https://gitlab.gnome.org/GNOME/gtk/-/blob/gtk-3-24/gtk/theme/Adwaita/_colors-public.scss
+$fg-color: #{"@theme_fg_color"};
+$bg-color: #{"@theme_bg_color"};
 
 window.Bar {
   background: transparent;
-}
+  color: $fg-color;
+  font-weight: bold;
 
-.bar-left  { margin-left: 15px; }
-.bar-right { margin-right: 15px; }
+  > centerbox {
+    background: $bg-color;
+    border-radius: 10px;
+    margin: 8px;
+  }
 
-.launcher, .clock, .workspaces, .notification,
-.media, .volume, .battery, .network {
-  background-color: #{"@surface_container"};
-  color: #{"@on_surface"};
-  padding: 0 10px;
-  border-radius: 50px;
-  min-height: 30px;
-}
-
-.launcher {
-  color: #{"@primary"};
-  font-size: 20px;
-  padding: 0 14px;
-}
-
-.clock        { color: #{"@primary"}; }
-.media        { color: #{"@secondary"}; }
-.volume       { color: #{"@tertiary"}; }
-.network      { color: #{"@on_surface_variant"}; }
-.notification { color: #{"@on_surface_variant"}; }
-
-.battery          { color: #{"@on_surface"}; }
-.battery.charging { color: #{"@primary"}; }
-
-.workspaces {
-  padding: 0 5px;
-  border-radius: 16px;
-
-  button.workspace-btn {
-    padding: 0 6px;
-    margin: 0 3px;
-    border-radius: 50px;
-    background-color: #{"@surface_container_high"};
-    color: transparent;
-    transition: all 300ms ease;
-
-    &.active {
-      background-color: #{"@primary_container"};
-      color: #{"@on_primary_container"};
-      min-width: 50px;
-      border-radius: 5px;
-    }
-
-    &:hover {
-      background-color: #{"@secondary_container"};
-      color: #{"@on_secondary_container"};
-      min-width: 50px;
-      border-radius: 16px;
-    }
+  button {
+    border-radius: 8px;
+    margin: 2px;
   }
 }
