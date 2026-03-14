@@ -3,7 +3,16 @@
 --------------------------------------------------------------------------------
 
 local base_caps = vim.lsp.protocol.make_client_capabilities()
-local caps = require("blink.cmp").get_lsp_capabilities(base_caps)
+
+
+vim.lsp.enable({
+    "lua_ls",
+      "nil_ls",
+        "ts_ls",
+          "pyright",
+            "html",
+              "qmlls",
+            })local caps = require("blink.cmp").get_lsp_capabilities(base_caps)
 caps.textDocument.completion.completionItem.snippetSupport = true
 
 vim.lsp.config('*', {
@@ -141,3 +150,12 @@ vim.lsp.config['html'] = {
     configurationSection = { 'html', 'css', 'javascript' },
   },
 }
+
+vim.lsp.enable({
+  "lua_ls",
+  "nil_ls",
+  "ts_ls",
+  "pyright",
+  "html",
+  "qmlls",
+})

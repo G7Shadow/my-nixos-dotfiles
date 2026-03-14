@@ -82,6 +82,7 @@
       bibata-cursors
       nerd-fonts.jetbrains-mono
       adwaita-icon-theme
+      papirus-icon-theme
       adwsteamgtk
       nwg-look
       adw-gtk3

@@ -21,11 +21,10 @@ return {
   config = function()
     ---@type opencode.Opts
     vim.g.opencode_opts = {
-      provider = {
+      server = {
         enabled = "tmux",
       },
     }
-  
     vim.o.autoread = true
 
     vim.keymap.set({ "n", "x" }, "<C-a>", function() require("opencode").ask("@this: ", { submit = true }) end,
@@ -42,3 +41,4 @@ return {
     vim.keymap.set('n', '-', '<C-x>', { desc = 'Decrement', noremap = true })
   end,
 }
+
