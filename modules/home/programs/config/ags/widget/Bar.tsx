@@ -1,39 +1,40 @@
-import app from "ags/gtk4/app"
-import { Astal, Gtk, Gdk } from "ags/gtk4"
-import { execAsync } from "ags/process"
-import { createPoll } from "ags/time"
+import Gtk from "gi://Gtk"
+import { Astal } from "ags/gtk4"
 
-export default function Bar(gdkmonitor: Gdk.Monitor) {
-  const time = createPoll("", 1000, "date")
+//import Clock from ".bar/Clock"
+import Workspaces from ".bar/Workspace"
+//import Battery from ".bar/Battery"
+//import Media from ".bar/Media"
+//import Network from ".bar/Network"
+
+function Seperator() {
+  return <label label="." cssClasses={["seperator"]} />
+}
+
+export default function Bar() {
   const { TOP, LEFT, RIGHT } = Astal.WindowAnchor
 
   return (
     <window
       visible
-      name="bar"
-      class="Bar"
-      gdkmonitor={gdkmonitor}
-      exclusivity={Astal.Exclusivity.EXCLUSIVE}
       anchor={TOP | LEFT | RIGHT}
-      application={app}
+      layer={Astal.Layer.TOP}
+      exclusivity={Astal.Exclusivity.EXCLUSIVE}
     >
-      <centerbox cssName="centerbox">
-        <button
-          $type="start"
-          onClicked={() => execAsync("echo hello").then(console.log)}
-          hexpand
-          halign={Gtk.Align.CENTER}
-        >
-          <label label="Welcome to AGS!" />
-        </button>
-        <box $type="center" />
-        <menubutton $type="end" hexpand halign={Gtk.Align.CENTER}>
-          <label label={time} />
-          <popover>
-            <Gtk.Calendar />
-          </popover>
-        </menubutton>
-      </centerbox>
-    </window>
-  )
+      <box halign={Gtk.Align.CENTER} valign={Gtk.Align.CENTER}>
+        <box cssClasses={["modules-left"]}>
+            <Clock format="%-I:%M" />
+            </box>
+          <box cssClasses={["modules-center"]}>
+            <Media />
+            <Seperator />
+            <Workspaces />
+          </box>
+          <box cssClasses={["modules-right"]}>
+            <Network />
+            <Battery />
+            </box> 
+      </box>
+     </window>
+  );
 }
