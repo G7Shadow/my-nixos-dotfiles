@@ -1,8 +1,12 @@
-{ self, ... }: {
-  flake.homeModules.vscodium = { pkgs, inputs, ... }: {
+{self, ...}: {
+  flake.homeModules.vscodium = {
+    pkgs,
+    inputs,
+    ...
+  }: {
     programs.vscode = {
-      enable    = true;
-      package   = pkgs.vscodium;
+      enable = true;
+      package = pkgs.vscodium;
       mutableExtensionsDir = true;
 
       profiles.default = {

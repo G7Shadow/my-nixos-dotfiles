@@ -40,6 +40,26 @@
         "type": "github"
       }
     },
+    "astal_2": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1773507676,
+        "narHash": "sha256-UabDWdQTsGopWsC+RW0GDBRvAXF5KbkHwEcW4UQpd/A=",
+        "owner": "Aylur",
+        "repo": "astal",
+        "rev": "d3fa2117d581b50e63eb3aefbf92d4883fa23f1b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Aylur",
+        "repo": "astal",
+        "type": "github"
+      }
+    },
     "disko": {
       "inputs": {
         "nixpkgs": [
@@ -234,6 +254,7 @@
     "root": {
       "inputs": {
         "ags": "ags",
+        "astal": "astal_2",
         "disko": "disko",
         "flake-parts": "flake-parts",
         "home-manager": "home-manager",
