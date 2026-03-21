@@ -3,16 +3,7 @@
 --------------------------------------------------------------------------------
 
 local base_caps = vim.lsp.protocol.make_client_capabilities()
-
-
-vim.lsp.enable({
-    "lua_ls",
-      "nil_ls",
-        "ts_ls",
-          "pyright",
-            "html",
-              "qmlls",
-            })local caps = require("blink.cmp").get_lsp_capabilities(base_caps)
+local caps = require("blink.cmp").get_lsp_capabilities(base_caps)
 caps.textDocument.completion.completionItem.snippetSupport = true
 
 vim.lsp.config('*', {
@@ -96,7 +87,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
 })
 
 --------------------------------------------------------------------------------
--- 3. Server-specific settings (no cmd/enable needed — lazy-lsp handles that)
+-- 3. Server-specific settings
 --------------------------------------------------------------------------------
 
 vim.lsp.config['lua_ls'] = {

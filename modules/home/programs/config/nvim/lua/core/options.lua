@@ -37,9 +37,3 @@ vim.opt.splitbelow = true
 
 -- Save undo history
 vim.opt.undofile = true
-
-vim.filetype.add({
-  extension = {
-    qml = 'qml',
-  },
-})
