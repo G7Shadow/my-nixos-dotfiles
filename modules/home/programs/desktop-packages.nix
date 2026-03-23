@@ -82,6 +82,8 @@
       matugen
       bibata-cursors
       nerd-fonts.jetbrains-mono
+      rubik
+      noto-fonts-cjk-sans
       adwaita-icon-theme
       papirus-icon-theme
       adwsteamgtk

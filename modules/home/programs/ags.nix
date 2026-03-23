@@ -15,6 +15,7 @@
         mpris
         hyprland
         notifd
+        apps
       ];
     };
   };

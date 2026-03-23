@@ -1,20 +1,159 @@
-// https://gitlab.gnome.org/GNOME/gtk/-/blob/gtk-3-24/gtk/theme/Adwaita/_colors-public.scss
-$fg-color: #{"@theme_fg_color"};
-$bg-color: #{"@theme_bg_color"};
+* {
+  font-family: "Rubik","Noto Sans CJK JP","Noto Sans CJK KR","JetBrainsMono Nerd Font Propo", sans-serif;
+  font-size: 13px;
+  transition: all 200ms ease;
+}
 
-window.Bar {
-  background: transparent;
-  color: $fg-color;
-  font-weight: bold;
+window {
+  background: #{"@window_bg_color"};
+  color: #{"@window_fg_color"};
+}
 
-  > centerbox {
-    background: $bg-color;
-    border-radius: 10px;
-    margin: 8px;
+// ── Shared pill shape ────────────────────────────────────────────────
+@mixin pill {
+  background: #{"alpha(@headerbar_bg_color, 0.6)"};
+  border-radius: 999px;
+  padding: 4px 14px;
+  margin: 4px 4px;
+  border: 1px solid #{"alpha(@window_fg_color, 0.1)"};
+}
+
+// ── Bar sections ─────────────────────────────────────────────────────
+.left-modules,
+.center-modules,
+.right-modules {
+  margin: 0 4px;
+}
+
+// ── Clock ────────────────────────────────────────────────────────────
+.clock {
+  @include pill;
+  color: #{"@accent_color"};
+  font-weight: 700;
+
+  &:hover {
+    background: #{"alpha(@headerbar_bg_color, 0.9)"};
   }
 
+  calendar {
+    color: #{"@window_fg_color"};
+    background: #{"@headerbar_bg_color"};
+    border-radius: 12px;
+    padding: 8px;
+
+    &:selected {
+      background: #{"@accent_bg_color"};
+      color: #{"@accent_fg_color"};
+      border-radius: 999px;
+    }
+
+    label.day-number:hover {
+      background: #{"alpha(@window_fg_color, 0.1)"};
+      border-radius: 999px;
+    }
+  }
+}
+
+// ── Workspaces ───────────────────────────────────────────────────────
+.workspaces {
+  @include pill;
+  padding: 4px 6px;
+
   button {
-    border-radius: 8px;
-    margin: 2px;
+    background: transparent;
+    border-radius: 999px;
+    color: #{"alpha(@window_fg_color, 0.5)"};
+    min-width: 10px;
+    min-height: 10px;
+    padding: 4px 8px;
+    margin: 0 2px;
+
+    &:hover {
+      background: #{"alpha(@window_fg_color, 0.1)"};
+      color: #{"@window_fg_color"};
+    }
+
+    &.active {
+      background: #{"@accent_bg_color"};
+      color: #{"@accent_fg_color"};
+      min-width: 24px;
+    }
+
+    &.occupied {
+      color: #{"@window_fg_color"};
+    }
+  }
+}
+
+// ── Media ────────────────────────────────────────────────────────────
+.media {
+  @include pill;
+  color: #{"@window_fg_color"};
+
+  &:hover {
+    background: #{"alpha(@headerbar_bg_color, 0.9)"};
+  }
+
+  popover {
+    background: #{"@headerbar_bg_color"};
+    border-radius: 16px;
+    padding: 12px;
+    border: 1px solid #{"alpha(@window_fg_color, 0.1)"};
+
+    label {
+      color: #{"@window_fg_color"};
+
+      &:first-child {
+        font-weight: 700;
+      }
+
+      &:last-child {
+        color: #{"alpha(@window_fg_color, 0.6)"};
+        font-size: 12px;
+      }
+    }
+
+    button {
+      background: transparent;
+      border-radius: 999px;
+      padding: 6px;
+      color: #{"alpha(@window_fg_color, 0.6)"};
+      min-width: 32px;
+      min-height: 32px;
+
+      &:hover {
+        background: #{"alpha(@window_fg_color, 0.1)"};
+        color: #{"@window_fg_color"};
+      }
+
+      &:active {
+        background: #{"@accent_bg_color"};
+        color: #{"@accent_fg_color"};
+      }
+    }
+  }
+}
+
+// ── Wireless ─────────────────────────────────────────────────────────
+.wireless-icon {
+  @include pill;
+  color: #{"alpha(@window_fg_color, 0.6)"};
+
+  &:hover {
+    background: #{"alpha(@headerbar_bg_color, 0.9)"};
+    color: #{"@window_fg_color"};
+  }
+}
+
+// ── Battery ──────────────────────────────────────────────────────────
+.battery {
+  @include pill;
+
+  .battery-label {
+    color: #{"@window_fg_color"};
+
+    &.charging {
+      color: #{"@accent_color"};
+    }
   }
 }

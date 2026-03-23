@@ -1,4 +1,5 @@
 vim.g.mapleader = " "
+vim.g.termguicolors = true
 
 local keymap = vim.keymap -- for conciseness
 
