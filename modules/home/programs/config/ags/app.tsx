@@ -7,6 +7,6 @@ app.start({
   css: `${colors}\n${style}`,
   gtkTheme: "Adwaita-dark",
   main() {
-    app.get_monitors().map(Bar)
+    Bar()
   },
 })

@@ -1,15 +1,15 @@
-{ ... }: {
-  flake.nixosModules.auto-cpufreq = { ... }: {
+{...}: {
+  flake.nixosModules.auto-cpufreq = {...}: {
     services.auto-cpufreq = {
-      enable   = true;
+      enable = true;
       settings = {
         battery = {
           governor = "schedutil";
-          turbo    = "never";
+          turbo = "never";
         };
         charger = {
           governor = "performance";
-          turbo    = "auto";
+          turbo = "auto";
         };
       };
     };

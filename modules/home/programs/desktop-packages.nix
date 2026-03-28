@@ -65,8 +65,9 @@
       hyprlock
       hypridle
       wlogout
+      waypaper
       rofi
-      swww
+      inputs.awww.packages.${stdenv.hostPlatform.system}.awww
       swaynotificationcenter
       wl-clipboard
       cava
