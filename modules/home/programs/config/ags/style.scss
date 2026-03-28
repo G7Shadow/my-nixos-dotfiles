@@ -1,6 +1,5 @@
 * {
-  font-family: "Rubik","Noto Sans CJK JP","Noto Sans CJK KR","JetBrainsMono Nerd Font Propo", sans-serif;
-  font-size: 13px;
+  font-family: "Rubik", "Noto Sans CJK JP", "Noto Sans CJK KR", "JetBrainsMono Nerd Font Propo", "sans-serif";
   transition: all 200ms ease;
 }
 
@@ -8,6 +7,7 @@ window {
   background: #{"@window_bg_color"};
   color: #{"@window_fg_color"};
 }
+
 
 // ── Shared pill shape ────────────────────────────────────────────────
 @mixin pill {
@@ -146,14 +146,23 @@ window {
 }
 
 // ── Battery ──────────────────────────────────────────────────────────
-.battery {
-  @include pill;
+.battery-pill {
+  border-radius: 999px;
+  padding: 2px 12px;
+  margin: 4px 4px;
+  min-width: 20px;
+  min-height: 30px;
 
   .battery-label {
-    color: #{"@window_fg_color"};
+    font-weight: 700;
+    font-size: 12px;
 
-    &.charging {
-      color: #{"@accent_color"};
+    &.dark {
+      color: #{"@accent_fg_color"};
+    }
+
+    &.light {
+      color: #{"@window_fg_color"};
     }
   }
 }
