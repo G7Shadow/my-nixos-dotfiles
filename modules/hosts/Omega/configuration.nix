@@ -42,7 +42,12 @@
       loader.systemd-boot.configurationLimit = 5;
       loader.timeout = 60;
       loader.efi.canTouchEfiVariables = true;
-      kernelParams = ["amdgpu.ppfeaturemask=0xffffffff"];
+    };
+
+    services.logind.settings.Login = {
+      HandleLidSwitch = "poweroff";
+      HandleLidSwitchExternalPower = "lock";
+      HandleLidSwitchDocked = "ignore";
     };
 
     programs.nh = {
@@ -73,6 +78,16 @@
       layout = "us";
       variant = "";
     };
+
+    security.sudo.enable = false;
+    security.doas.enable = true;
+    security.doas.extraRules = [
+      {
+        users = ["jeremyl"];
+        keepEnv = true;
+        persist = true; # Optional, don't ask for the password for some time, after a successfully authentication
+      }
+    ];
 
     users.users.jeremyl = {
       isNormalUser = true;

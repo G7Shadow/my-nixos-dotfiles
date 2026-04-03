@@ -6,6 +6,10 @@ import Workspaces from "./bar/Workspaces"
 import Wireless from "./bar/Wireless"
 import Battery from "./bar/Battery"
 
+function Separator() {
+  return <label label="." cssClasses={["separator"]} />
+}
+
 export default function Bar() {
   const { TOP, LEFT, RIGHT } = Astal.WindowAnchor
 
@@ -23,6 +27,7 @@ export default function Bar() {
         </box>
         <box cssClasses={["center-modules"]}>
           <Media />
+          <Separator />
           <Workspaces />
         </box>
         <box cssClasses={["right-modules"]}>

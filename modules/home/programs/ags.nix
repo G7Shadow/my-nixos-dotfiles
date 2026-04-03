@@ -8,7 +8,7 @@
 
     programs.ags = {
       enable = true;
-      extraPackages = with inputs.astal.packages.${pkgs.system}; [
+      extraPackages = with inputs.astal.packages.${pkgs.stdenv.hostPlatform.system}; [
         battery
         wireplumber
         network
