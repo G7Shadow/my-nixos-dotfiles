@@ -83,7 +83,6 @@
         obsidian
         netflix
         localsend
-        mcpelauncher-client
 
         # Theming
         matugen
