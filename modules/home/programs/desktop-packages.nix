@@ -20,6 +20,8 @@
           ]
         ))
         opencode
+        ntfs3g
+        gvfs
         gnumake
         nodejs
         unzip
@@ -83,6 +85,7 @@
         obsidian
         netflix
         localsend
+        prismlauncher
 
         # Theming
         matugen

@@ -45,6 +45,7 @@
         loader.systemd-boot.configurationLimit = 5;
         loader.timeout = 60;
         loader.efi.canTouchEfiVariables = true;
+        supportedFilesystems = [ "ntfs" ];
       };
 
       services.logind.settings.Login = {
@@ -123,6 +124,7 @@
         flatpak.enable = true;
         fwupd.enable = true;
         fstrim.enable = true;
+        udisks2.enable = true;
         dbus.enable = true;
       };
 
