@@ -82,6 +82,7 @@
         inputs.zen-browser.packages.${stdenv.hostPlatform.system}.default
         vesktop
         spotify
+        waydroid
         obsidian
         netflix
         localsend
