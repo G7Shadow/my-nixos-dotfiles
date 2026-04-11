@@ -46,6 +46,7 @@
         loader.timeout = 60;
         loader.efi.canTouchEfiVariables = true;
         supportedFilesystems = [ "ntfs" ];
+
       };
 
       services.logind.settings.Login = {
