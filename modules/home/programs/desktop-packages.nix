@@ -45,15 +45,8 @@
         fd
         lazygit
         tmux
-        ryzenadj
-        radeontop
 
         # Media & system utilities
-        libva
-        libva-utils
-        libvdpau
-        libvdpau-va-gl
-        libva-vdpau-driver
         brightnessctl
         lm_sensors
         ffmpeg
@@ -64,7 +57,6 @@
         feh
         nautilus
         file-roller
-        mesa
 
         # Desktop tools (Wayland)
         waybar

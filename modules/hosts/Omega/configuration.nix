@@ -8,13 +8,8 @@
     specialArgs = { inherit inputs self; };
 
     modules = [
-      # 1. Hardware + host settings (merged from hardware-configuration.nix, disko.nix, and configuration.nix)
       self.nixosModules.hostOmega
-
-      # 2. System feature set (audio, hyprland, auto-cpufreq, virtualization)
-      self.nixosModules.profile-desktop
-
-      # 3. Home-manager integration
+      self.nixosModules.profile-laptop
       inputs.home-manager.nixosModules.home-manager
       {
         home-manager = {
@@ -35,8 +30,6 @@
     ];
   };
 
-  # Host-specific system configuration — hardware is in hardware-configuration.nix
-  # Both define flake.nixosModules.hostOmega and flake-parts merges them automatically
   flake.nixosModules.hostOmega =
     { pkgs, ... }:
     {
@@ -46,7 +39,6 @@
         loader.timeout = 60;
         loader.efi.canTouchEfiVariables = true;
         supportedFilesystems = [ "ntfs" ];
-
       };
 
       services.logind.settings.Login = {
@@ -115,11 +107,6 @@
       nixpkgs.config.allowUnfree = true;
 
       environment.systemPackages = with pkgs; [ tree ];
-
-      hardware.graphics = {
-        enable = true;
-        enable32Bit = true;
-      };
 
       services = {
         flatpak.enable = true;

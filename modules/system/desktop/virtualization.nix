@@ -12,10 +12,8 @@
         };
       };
 
-      virtualisation.waydroid = {
-        enable = true;
-        package = pkgs.waydroid-nftables; # ← instead of the default pkgs.waydroid
-      };
+      virtualisation.waydroid.enable = true;
+      virtualisation.waydroid.package = pkgs.waydroid-nftables;
 
       programs.virt-manager.enable = true;
       programs.dconf.enable = true;
