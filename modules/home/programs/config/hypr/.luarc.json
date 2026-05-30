@@ -1,0 +1,10 @@
+{
+  "workspace": {
+    "library": [
+      "/home/jeremyl/.config/hypr"
+    ]
+  },
+  "diagnostics": {
+    "globals": ["hl"]
+  }
+}

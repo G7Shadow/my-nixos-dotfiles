@@ -1,10 +1,13 @@
-{ self, ... }: {
-  flake.homeModules.neovim = { pkgs, ... }: {
-    programs.neovim = {
-      enable        = true;
-      viAlias       = true;
-      vimAlias      = true;
-      defaultEditor = true;
+{ self, ... }:
+{
+  flake.homeModules.neovim =
+    { pkgs, ... }:
+    {
+      home.packages = [ pkgs.neovim ];
+      home.sessionVariables.EDITOR = "nvim";
+      home.shellAliases = {
+        vi = "nvim";
+        vim = "nvim";
+      };
     };
-  };
 }

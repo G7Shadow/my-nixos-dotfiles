@@ -12,9 +12,6 @@
         };
       };
 
-      virtualisation.waydroid.enable = true;
-      virtualisation.waydroid.package = pkgs.waydroid-nftables;
-
       programs.virt-manager.enable = true;
       programs.dconf.enable = true;
 

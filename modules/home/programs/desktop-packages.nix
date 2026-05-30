@@ -99,6 +99,7 @@
         nitch
         fastfetch
         protonup-ng
+        hyprshutdown
 
         # Language servers
         vscode-langservers-extracted

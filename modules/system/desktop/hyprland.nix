@@ -1,16 +1,18 @@
-{ ... }: {
-  flake.nixosModules.hyprland = { pkgs, ... }: {
-    programs.hyprland = {
-      enable         = true;
-      xwayland.enable = true;
-    };
+{ ... }:
+{
+  flake.nixosModules.hyprland =
+    { pkgs, inputs, ... }:
+    {
+      programs.hyprland = {
+        enable = true;
+        xwayland.enable = true;
+        package = inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.hyprland;
+        portalPackage =
+          inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.xdg-desktop-portal-hyprland;
+      };
 
-    security.polkit.enable = true;
-    services.dbus.enable   = true;
+      security.polkit.enable = true;
+      services.dbus.enable = true;
 
-    xdg.portal = {
-      enable       = true;
-      extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
     };
-  };
 }

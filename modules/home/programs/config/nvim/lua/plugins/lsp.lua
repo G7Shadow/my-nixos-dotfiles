@@ -5,12 +5,23 @@ return {
     "neovim/nvim-lspconfig",
     opts = {
       servers = {
-        nil_ls = {},
-        ts_ls = {},
-        lua_ls = {},
-        cssls = {},
-        hyprls = {},
-        html = {},
+        nil_ls  = {},
+        ts_ls   = {},
+        lua_ls  = {
+          settings = {
+            Lua = {
+              workspace = {
+                ignoreDir = {
+                  "**/*.lua.tmpl",
+                  "**/colors/matugen.lua",
+                },
+              },
+            },
+          },
+        },
+        cssls   = {},
+        hyprls  = {},
+        html    = {},
         pyright = {},
       },
     },
