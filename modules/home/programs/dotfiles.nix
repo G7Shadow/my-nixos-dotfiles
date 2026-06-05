@@ -16,6 +16,7 @@
         matugen = "matugen";
         nvim = "nvim";
         tmux = "tmux";
+        quickshell = "quickshell";
       };
     in
     {

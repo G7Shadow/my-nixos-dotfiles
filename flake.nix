@@ -11,9 +11,8 @@
     awww.url = "git+https://codeberg.org/LGFae/awww";
     nix-vscode-extensions.url = "github:nix-community/nix-vscode-extensions";
 
-    ags.url = "github:Aylur/ags";
-    astal = {
-      url = "github:Aylur/astal";
+    quickshell = {
+      url = "git+https://git.outfoxxed.me/outfoxxed/quickshell";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 

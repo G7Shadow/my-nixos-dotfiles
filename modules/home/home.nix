@@ -1,4 +1,5 @@
-{self, ...}: {
+{ self, ... }:
+{
   flake.homeModules.base = {
     home.stateVersion = "25.05";
     programs.home-manager.enable = true;
@@ -11,8 +12,8 @@
       dotfiles
       git
       neovim
+      quickshell
       theme
-      ags
       vscodium
       zsh
     ];
