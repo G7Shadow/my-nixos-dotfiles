@@ -13,6 +13,7 @@
       git
       neovim
       quickshell
+      noctalia
       theme
       vscodium
       zsh
