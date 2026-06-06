@@ -23,6 +23,7 @@ return {
         hyprls  = {},
         html    = {},
         pyright = {},
+        clangd  = {},
       },
     },
   },

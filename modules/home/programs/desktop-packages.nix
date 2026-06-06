@@ -86,7 +86,7 @@
         rubik
         noto-fonts-cjk-sans
         adwaita-icon-theme
-        papirus-icon-theme
+        (pkgs.papirus-icon-theme.override { color = "black"; })
         adwsteamgtk
         nwg-look
         adw-gtk3
@@ -106,6 +106,7 @@
         lua-language-server
         typescript-language-server
         nil
+        clang-tools
         hyprls
         pyright
         tree-sitter
