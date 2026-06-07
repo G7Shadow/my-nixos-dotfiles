@@ -55,7 +55,7 @@
         imagemagick
         obs-studio
         feh
-        nautilus
+        thunar
         file-roller
 
         # Desktop tools (Wayland)
