@@ -1,7 +1,7 @@
 { self, ... }:
 {
   flake.homeModules.theme =
-    { pkgs, ... }:
+    { pkgs, lib, ... }:
     {
       gtk = {
         enable = true;
@@ -26,6 +26,11 @@
 
       xdg.configFile."gtk-4.0/gtk.css".text = ''
         @import 'colors.css'  
+      '';
+
+      home.activation.cleanStaleBackups = lib.hm.dag.entryBefore [ "checkLinkTargets" ] ''
+        rm -f "$HOME/.config/gtk-4.0/settings.ini.backup" \
+              "$HOME/.config/gtk-3.0/settings.ini.backup"
       '';
 
       xdg.configFile."qt5ct/qt5ct.conf".text = ''
