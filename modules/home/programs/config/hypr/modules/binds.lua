@@ -7,7 +7,7 @@ hl.bind(mainMod .. " + Q", hl.dsp.window.close())
 hl.bind(mainMod .. " + M",
   hl.dsp.exec_cmd("command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch 'hl.dsp.exit()'"))
 -- hl.bind(mainMod .. " + SHIFT + B", hl.dsp.exec_cmd("pkill -SIGUSR2 waybar"))
-hl.bind(mainMod .. " + E", hl.dsp.exec_cmd("nautilus"))
+hl.bind(mainMod .. " + E", hl.dsp.exec_cmd("thunar"))
 hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mainMod .. " + SHIFT + L", hl.dsp.exec_cmd("noctalia-shell ipc call lockScreen lock"))
 hl.bind(mainMod .. " + R", hl.dsp.exec_cmd("noctalia-shell ipc call launcher toggle"))
