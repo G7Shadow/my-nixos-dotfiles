@@ -3,7 +3,7 @@ import QtQuick
 
 PanelWindow {
     anchors { top: true; left: true; right: true }
-    exclusionMode: ExclusionMode.Ignore
+    exclusionMode: ExclusionMode.Normal
     color: "transparent"
     implicitHeight: 160
     mask: Region { item: island }
