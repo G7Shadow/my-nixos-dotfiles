@@ -24,6 +24,7 @@ return {
         html    = {},
         pyright = {},
         clangd  = {},
+        qmlls   = {},
       },
     },
   },

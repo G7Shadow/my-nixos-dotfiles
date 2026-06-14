@@ -18,6 +18,7 @@ return {
       "toml",
       "markdown",
       "markdown_inline",
+      "qml",
     },
   },
 }
