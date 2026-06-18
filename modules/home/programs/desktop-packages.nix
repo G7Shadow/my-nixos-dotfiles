@@ -78,6 +78,7 @@
         netflix
         localsend
         prismlauncher
+        zed-editor
 
         # Theming
         matugen
@@ -92,7 +93,6 @@
         adw-gtk3
         libsForQt5.qt5ct
         kdePackages.qt6ct
-        kdePackages.qtdeclarative
         pywalfox-native
 
         # Misc
@@ -111,8 +111,7 @@
         hyprls
         pyright
         tree-sitter
-        qt6.qtdeclarative
-
+        kdePackages.qtdeclarative
         # Virtualization
         virt-manager
       ];

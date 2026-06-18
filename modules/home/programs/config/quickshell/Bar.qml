@@ -1,12 +1,19 @@
 import Quickshell
 import QtQuick
+import QtQuick.Layouts  
 
 PanelWindow {
-    anchors { top: true; left: true; right: true }
+    anchors {
+        top: true
+        left: true
+        right: true
+    }
     exclusionMode: ExclusionMode.Normal
     color: "transparent"
     implicitHeight: 160
-    mask: Region { item: island }
+    mask: Region {
+        item: island
+    }
 
     Rectangle {
         id: island
@@ -37,7 +44,9 @@ PanelWindow {
             }
         }
 
-        HoverHandler { id: hover }
+        HoverHandler {
+            id: hover
+        }
 
         SystemClock {
             id: clock
@@ -49,8 +58,15 @@ PanelWindow {
             opacity: island.expanded ? 0 : 1
             text: Qt.formatDateTime(clock.date, "hh:mm")
             color: Colors.md3.on_surface
-            font { pixelSize: 14; weight: 600 }
-            Behavior on opacity { NumberAnimation { duration: 150 } }
+            font {
+                pixelSize: 14
+                weight: 600
+            }
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 150
+                }
+            }
         }
 
         Column {
@@ -68,14 +84,19 @@ PanelWindow {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: Qt.formatDateTime(clock.date, "hh:mm")
                 color: Colors.md3.on_surface
-                font { pixelSize: 26; weight: 600 }
+                font {
+                    pixelSize: 26
+                    weight: 600
+                }
             }
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: Qt.formatDateTime(clock.date, "dddd, MMMM d")
-                color: Colors.md3.on_surface
+                color: Colors.md3.on_surface_variant
                 font.pixelSize: 13
             }
         }
     }
 }
+ 
+ 
