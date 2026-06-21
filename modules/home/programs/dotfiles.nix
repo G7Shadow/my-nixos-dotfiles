@@ -1,5 +1,5 @@
 # modules/home/programs/dotfiles.nix
-{ self, ... }:
+{ ... }:
 {
   flake.nixosModules.dotfiles =
     { ... }:

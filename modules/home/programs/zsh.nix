@@ -22,10 +22,10 @@
           zsh-syntax-highlighting
         ];
 
-        environment.sessionVariables.EDITOR = "nvim";
-
         files.".zshrc" = {
           text = ''
+
+            export EDITOR=nvim
             autoload -Uz compinit && compinit
 
             source ${pkgs.zsh-autosuggestions}/share/zsh-autosuggestions/zsh-autosuggestions.zsh
