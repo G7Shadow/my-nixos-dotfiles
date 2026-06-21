@@ -1,32 +1,13 @@
-{
-  inputs,
-  self,
-  ...
-}:
+# modules/hosts/Omega/configuration.nix
+{ inputs, self, ... }:
 {
   flake.nixosConfigurations.Omega = inputs.nixpkgs.lib.nixosSystem {
     specialArgs = { inherit inputs self; };
-
     modules = [
+      inputs.hjem.nixosModules.default
       self.nixosModules.hostOmega
       self.nixosModules.profile-laptop
-      inputs.home-manager.nixosModules.home-manager
-      {
-        home-manager = {
-          useGlobalPkgs = true;
-          useUserPackages = true;
-          backupFileExtension = "backup";
-          extraSpecialArgs = { inherit inputs self; };
-
-          users.jeremyl = {
-            imports = [ self.homeModules.profile-desktop ];
-            home = {
-              username = "jeremyl";
-              homeDirectory = "/home/jeremyl";
-            };
-          };
-        };
-      }
+      self.nixosModules.profile-desktop
     ];
   };
 
@@ -80,14 +61,16 @@
       };
 
       security.sudo.enable = false;
-      security.doas.enable = true;
-      security.doas.extraRules = [
-        {
-          users = [ "jeremyl" ];
-          keepEnv = true;
-          persist = true; # Optional, don't ask for the password for some time, after a successfully authentication
-        }
-      ];
+      security.doas = {
+        enable = true;
+        extraRules = [
+          {
+            users = [ "jeremyl" ];
+            keepEnv = true;
+            persist = true;
+          }
+        ];
+      };
 
       users.users.jeremyl = {
         isNormalUser = true;
@@ -141,6 +124,11 @@
           "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
           "noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4="
         ];
+      };
+
+      hjem.users.jeremyl = {
+        user = "jeremyl";
+        directory = "/home/jeremyl";
       };
 
       system.stateVersion = "25.05";

@@ -1,9 +1,10 @@
+# modules/home/programs/quickshell.nix
 { self, ... }:
 {
-  flake.homeModules.quickshell =
+  flake.nixosModules.quickshell =
     { pkgs, inputs, ... }:
     {
-      home.packages = [
+      hjem.users.jeremyl.packages = [
         (inputs.quickshell.packages.${pkgs.stdenv.hostPlatform.system}.default.withModules [
           pkgs.qt6.qtsvg
           pkgs.qt6.qtimageformats

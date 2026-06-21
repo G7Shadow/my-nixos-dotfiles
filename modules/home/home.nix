@@ -1,13 +1,8 @@
+# modules/home/home.nix
 { self, ... }:
 {
-  flake.homeModules.base = {
-    home.stateVersion = "25.05";
-    programs.home-manager.enable = true;
-  };
-
-  flake.homeModules.profile-desktop = {
-    imports = with self.homeModules; [
-      base
+  flake.nixosModules.profile-desktop = {
+    imports = with self.nixosModules; [
       desktop-packages
       dotfiles
       git

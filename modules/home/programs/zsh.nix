@@ -1,73 +1,60 @@
-{ self, ... }: {
-  flake.homeModules.zsh = { pkgs, ... }: {
-    programs.zsh = {
-      enable            = true;
-      autosuggestion    = {
-        enable   = true;
-        strategy = [ "history" ];
-      };
-      syntaxHighlighting.enable = true;
-      enableCompletion          = true;
+# modules/home/programs/zsh.nix
+{ self, ... }:
+{
+  flake.nixosModules.zsh =
+    { pkgs, ... }:
+    {
+      programs.zsh.enable = true;
 
-      shellAliases = {
-        # Quick launchers
-        v  = "nvim";
-        t  = "tmux";
-        ta = "tmux attach || tmux new";
-
-        # Git
-        gs = "git status";
-        ga = "git add";
-        gc = "git commit";
-        gp = "git push";
-        gl = "git log --oneline";
-        gd = "git diff";
-
-        # Eza (modern ls)
-        ls = "eza --icons";
-        ll = "eza -l --icons";
-        la = "eza -la --icons";
-        lt = "eza --tree --icons";
-
-        # Better defaults
-        cat = "bat";
-        cd  = "z";
-      };
-
-      initContent = ''
-        # Show system info once per shell, only outside tmux
-        if command -v nitch &> /dev/null && [ -z "$TMUX" ] && [ -z "$NITCH_RAN" ]; then
-          export NITCH_RAN=1
+      hjem.users.jeremyl = {
+        packages = with pkgs; [
+          zsh
+          zoxide
+          fzf
+          starship
+          direnv
+          eza
+          bat
           nitch
-        fi
+          zsh-autosuggestions
+          zsh-syntax-highlighting
+        ];
 
-        eval "$(zoxide init zsh)"
-      '';
-    };
+        environment.sessionVariables.EDITOR = "nvim";
 
-    programs.fzf = {
-      enable              = true;
-      enableZshIntegration = true;
-    };
+        files.".zshrc" = {
+          text = ''
+            autoload -Uz compinit && compinit
 
-    programs.zoxide = {
-      enable               = true;
-      enableZshIntegration = true;
-    };
+            source ${pkgs.zsh-autosuggestions}/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+            source ${pkgs.zsh-syntax-highlighting}/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
-    programs.starship = {
-      enable               = true;
-      enableZshIntegration = true;
-      settings = {
-        command_timeout = 500;
-        scan_timeout    = 10;
+            alias v="nvim" t="tmux" ta="tmux attach || tmux new"
+            alias gs="git status" ga="git add" gc="git commit"
+            alias gp="git push" gl="git log --oneline" gd="git diff"
+            alias ls="eza --icons" ll="eza -l --icons"
+            alias la="eza -la --icons" lt="eza --tree --icons"
+            alias cat="bat" cd="z"
+
+            eval "$(zoxide init zsh)"
+            eval "$(starship init zsh)"
+            eval "$(direnv hook zsh)"
+            eval "$(fzf --zsh)"
+
+            if command -v nitch &>/dev/null && [ -z "$TMUX" ] && [ -z "$NITCH_RAN" ]; then
+              export NITCH_RAN=1
+              nitch
+            fi
+          '';
+        };
+
+        files.".config/starship.toml" = {
+          generator = (pkgs.formats.toml { }).generate "starship.toml";
+          value = {
+            command_timeout = 500;
+            scan_timeout = 10;
+          };
+        };
       };
     };
-
-    programs.direnv = {
-      enable               = true;
-      enableZshIntegration = true;
-      nix-direnv.enable    = true;
-    };
-  };
 }

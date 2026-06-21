@@ -1,13 +1,12 @@
+# modules/home/programs/neovim.nix
 { self, ... }:
 {
-  flake.homeModules.neovim =
+  flake.nixosModules.neovim =
     { pkgs, ... }:
     {
-      home.packages = [ pkgs.neovim ];
-      home.sessionVariables.EDITOR = "nvim";
-      home.shellAliases = {
-        vi = "nvim";
-        vim = "nvim";
+      hjem.users.jeremyl = {
+        packages = [ pkgs.neovim ];
+        environment.sessionVariables.EDITOR = "nvim";
       };
     };
 }

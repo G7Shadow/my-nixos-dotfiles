@@ -1,35 +1,34 @@
+# modules/home/programs/dotfiles.nix
+{ self, ... }:
 {
-  self,
-  lib,
-  ...
-}: {
-  flake.homeModules.dotfiles = {
-    config,
-    lib,
-    ...
-  }: let
-    dotfiles = "${config.home.homeDirectory}/my-nixos-dotfiles/modules/home/programs/config";
-    create_symlink = path: config.lib.file.mkOutOfStoreSymlink path;
-
-    configs = {
-      hypr = "hypr";
-      rofi = "rofi";
-      waybar = "waybar";
-      kitty = "kitty";
-      swaync = "swaync";
-      matugen = "matugen";
-      nvim = "nvim";
-      tmux = "tmux";
-      quickshell = "quickshell";
+  flake.nixosModules.dotfiles =
+    { ... }:
+    {
+      system.activationScripts.dotfileSymlinks =
+        let
+          dotfiles = "/home/jeremyl/my-nixos-dotfiles/modules/home/programs/config";
+          configs = {
+            hypr = "hypr";
+            quickshell = "quickshell";
+            nvim = "nvim";
+            kitty = "kitty";
+            rofi = "rofi";
+            swaync = "swaync";
+            matugen = "matugen";
+            waybar = "waybar";
+            tmux = "tmux";
+          };
+          links = builtins.concatStringsSep "\n" (
+            builtins.attrValues (
+              builtins.mapAttrs (name: sub: ''
+                ln -sfn "${dotfiles}/${sub}" "/home/jeremyl/.config/${name}"
+              '') configs
+            )
+          );
+        in
+        {
+          text = links;
+          deps = [ ];
+        };
     };
-  in {
-    home.file =
-      lib.mapAttrs' (
-        name: subpath:
-          lib.nameValuePair ".config/${name}" {
-            source = create_symlink "${dotfiles}/${subpath}";
-          }
-      )
-      configs;
-  };
 }

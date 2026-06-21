@@ -1,15 +1,10 @@
+# modules/home/programs/desktop-packages.nix
 { self, ... }:
 {
-  flake.homeModules.desktop-packages =
+  flake.nixosModules.desktop-packages =
+    { pkgs, inputs, ... }:
     {
-      pkgs,
-      inputs,
-      lib,
-      ...
-    }:
-    {
-      home.packages = with pkgs; [
-        # Dev tools
+      hjem.users.jeremyl.packages = with pkgs; [
         alejandra
         cmake
         gcc
@@ -30,7 +25,6 @@
         jq
         docker
 
-        # Terminals & CLI utilities
         kitty
         htop
         btop
@@ -46,7 +40,6 @@
         lazygit
         tmux
 
-        # Media & system utilities
         brightnessctl
         lm_sensors
         ffmpeg
@@ -58,7 +51,6 @@
         thunar
         file-roller
 
-        # Desktop tools (Wayland)
         waybar
         hyprpaper
         hyprlock
@@ -66,12 +58,12 @@
         wlogout
         waypaper
         rofi
-        inputs.awww.packages.${stdenv.hostPlatform.system}.awww
+        inputs.awww.packages.${pkgs.stdenv.hostPlatform.system}.awww
         swaynotificationcenter
         wl-clipboard
         cava
         mangohud
-        inputs.zen-browser.packages.${stdenv.hostPlatform.system}.default
+        inputs.zen-browser.packages.${pkgs.stdenv.hostPlatform.system}.default
         vesktop
         spotify
         obsidian
@@ -80,14 +72,13 @@
         prismlauncher
         zed-editor
 
-        # Theming
         matugen
         bibata-cursors
         nerd-fonts.jetbrains-mono
         rubik
         noto-fonts-cjk-sans
         adwaita-icon-theme
-        (pkgs.papirus-icon-theme.override { color = "black"; })
+        (papirus-icon-theme.override { color = "black"; })
         adwsteamgtk
         nwg-look
         adw-gtk3
@@ -95,14 +86,12 @@
         kdePackages.qt6ct
         pywalfox-native
 
-        # Misc
         playerctl
         nitch
         fastfetch
         protonup-ng
         hyprshutdown
 
-        # Language servers
         vscode-langservers-extracted
         lua-language-server
         typescript-language-server
@@ -112,7 +101,7 @@
         pyright
         tree-sitter
         kdePackages.qtdeclarative
-        # Virtualization
+
         virt-manager
       ];
     };
