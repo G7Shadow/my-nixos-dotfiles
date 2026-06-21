@@ -5,7 +5,7 @@
     { lib, ... }:
     {
       hjem.users.jeremyl.files.".gitconfig" = {
-        generator = lib.generators.toGitINI { };
+        generator = lib.generators.toGitINI; # ← no `{ }` here
         value = {
           user = {
             name = "G7Shadow";

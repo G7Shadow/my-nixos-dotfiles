@@ -5,6 +5,8 @@
     { pkgs, ... }:
     {
       programs.zsh.enable = true;
+      hjem.users.jeremyl.environment.sessionVariables.QMLLS_BUILD_DIRS =
+        "/etc/profiles/per-user/jeremyl/lib/qt-6/qml";
 
       hjem.users.jeremyl = {
         packages = with pkgs; [
