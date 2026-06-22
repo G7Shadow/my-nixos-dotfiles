@@ -1,4 +1,3 @@
-# flake.nix
 {
   description = "Omega NixOS Configuration";
 
