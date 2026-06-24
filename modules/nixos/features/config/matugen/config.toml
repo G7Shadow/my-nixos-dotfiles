@@ -2,11 +2,6 @@
 command = "awww img --transition-type center --transition-step 15 --transition-fps 60 {{ image }}"
 set = true
 
-#[templates.ags]
-#input_path = '~/.config/matugen/templates/gtk-colors.css'
-#output_path = '~/.config/ags/colors/colors.css'
-#post_hook = 'ags quit; sleep 0.3; ags run ~/.config/ags &'
-
 [templates.hyprland]
 input_path = '~/.config/matugen/templates/hyprland-colors.conf'
 output_path = '~/.config/hypr/colors/matugen.conf'
@@ -17,14 +12,18 @@ input_path  = '~/.config/matugen/templates/hyprland-colors.lua'
 output_path = '~/.config/hypr/colors/matugen.lua'
 post_hook   = 'hyprctl reload'
 
-[templates.waybar]
-input_path = '~/.config/matugen/templates/colors.css'
-utput_path = '~/.config/waybar/colors/matugen.css'
-post_hook = 'pkill -SIGUSR2 waybar'
+#[templates.waybar]
+#input_path = '~/.config/matugen/templates/colors.css'
+#output_path = '~/.config/waybar/colors/matugen.css'
+#post_hook = 'pkill -SIGUSR2 waybar'
 
 [templates.rofi]
 input_path = '~/.config/matugen/templates/rofi-colors.rasi'
 output_path = '~/.config/rofi/colors/matugen.rasi'
+
+[templates.color-scheme]
+input_path = '~/.config/matugen/templates/Matugen.colors'
+output_path = '~/.local/share/color-schemes/Matugen.colors'
 
 [templates.gtk3]
 input_path = '~/.config/matugen/templates/gtk-colors.css'
@@ -35,14 +34,6 @@ post_hook = 'gsettings set org.gnomde.desktop.interface gtk-theme ""; gsettings 
 input_path = '~/.config/matugen/templates/gtk-colors.css' 
 output_path = '~/.config/gtk-4.0/colors.css'
 post_hook = '~/.config/matugen/post-hook-scripts/gtk-themes-reload.sh'
-
-[templates.qt5ct]
-input_path = '~/.config/matugen/templates/qtct-colors.conf'
-output_path = '~/.config/qt5ct/colors/matugen.conf'
-
-[templates.qt6ct]
-input_path =  '~/.config/matugen/templates/qtct-colors.conf'
-output_path = '~/.config/qt6ct/colors/matugen.conf'
 
 [templates.quickshell]
 input_path = '~/.config/matugen/templates/quickshell.json'

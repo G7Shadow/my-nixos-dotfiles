@@ -1,7 +1,12 @@
 { ... }:
 {
   flake.nixosModules.desktop-packages =
-    { pkgs, inputs, config, ... }:
+    {
+      pkgs,
+      inputs,
+      config,
+      ...
+    }:
     let
       user = config.preferences.user.name;
     in
@@ -51,6 +56,7 @@
         obs-studio
         feh
         thunar
+        nautilus
         file-roller
 
         waybar
