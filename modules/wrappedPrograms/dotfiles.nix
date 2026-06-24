@@ -15,6 +15,7 @@
         matugen = "matugen";
         waybar = "waybar";
         tmux = "tmux";
+        colorschemes = "colorschemes";
       };
       links = builtins.concatStringsSep "\n" (
         builtins.attrValues (

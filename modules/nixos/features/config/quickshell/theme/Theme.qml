@@ -48,9 +48,13 @@ Singleton {
         return Qt.rgba(a.r * (1 - t) + b.r * t, a.g * (1 - t) + b.g * t, a.b * (1 - t) + b.b * t, 1);
     }
     // Same color at a given alpha (ink/glass derived from fg, so it adapts to light themes).
-    function alpha(c, a) { return Qt.rgba(c.r, c.g, c.b, a); }
+    function alpha(c, a) {
+        return Qt.rgba(c.r, c.g, c.b, a);
+    }
     // Perceived luminance 0..1, used to pick readable ink on the accent.
-    function lum(c) { return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b; }
+    function lum(c) {
+        return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+    }
 
     // palette (straight from colors.json)
     readonly property color background: pal.background
@@ -107,9 +111,9 @@ Singleton {
     // drop shadow on FLOATING surfaces (the island + popout panels) so they lift
     // off the wallpaper. Tokenized here, used identically everywhere. (No blur, ever.)
     readonly property color shadow: Qt.rgba(0, 0, 0, 0.28)  // floating-surface drop shadow
-    readonly property real  shadowBlur: 0.6                 // MultiEffect blur (0..1)
-    readonly property int   shadowY: 4                      // vertical offset (px)
-    readonly property int   shadowBlurMax: 48               // MultiEffect blurMax (px)
+    readonly property real shadowBlur: 0.6                 // MultiEffect blur (0..1)
+    readonly property int shadowY: 4                      // vertical offset (px)
+    readonly property int shadowBlurMax: 48               // MultiEffect blurMax (px)
 
     // radii
     readonly property int rSm: 10     // inner controls
@@ -130,8 +134,8 @@ Singleton {
     readonly property int s6: 32
 
     // typography
-    readonly property string fontDisplay: "SF Mono"  // numerals / data labels
-    readonly property string fontBody: "SF Pro Text"            // everything else
+    readonly property string fontDisplay: "JetBrainsMono Nerd Font"  // numerals / data labels
+    readonly property string fontBody: "JetBrainsMono Nerd Font"            // everything else
     readonly property string fontGlyph: "JetBrainsMono Nerd Font Propo" // nerd-font icons
     readonly property int fontSize: Config.fontSize                 // user-tunable (settings)
     // type scale (relative to fontSize so the settings slider scales it all)
@@ -170,7 +174,9 @@ Singleton {
     readonly property int stagger: 90
     property bool reducedMotion: false
     // collapse durations when reduced motion is on
-    function dur(d) { return reducedMotion ? 0 : d; }
+    function dur(d) {
+        return reducedMotion ? 0 : d;
+    }
 
     // Legacy tokens (pre-Obsidian), still read by un-migrated components.
     // Migrate each surface to the tokens above, then prune these.

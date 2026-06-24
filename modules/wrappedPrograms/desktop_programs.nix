@@ -81,6 +81,7 @@
         zed-editor
 
         matugen
+        wallust
         bibata-cursors
         nerd-fonts.jetbrains-mono
         rubik
