@@ -1,7 +1,7 @@
-{ config, ... }:
+{ ... }:
 {
   flake.nixosModules.neovim =
-    { pkgs, ... }:
+    { pkgs, config, ... }:
     let
       user = config.preferences.user.name;
     in

@@ -1,7 +1,7 @@
-{ config, ... }:
+{ ... }:
 {
   flake.nixosModules.dotfiles =
-    { ... }:
+    { config, ... }:
     let
       user = config.preferences.user.name;
       dotfiles = "/home/${user}/my-nixos-dotfiles/modules/nixos/features/config";

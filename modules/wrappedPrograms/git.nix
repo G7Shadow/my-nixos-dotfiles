@@ -1,7 +1,7 @@
-{ config, ... }:
+{ ... }:
 {
   flake.nixosModules.git =
-    { lib, ... }:
+    { lib, config, ... }:
     let
       user = config.preferences.user.name;
     in

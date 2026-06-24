@@ -1,16 +1,17 @@
-{ config, ... }:
+{ ... }:
 {
   flake.nixosModules.zsh =
-    { pkgs, ... }:
+    { pkgs, config, ... }:
     let
       user = config.preferences.user.name;
     in
     {
       programs.zsh.enable = true;
-      hjem.users."${user}".environment.sessionVariables.QMLLS_BUILD_DIRS =
-        "/etc/profiles/per-user/${user}/lib/qt-6/qml";
 
       hjem.users."${user}" = {
+        environment.sessionVariables.QMLLS_BUILD_DIRS =
+          "/etc/profiles/per-user/${user}/lib/qt-6/qml";
+
         packages = with pkgs; [
           zsh
           zoxide

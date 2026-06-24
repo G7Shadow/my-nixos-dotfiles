@@ -1,7 +1,7 @@
-{ config, ... }:
+{ ... }:
 {
   flake.nixosModules.desktop-packages =
-    { pkgs, inputs, ... }:
+    { pkgs, inputs, config, ... }:
     let
       user = config.preferences.user.name;
     in

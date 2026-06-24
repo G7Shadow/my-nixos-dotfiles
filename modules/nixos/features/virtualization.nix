@@ -1,7 +1,7 @@
-{ config, ... }:
+{ ... }:
 {
   flake.nixosModules.virtualization =
-    { pkgs, ... }:
+    { pkgs, config, ... }:
     let
       user = config.preferences.user.name;
     in

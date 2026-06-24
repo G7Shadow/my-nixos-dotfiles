@@ -1,7 +1,7 @@
-{ config, inputs, ... }:
+{ inputs, ... }:
 {
   flake.nixosModules.vscodium =
-    { pkgs, ... }:
+    { pkgs, config, ... }:
     let
       user = config.preferences.user.name;
     in
