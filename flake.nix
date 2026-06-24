@@ -6,14 +6,8 @@
 
     flake-parts.url = "github:hercules-ci/flake-parts";
 
-    impermanence.url = "github:nix-community/impermanence";
     disko = {
       url = "github:nix-community/disko";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    nix-index-database = {
-      url = "github:Mic92/nix-index-database";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -36,8 +30,6 @@
 
     wrappers.url = "github:Lassulus/wrappers";
     wrapper-modules.url = "github:BirdeeHub/nix-wrapper-modules";
-
-    nix-gaming.url = "github:fufexan/nix-gaming";
   };
 
   outputs = inputs: let
