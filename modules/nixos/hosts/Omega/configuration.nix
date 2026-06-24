@@ -1,4 +1,8 @@
-{ inputs, self, ... }:
+{
+  inputs,
+  self,
+  ...
+}:
 {
   flake.nixosConfigurations.Omega = inputs.nixpkgs.lib.nixosSystem {
     specialArgs = { inherit inputs self; };
@@ -21,7 +25,11 @@
   };
 
   flake.nixosModules.hostOmega =
-    { config, pkgs, ... }:
+    {
+      config,
+      pkgs,
+      ...
+    }:
     let
       user = config.preferences.user.name;
     in
@@ -130,15 +138,12 @@
       nix.settings = {
         substituters = [
           "https://hyprland.cachix.org"
-          "https://noctalia.cachix.org"
         ];
         trusted-substituters = [
           "https://hyprland.cachix.org"
-          "https://noctalia.cachix.org"
         ];
         trusted-public-keys = [
           "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
-          "noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4="
         ];
       };
 
