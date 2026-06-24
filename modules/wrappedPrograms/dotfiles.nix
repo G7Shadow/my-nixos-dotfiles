@@ -4,7 +4,7 @@
     { ... }:
     let
       user = config.preferences.user.name;
-      dotfiles = "/home/${user}/nixosConfig/modules/nixos/features/config";
+      dotfiles = "/home/${user}/my-nixos-dotfiles/modules/nixos/features/config";
           configs = {
             hypr = "hypr";
             quickshell = "quickshell";
@@ -25,8 +25,10 @@
           );
         in
         {
-          text = links;
-          deps = [ ];
+          system.activationScripts.dotfileSymlinks = {
+            text = links;
+            deps = [ ];
+          };
         };
     };
 }
