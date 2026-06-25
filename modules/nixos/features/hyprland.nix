@@ -1,7 +1,7 @@
-{ ... }:
+{ inputs, ... }:
 {
   flake.nixosModules.hyprland =
-    { pkgs, inputs, ... }:
+    { pkgs, ... }:
     {
       programs.hyprland = {
         enable = true;

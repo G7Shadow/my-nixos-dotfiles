@@ -1,7 +1,7 @@
-{ ... }:
+{ inputs, ... }:
 {
   flake.nixosModules.quickshell =
-    { pkgs, inputs, config, ... }:
+    { pkgs, config, ... }:
     let
       user = config.preferences.user.name;
     in
