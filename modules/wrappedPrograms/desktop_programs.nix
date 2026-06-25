@@ -78,6 +78,7 @@
         netflix
         localsend
         prismlauncher
+        hyprsunset
         zed-editor
 
         matugen

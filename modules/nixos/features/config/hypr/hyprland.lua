@@ -9,4 +9,3 @@ require("modules.animations")
 require("modules.input")
 require("modules.windowrules")
 require("modules.layerrules")
-
