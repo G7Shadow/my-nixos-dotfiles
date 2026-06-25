@@ -6,7 +6,7 @@
 #   wallust theme <name>                     built-in theme
 
 backend = "fastresize"
-palette = "salience"
+palette = "salience-dark"
 
 [templates]
 # Quickshell shell: writes colors.json; Theme.qml reads it live (no reload hook).
