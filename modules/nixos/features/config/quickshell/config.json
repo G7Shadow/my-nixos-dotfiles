@@ -1,11 +1,11 @@
 {
-    "barHeight": 37,
+    "barHeight": 24,
     "ccColumns": 3,
-    "ccMedia": false,
+    "ccMedia": true,
     "ccNotifications": true,
     "ccSliders": true,
     "ccTiles": "[{\"key\":\"wifi\",\"span\":1,\"enabled\":true},{\"key\":\"audio\",\"span\":1,\"enabled\":true},{\"key\":\"bluetooth\",\"span\":1,\"enabled\":true},{\"key\":\"display\",\"span\":1,\"enabled\":true},{\"key\":\"peace\",\"span\":1,\"enabled\":true},{\"key\":\"nightlight\",\"span\":1,\"enabled\":true}]",
-    "fontSize": 15,
-    "theme": "ariadne",
-    "wallpaper": ""
+    "fontSize": 18,
+    "theme": "catppuccin",
+    "wallpaper": "/home/jeremyl/.config/colorschemes/catppuccin/wallpapers/astronaut_jellyfish.jpg"
 }

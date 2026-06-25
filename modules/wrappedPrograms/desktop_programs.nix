@@ -105,6 +105,7 @@
         lua-language-server
         typescript-language-server
         nil
+        nixd
         clang-tools
         hyprls
         pyright
