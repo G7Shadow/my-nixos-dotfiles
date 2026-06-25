@@ -2,7 +2,8 @@
   inputs,
   self,
   ...
-}: {
+}:
+{
   flake.nixosConfigurations.Omega = inputs.nixpkgs.lib.nixosSystem {
     modules = [ self.nixosModules.hostOmega ];
   };
@@ -81,18 +82,6 @@
         }
       ];
     };
-
-    users.users."${config.preferences.user.name}" = {
-      isNormalUser = true;
-      description = "Jeremy Lee";
-      extraGroups = [
-        "networkmanager"
-        "wheel"
-      ];
-      shell = pkgs.zsh;
-    };
-
-    programs.zsh.enable = true;
 
     services.displayManager.sddm = {
       enable = true;
