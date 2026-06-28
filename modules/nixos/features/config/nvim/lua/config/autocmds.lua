@@ -119,7 +119,7 @@ if vim.uv.fs_stat(cache_file) then
 
   local watcher = vim.uv.new_fs_event()
   watcher:start(cache_file, {}, vim.schedule_wrap(function()
-    if debounce then debounce:close() end
+    if debounce then pcall(debounce.close, debounce) end
     debounce = vim.defer_fn(apply_theme, 100)
   end))
 

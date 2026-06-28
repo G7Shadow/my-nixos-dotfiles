@@ -90,6 +90,7 @@
         (papirus-icon-theme.override { color = "black"; })
         adwsteamgtk
         nwg-look
+        xsettingsd
         adw-gtk3
         libsForQt5.qt5ct
         kdePackages.qt6ct

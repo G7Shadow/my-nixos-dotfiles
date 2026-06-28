@@ -52,25 +52,26 @@ hyprctl reload    >/dev/null 2>&1 || true
 pkill -USR1 kitty 2>/dev/null      || true
 # foot: new windows pick up colors. vesktop: hot-reloads CSS. quickshell: live FileView.
 
-# --- GTK (option B): switch the matching custom GTK 3/4 theme, if one exists ---
+# --- GTK: set gtk-theme-name in settings.ini (nwg-look / GTK native) ---
 csdir="$HOME/.config/colorschemes/$name"
 if [ -f "$csdir/gtk-theme" ]; then
-    gt="$(cat "$csdir/gtk-theme")"
-    themedir="$HOME/.themes/$gt"
-
-    # Symlink the theme's gtk-4.0 CSS
-    if [ -f "$themedir/gtk-4.0/gtk.css" ]; then
-        ln -sf "$themedir/gtk-4.0/gtk.css" "$HOME/.config/gtk-4.0/gtk.css" 2>/dev/null || true
+    gtkname="$(cat "$csdir/gtk-theme")"
+    # gtk-3.0 settings.ini
+    if grep -q "^gtk-theme-name" "$HOME/.config/gtk-3.0/settings.ini" 2>/dev/null; then
+        sed -i "s|^gtk-theme-name=.*|gtk-theme-name=$gtkname|" "$HOME/.config/gtk-3.0/settings.ini"
+    else
+        echo "gtk-theme-name=$gtkname" >> "$HOME/.config/gtk-3.0/settings.ini"
     fi
-
-    # Symlink the theme's gtk-3.0 CSS
-    if [ -f "$themedir/gtk-3.0/gtk.css" ]; then
-        ln -sf "$themedir/gtk-3.0/gtk.css" "$HOME/.config/gtk-3.0/gtk.css" 2>/dev/null || true
+    # gtkrc (GTK 2)
+    if [ -f "$HOME/.config/gtkrc" ] && grep -q '^gtk-theme-name=' "$HOME/.config/gtkrc" 2>/dev/null; then
+        sed -i "s|^gtk-theme-name=.*|gtk-theme-name=\"$gtkname\"|" "$HOME/.config/gtkrc"
     fi
-
-    gsettings set org.gnome.desktop.interface gtk-theme "$gt" 2>/dev/null || true
-    gsettings set org.gnome.desktop.interface color-scheme prefer-dark 2>/dev/null || true
-    gsettings set org.gnome.desktop.interface color-scheme prefer-light 2>/dev/null || true
+    # xsettingsd: live-reload running GTK apps
+    xscfg="$HOME/.config/xsettingsd/xsettingsd.conf"
+    if [ -f "$xscfg" ]; then
+        sed -i "s|^Net/ThemeName.*|Net/ThemeName \"$gtkname\"|" "$xscfg"
+        pkill -HUP xsettingsd 2>/dev/null || true
+    fi
 fi
 
 # --- spicetify (option B: curated Sleek color schemes; best-effort name match) ---
@@ -86,22 +87,19 @@ if command -v spicetify >/dev/null 2>&1; then
     done
 fi
 
-# --- nvim / NvChad (option B): patch the theme name in the live chadrc ---
-nvchadrc="$HOME/.config/nvim/lua/chadrc.lua"
-if [ -f "$csdir/nvim/lua/chadrc.lua" ] && [ -f "$nvchadrc" ]; then
-    nvtheme="$(grep -oP 'theme\s*=\s*"\K[^"]+' "$csdir/nvim/lua/chadrc.lua" 2>/dev/null | head -1)"
-    [ -n "$nvtheme" ] && sed -i "s/theme = \"[^\"]*\"/theme = \"$nvtheme\"/" "$nvchadrc" 2>/dev/null || true
-fi
+# --- neovim: write theme name to cache file for lazy.lua + autocmds.lua ---
+nvim_theme="$name"
+[ -f "$csdir/nvim-theme" ] && nvim_theme="$(cat "$csdir/nvim-theme")"
+printf "%s" "$nvim_theme" > "$HOME/.cache/nvim-dynamite-theme"
 
-# --- vscodium (option B): set workbench.colorTheme to the named extension theme ---
+# --- vscodium: set workbench.colorTheme via sed (settings.json has trailing commas, jq can't parse) ---
 vscfg="$HOME/.config/VSCodium/User/settings.json"
-if [ -f "$csdir/vscodium-theme" ] && [ -f "$vscfg" ] && command -v jq >/dev/null 2>&1; then
+if [ -f "$csdir/vscodium-theme" ] && [ -f "$vscfg" ]; then
     vsname="$(cat "$csdir/vscodium-theme")"
-    tmp="$(mktemp)"
-    if jq --arg t "$vsname" '.["workbench.colorTheme"]=$t' "$vscfg" >"$tmp" 2>/dev/null; then
-        mv "$tmp" "$vscfg"
+    if grep -q '"workbench.colorTheme"' "$vscfg"; then
+        sed -i 's|"workbench.colorTheme": "[^"]*"|"workbench.colorTheme": "'"$vsname"'"|' "$vscfg"
     else
-        rm -f "$tmp"
+        sed -i '1s|{|{"workbench.colorTheme": "'"$vsname"'",\n|' "$vscfg"
     fi
 fi
 
