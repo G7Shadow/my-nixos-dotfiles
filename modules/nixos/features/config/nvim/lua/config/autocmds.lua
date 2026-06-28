@@ -113,7 +113,9 @@ if vim.uv.fs_stat(cache_file) then
     local mapping = { ["tokyo-night"] = "tokyonight" }
     theme = mapping[theme] or theme
 
-    vim.cmd.colorscheme(theme)
+    pcall(require, theme)
+    pcall(require, "snacks")
+    pcall(vim.cmd.colorscheme, theme)
     vim.notify("Theme: " .. theme, vim.log.levels.INFO, { title = "Theme" })
   end
 

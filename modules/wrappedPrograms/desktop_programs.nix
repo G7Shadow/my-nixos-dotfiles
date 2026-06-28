@@ -57,6 +57,7 @@
         thunar
         nautilus
         file-roller
+        gvfs
 
         waybar
         hyprpaper
@@ -71,7 +72,9 @@
         cava
         mangohud
         inputs.zen-browser.packages.${pkgs.stdenv.hostPlatform.system}.default
+        hyprpolkitagent
         discord
+        vesktop
         spotify
         obsidian
         netflix

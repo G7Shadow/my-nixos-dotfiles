@@ -31,6 +31,7 @@ require("lazy").setup({
           local mapping = { ["tokyo-night"] = "tokyonight" }
           theme = mapping[theme] or theme
 
+          pcall(require, "snacks")
           local ok = pcall(vim.cmd.colorscheme, theme)
           if not ok then
             pcall(vim.cmd.colorscheme, "solarized-osaka")

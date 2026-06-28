@@ -66,7 +66,9 @@ if [ -f "$csdir/gtk-theme" ]; then
     if [ -f "$HOME/.config/gtkrc" ] && grep -q '^gtk-theme-name=' "$HOME/.config/gtkrc" 2>/dev/null; then
         sed -i "s|^gtk-theme-name=.*|gtk-theme-name=\"$gtkname\"|" "$HOME/.config/gtkrc"
     fi
-    # xsettingsd: live-reload running GTK apps
+    # dconf → xdg-desktop-portal-gtk → live reload running GTK apps
+    dconf write /org/gnome/desktop/interface/gtk-theme "'$gtkname'" 2>/dev/null || true
+    # xsettingsd: live-reload X11 GTK apps
     xscfg="$HOME/.config/xsettingsd/xsettingsd.conf"
     if [ -f "$xscfg" ]; then
         sed -i "s|^Net/ThemeName.*|Net/ThemeName \"$gtkname\"|" "$xscfg"
