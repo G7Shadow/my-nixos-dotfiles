@@ -97,6 +97,8 @@
 
     environment.systemPackages = with pkgs; [ tree ];
 
+    hardware.bluetooth.enable = true;
+
     services = {
       flatpak.enable = true;
       fwupd.enable = true;

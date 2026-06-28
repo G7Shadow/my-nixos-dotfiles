@@ -72,7 +72,6 @@
         cava
         mangohud
         inputs.zen-browser.packages.${pkgs.stdenv.hostPlatform.system}.default
-        hyprpolkitagent
         discord
         vesktop
         spotify
@@ -94,6 +93,7 @@
         adwsteamgtk
         nwg-look
         xsettingsd
+        bluez
         adw-gtk3
         libsForQt5.qt5ct
         kdePackages.qt6ct
