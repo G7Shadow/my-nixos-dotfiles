@@ -22,6 +22,7 @@
       self.nixosModules.dotfiles
       self.nixosModules.git
       self.nixosModules.kitty
+      self.nixosModules.lf
       self.nixosModules.neovim
       self.nixosModules.quickshell
       self.nixosModules.theme
