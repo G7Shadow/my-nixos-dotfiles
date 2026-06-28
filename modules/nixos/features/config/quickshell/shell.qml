@@ -115,11 +115,15 @@ ShellRoot {
     // prompt now (modules/polkit/PolkitContent.qml). This Connections instantiates
     // the Polkit singleton so the agent registers at startup, before any request
     // shows up. Without that, escalation prompts just silently fail.
-    Connections { target: Polkit }
+    Connections {
+        target: Polkit
+    }
 
     Connections {
         target: GlobalState
-        function onLockRequested() { LockState.lock(); }
+        function onLockRequested() {
+            LockState.lock();
+        }
     }
 
     GlobalShortcut {
@@ -143,12 +147,20 @@ ShellRoot {
     GlobalShortcut {
         name: "brightnessUp"
         description: "Brightness +5% (focused monitor)"
-        onPressed: { const m = Brightness.focused(); if (m) m.setBrightness(m.percentage + 5); }
+        onPressed: {
+            const m = Brightness.focused();
+            if (m)
+                m.setBrightness(m.percentage + 5);
+        }
     }
     GlobalShortcut {
         name: "brightnessDown"
         description: "Brightness -5% (focused monitor)"
-        onPressed: { const m = Brightness.focused(); if (m) m.setBrightness(m.percentage - 5); }
+        onPressed: {
+            const m = Brightness.focused();
+            if (m)
+                m.setBrightness(m.percentage - 5);
+        }
     }
 
     // Volume keys, also in-process. Bind with repeating binds, e.g.:
@@ -185,73 +197,121 @@ ShellRoot {
     // Portable / test hook:  qs ipc call launcher toggle|open|close
     IpcHandler {
         target: "launcher"
-        function toggle() { GlobalState.toggleLauncher(); }
-        function open() { GlobalState.launcherOpen = true; }
-        function close() { GlobalState.launcherOpen = false; }
+        function toggle() {
+            GlobalState.toggleLauncher();
+        }
+        function open() {
+            GlobalState.launcherOpen = true;
+        }
+        function close() {
+            GlobalState.launcherOpen = false;
+        }
     }
 
     // Portable / test hook:  qs ipc call controlcenter toggle|open|close
     IpcHandler {
         target: "controlcenter"
-        function toggle() { GlobalState.toggleControlCenter(); }
-        function open() { GlobalState.controlCenterOpen = true; }
-        function close() { GlobalState.controlCenterOpen = false; }
+        function toggle() {
+            GlobalState.toggleControlCenter();
+        }
+        function open() {
+            GlobalState.controlCenterOpen = true;
+        }
+        function close() {
+            GlobalState.controlCenterOpen = false;
+        }
     }
 
     // qs ipc call logout toggle|open|close
     IpcHandler {
         target: "logout"
-        function toggle() { GlobalState.toggleLogout(); }
-        function open() { GlobalState.logoutOpen = true; }
-        function close() { GlobalState.logoutOpen = false; }
+        function toggle() {
+            GlobalState.toggleLogout();
+        }
+        function open() {
+            GlobalState.logoutOpen = true;
+        }
+        function close() {
+            GlobalState.logoutOpen = false;
+        }
     }
 
     // qs ipc call lock lock
     IpcHandler {
         target: "lock"
-        function lock() { GlobalState.requestLock(); }
+        function lock() {
+            GlobalState.requestLock();
+        }
     }
 
     // qs ipc call wallpaper toggle|open|close
     IpcHandler {
         target: "wallpaper"
-        function toggle() { GlobalState.toggleWallpaperPicker(); }
-        function open() { GlobalState.wallpaperPickerOpen = true; }
-        function close() { GlobalState.wallpaperPickerOpen = false; }
+        function toggle() {
+            GlobalState.toggleWallpaperPicker();
+        }
+        function open() {
+            GlobalState.wallpaperPickerOpen = true;
+        }
+        function close() {
+            GlobalState.wallpaperPickerOpen = false;
+        }
     }
 
     // qs ipc call theme toggle|open|close
     IpcHandler {
         target: "theme"
-        function toggle() { GlobalState.toggleThemeSwitcher(); }
-        function open() { GlobalState.themeSwitcherOpen = true; }
-        function close() { GlobalState.themeSwitcherOpen = false; }
+        function toggle() {
+            GlobalState.toggleThemeSwitcher();
+        }
+        function open() {
+            GlobalState.themeSwitcherOpen = true;
+        }
+        function close() {
+            GlobalState.themeSwitcherOpen = false;
+        }
     }
 
     // qs ipc call settings toggle|open|close
     IpcHandler {
         target: "settings"
-        function toggle() { GlobalState.toggleSettings(); }
-        function open() { GlobalState.settingsOpen = true; }
-        function close() { GlobalState.settingsOpen = false; }
+        function toggle() {
+            GlobalState.toggleSettings();
+        }
+        function open() {
+            GlobalState.settingsOpen = true;
+        }
+        function close() {
+            GlobalState.settingsOpen = false;
+        }
     }
 
     // qs ipc call calendar toggle|open|close
     IpcHandler {
         target: "calendar"
-        function toggle() { GlobalState.toggleCalendar(); }
-        function open() { GlobalState.calendarOpen = true; }
-        function close() { GlobalState.calendarOpen = false; }
+        function toggle() {
+            GlobalState.toggleCalendar();
+        }
+        function open() {
+            GlobalState.calendarOpen = true;
+        }
+        function close() {
+            GlobalState.calendarOpen = false;
+        }
     }
 
     // qs ipc call nightlight toggle  /  qs ipc call gamemode toggle
     IpcHandler {
         target: "nightlight"
-        function toggle() { toggleMode(NightLight); }
+        function toggle() {
+            toggleMode(NightLight);
+        }
     }
     IpcHandler {
         target: "gamemode"
-        function toggle() { toggleMode(GameMode); }
+        function toggle() {
+            toggleMode(GameMode);
+        }
     }
 
     // Brightness control: bind your keys to these so changes route through the
@@ -263,21 +323,25 @@ ShellRoot {
         // Adjust/set a specific display by connector name (e.g. "DP-1", "eDP-1").
         function adjust(name: string, delta: int): void {
             const m = Brightness.forName(name);
-            if (m) m.setBrightness(m.percentage + delta);
+            if (m)
+                m.setBrightness(m.percentage + delta);
         }
         function set(name: string, value: int): void {
             const m = Brightness.forName(name);
-            if (m) m.setBrightness(value);
+            if (m)
+                m.setBrightness(value);
         }
 
         // Adjust/set whichever monitor is focused (bind brightness up/down here).
         function adjustFocused(delta: int): void {
             const m = Brightness.focused();
-            if (m) m.setBrightness(m.percentage + delta);
+            if (m)
+                m.setBrightness(m.percentage + delta);
         }
         function setFocused(value: int): void {
             const m = Brightness.focused();
-            if (m) m.setBrightness(value);
+            if (m)
+                m.setBrightness(value);
         }
     }
 }

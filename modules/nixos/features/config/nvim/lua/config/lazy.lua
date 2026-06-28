@@ -21,7 +21,21 @@ require("lazy").setup({
       "LazyVim/LazyVim",
       import = "lazyvim.plugins",
       opts = {
-        colorscheme = "solarized-osaka",
+        colorscheme = function()
+          local cache_file = vim.fn.expand("~/.cache/nvim-dynamite-theme")
+          local f = io.open(cache_file, "r")
+          local theme = f and f:read("*l") or nil
+          if f then f:close() end
+          if not theme or theme == "" then theme = "solarized-osaka" end
+
+          local mapping = { ["tokyo-night"] = "tokyonight" }
+          theme = mapping[theme] or theme
+
+          local ok = pcall(vim.cmd.colorscheme, theme)
+          if not ok then
+            pcall(vim.cmd.colorscheme, "solarized-osaka")
+          end
+        end,
         news = {
           lazyvim = true,
           neovim = true,

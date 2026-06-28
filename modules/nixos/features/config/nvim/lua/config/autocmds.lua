@@ -15,7 +15,6 @@ vim.api.nvim_create_autocmd("BufReadPost", {
     local line_count = vim.api.nvim_buf_line_count(args.buf)
     if mark[1] > 0 and mark[1] <= line_count then
       vim.api.nvim_win_set_cursor(0, mark)
-      -- defer centering slightly so it's applied after render
       vim.schedule(function()
         vim.cmd("normal! zz")
       end)
@@ -74,18 +73,16 @@ if not vim.g.vscode then
     group = vim.api.nvim_create_augroup("LspReferenceHighlight", { clear = true }),
     desc = "Highlight references under cursor",
     callback = function()
-      -- Only run if the cursor is not in insert mode
       if vim.fn.mode() ~= "i" then
         local clients = vim.lsp.get_clients({ bufnr = 0 })
         local supports_highlight = false
         for _, client in ipairs(clients) do
           if client.server_capabilities.documentHighlightProvider then
             supports_highlight = true
-            break -- Found a supporting client, no need to check others
+            break
           end
         end
 
-        -- Proceed only if an LSP is active AND supports the feature
         if supports_highlight then
           vim.lsp.buf.clear_references()
           vim.lsp.buf.document_highlight()
@@ -94,7 +91,6 @@ if not vim.g.vscode then
     end,
   })
 
-  -- ide like highlight when stopping cursor
   vim.api.nvim_create_autocmd("CursorMovedI", {
     group = "LspReferenceHighlight",
     desc = "Clear highlights when entering insert mode",
@@ -102,4 +98,42 @@ if not vim.g.vscode then
       vim.lsp.buf.clear_references()
     end,
   })
+end
+
+-- watch ~/.cache/nvim-dynamite-theme for live theme switching
+local cache_file = vim.fn.expand("~/.cache/nvim-dynamite-theme")
+if vim.uv.fs_stat(cache_file) then
+  local debounce
+  local function apply_theme()
+    local f = io.open(cache_file, "r")
+    local theme = f and f:read("*l") or nil
+    if f then f:close() end
+    if not theme or theme == "" then return end
+
+    local mapping = { ["tokyo-night"] = "tokyonight" }
+    theme = mapping[theme] or theme
+
+    vim.cmd.colorscheme(theme)
+    vim.notify("Theme: " .. theme, vim.log.levels.INFO, { title = "Theme" })
+  end
+
+  local watcher = vim.uv.new_fs_event()
+  watcher:start(cache_file, {}, vim.schedule_wrap(function()
+    if debounce then debounce:close() end
+    debounce = vim.defer_fn(apply_theme, 100)
+  end))
+
+  vim.api.nvim_create_autocmd("FocusGained", {
+    callback = function()
+      local stat = vim.uv.fs_stat(cache_file)
+      if stat and stat.mtime.sec > (vim.g._dynamite_mtime or 0) then
+        vim.g._dynamite_mtime = stat.mtime.sec
+        apply_theme()
+      end
+    end,
+  })
+  vim.g._dynamite_mtime = vim.uv.fs_stat(cache_file).mtime.sec
+
+  -- :DTheme command to manually trigger
+  vim.api.nvim_create_user_command("DTheme", apply_theme, {})
 end

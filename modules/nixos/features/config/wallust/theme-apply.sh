@@ -54,13 +54,23 @@ pkill -USR1 kitty 2>/dev/null      || true
 
 # --- GTK (option B): switch the matching custom GTK 3/4 theme, if one exists ---
 csdir="$HOME/.config/colorschemes/$name"
-if [ -d "$csdir/gtk-4.0" ]; then
-    ln -sf  "$csdir/gtk-4.0/gtk.css"      "$HOME/.config/gtk-4.0/gtk.css"      2>/dev/null || true
-    ln -sf  "$csdir/gtk-4.0/gtk-dark.css" "$HOME/.config/gtk-4.0/gtk-dark.css" 2>/dev/null || true
-    [ -e "$csdir/gtk-4.0/assets" ] && ln -sfn "$csdir/gtk-4.0/assets" "$HOME/.config/gtk-4.0/assets" 2>/dev/null || true
-fi
 if [ -f "$csdir/gtk-theme" ]; then
-    gsettings set org.gnome.desktop.interface gtk-theme "$(cat "$csdir/gtk-theme")" 2>/dev/null || true
+    gt="$(cat "$csdir/gtk-theme")"
+    themedir="$HOME/.themes/$gt"
+
+    # Symlink the theme's gtk-4.0 CSS
+    if [ -f "$themedir/gtk-4.0/gtk.css" ]; then
+        ln -sf "$themedir/gtk-4.0/gtk.css" "$HOME/.config/gtk-4.0/gtk.css" 2>/dev/null || true
+    fi
+
+    # Symlink the theme's gtk-3.0 CSS
+    if [ -f "$themedir/gtk-3.0/gtk.css" ]; then
+        ln -sf "$themedir/gtk-3.0/gtk.css" "$HOME/.config/gtk-3.0/gtk.css" 2>/dev/null || true
+    fi
+
+    gsettings set org.gnome.desktop.interface gtk-theme "$gt" 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface color-scheme prefer-dark 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface color-scheme prefer-light 2>/dev/null || true
 fi
 
 # --- spicetify (option B: curated Sleek color schemes; best-effort name match) ---

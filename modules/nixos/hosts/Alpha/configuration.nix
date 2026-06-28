@@ -4,20 +4,16 @@
   ...
 }:
 {
-  flake.nixosConfigurations.Omega = inputs.nixpkgs.lib.nixosSystem {
-    modules = [ self.nixosModules.hostOmega ];
+  flake.nixosConfigurations.Alpha = inputs.nixpkgs.lib.nixosSystem {
+    modules = [ self.nixosModules.hostAlpha ];
   };
 
-  flake.nixosModules.hostOmega = { config, pkgs, ... }: {
+  flake.nixosModules.hostAlpha = { config, pkgs, ... }: {
     imports = [
       self.nixosModules.base
       self.nixosModules.extra_hjem
-      self.nixosModules.hostOmega-hardware
-      self.nixosModules.audio
-      self.nixosModules.hyprland
-      self.nixosModules.auto-cpufreq
-      self.nixosModules.virtualization
-      self.nixosModules.drivers-intel
+      self.nixosModules.hostAlpha-hardware
+      self.nixosModules.profile-laptop
       self.nixosModules.desktop-packages
       self.nixosModules.dotfiles
       self.nixosModules.git
@@ -27,9 +23,6 @@
       self.nixosModules.theme
       self.nixosModules.vscodium
       self.nixosModules.zsh
-
-      inputs.disko.nixosModules.disko
-      self.diskoConfigurations.diskoOmega
     ];
 
     boot = {
@@ -66,7 +59,7 @@
     };
 
     networking = {
-      hostName = "Omega";
+      hostName = "Alpha";
       networkmanager.enable = true;
     };
 

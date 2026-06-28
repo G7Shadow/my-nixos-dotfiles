@@ -21,6 +21,7 @@
           adw-gtk3
           adwaita-icon-theme
           (papirus-icon-theme.override { color = "black"; })
+          glib
           libsForQt5.qt5ct
           kdePackages.qt6ct
           nerd-fonts.jetbrains-mono

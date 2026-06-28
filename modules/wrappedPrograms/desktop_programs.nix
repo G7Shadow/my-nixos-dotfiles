@@ -71,7 +71,7 @@
         cava
         mangohud
         inputs.zen-browser.packages.${pkgs.stdenv.hostPlatform.system}.default
-        vesktop
+        discord
         spotify
         obsidian
         netflix

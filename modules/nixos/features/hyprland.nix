@@ -11,7 +11,7 @@
           inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.xdg-desktop-portal-hyprland;
       };
 
-      security.polkit.enable = true;
+      security.polkit.enable = false;
       services.dbus.enable = true;
 
     };

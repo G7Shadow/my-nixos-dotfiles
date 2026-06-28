@@ -15,6 +15,7 @@
         matugen = "matugen";
         waybar = "waybar";
         tmux = "tmux";
+        wallust = "wallust";
         colorschemes = "colorschemes";
       };
       links = builtins.concatStringsSep "\n" (

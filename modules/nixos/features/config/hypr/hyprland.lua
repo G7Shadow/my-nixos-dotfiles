@@ -1,4 +1,4 @@
-local c = require("colors.matugen")
+local c = require("colors.custom.wallust")
 
 require("modules.autostart")
 require("modules.monitors")
