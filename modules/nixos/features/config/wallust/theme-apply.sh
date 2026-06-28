@@ -50,7 +50,10 @@ fi
 # --- non-GTK reloads (cs skips wallust [hooks]) ---
 hyprctl reload    >/dev/null 2>&1 || true
 pkill -USR1 kitty 2>/dev/null      || true
-# foot: new windows pick up colors. vesktop: hot-reloads CSS. quickshell: live FileView.
+# vesktop: copy to quickCss.css (watched + auto-reloaded by Vencord)
+cp "$HOME/.config/vesktop/themes/custom/wallust.theme.css" \
+   "$HOME/.config/vesktop/settings/quickCss.css" 2>/dev/null || true
+# foot: new windows pick up colors. quickshell: live FileView.
 
 # --- GTK: set gtk-theme-name in settings.ini (nwg-look / GTK native) ---
 csdir="$HOME/.config/colorschemes/$name"
