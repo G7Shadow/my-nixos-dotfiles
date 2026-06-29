@@ -31,8 +31,6 @@
       self.diskoConfigurations.diskoOmega
     ];
 
-    users.users."${config.preferences.user.name}".shell = inputs.self.packages.${pkgs.system}.zsh;
-
     boot = {
       loader.systemd-boot.enable = true;
       loader.systemd-boot.configurationLimit = 5;
@@ -103,7 +101,7 @@
 
     nixpkgs.config.allowUnfree = true;
 
-    environment.systemPackages = with pkgs; [ tree inputs.self.packages.${pkgs.system}.zsh ];
+    environment.systemPackages = with pkgs; [ tree git ];
 
     services = {
       flatpak.enable = true;
