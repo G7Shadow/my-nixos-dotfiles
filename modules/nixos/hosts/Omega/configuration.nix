@@ -26,11 +26,12 @@
       self.nixosModules.quickshell
       self.nixosModules.theme
       self.nixosModules.vscodium
-      self.nixosModules.zsh
 
       inputs.disko.nixosModules.disko
       self.diskoConfigurations.diskoOmega
     ];
+
+    users.users."${config.preferences.user.name}".shell = inputs.self.packages.${pkgs.system}.zsh;
 
     boot = {
       loader.systemd-boot.enable = true;
@@ -102,7 +103,7 @@
 
     nixpkgs.config.allowUnfree = true;
 
-    environment.systemPackages = with pkgs; [ tree ];
+    environment.systemPackages = with pkgs; [ tree inputs.self.packages.${pkgs.system}.zsh ];
 
     services = {
       flatpak.enable = true;
