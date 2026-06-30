@@ -1,5 +1,5 @@
-{...}: {
-  flake.nixosModules.auto-cpufreq = {...}: {
+{ ... }: {
+  flake.nixosModules.auto-cpufreq = { ... }: {
     services.auto-cpufreq = {
       enable = true;
       settings = {

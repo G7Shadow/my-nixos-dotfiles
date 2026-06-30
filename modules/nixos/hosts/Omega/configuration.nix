@@ -16,6 +16,7 @@
       self.nixosModules.audio
       self.nixosModules.hyprland
       self.nixosModules.auto-cpufreq
+      self.nixosModules.powersave
       self.nixosModules.virtualization
       self.nixosModules.drivers-intel
       self.nixosModules.desktop-packages
