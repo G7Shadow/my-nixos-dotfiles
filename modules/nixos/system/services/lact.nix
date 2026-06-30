@@ -16,7 +16,7 @@
             name = "lact-set-profile";
             runtimeInputs = [ pkgs.lact ];
             text = ''
-              if [[ -d /sys/class/power_supply ]] && ls /sys/class/power_supply/*/type 2>/dev/null | xargs grep -q "Battery"; then
+              if grep -q "Battery" /sys/class/power_supply/*/type 2>/dev/null; then
                 lact cli profile set "power-saver"
               else
                 lact cli profile set "default"
