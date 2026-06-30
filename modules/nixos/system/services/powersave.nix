@@ -4,3 +4,4 @@
     powerManagement.powertop.enable = true;
   };
 }
+

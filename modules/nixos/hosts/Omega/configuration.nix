@@ -102,7 +102,11 @@
 
     nixpkgs.config.allowUnfree = true;
 
-    environment.systemPackages = with pkgs; [ tree git ];
+    environment.systemPackages = with pkgs; [
+      tree
+      git
+      direnv
+    ];
 
     services = {
       flatpak.enable = true;
