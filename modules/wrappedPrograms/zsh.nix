@@ -3,6 +3,10 @@
   let
     zshrc = pkgs.writeText "zshrc" ''
       export EDITOR=nvim
+      export HISTFILE="$HOME/.zsh_history"
+      export HISTSIZE=10000
+      export SAVEHIST=10000
+      setopt SHARE_HISTORY APPEND_HISTORY INC_APPEND_HISTORY
       autoload -Uz compinit && compinit
 
       source ${pkgs.zsh-autosuggestions}/share/zsh-autosuggestions/zsh-autosuggestions.zsh
