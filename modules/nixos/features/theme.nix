@@ -13,6 +13,7 @@
         XCURSOR_SIZE = "24";
         HYPRCURSOR_THEME = "Bibata-Modern-Classic";
         HYPRCURSOR_SIZE = "24";
+        NIXOS_OZONE_WL = "1";
       };
 
       hjem.users."${user}" = {
