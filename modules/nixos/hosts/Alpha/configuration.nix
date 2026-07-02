@@ -16,7 +16,6 @@
       self.nixosModules.profile-laptop
       self.nixosModules.desktop-packages
       self.nixosModules.dotfiles
-      self.nixosModules.git
       self.nixosModules.kitty
       self.nixosModules.neovim
       self.nixosModules.quickshell

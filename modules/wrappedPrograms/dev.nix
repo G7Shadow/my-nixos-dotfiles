@@ -1,9 +1,10 @@
-{ ... }:
+{ self, ... }:
 {
   flake.nixosModules.dev =
     { pkgs, config, ... }:
     let
       user = config.preferences.user.name;
+      wrappedGit = self.packages.${pkgs.system}.git;
     in
     {
       hjem.users."${user}".packages = with pkgs; [
@@ -20,7 +21,7 @@
         gnumake
         nodejs
         unzip
-        git
+        wrappedGit
         curl
         jq
         docker

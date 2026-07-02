@@ -21,7 +21,6 @@
       self.nixosModules.drivers-intel
       self.nixosModules.desktop-packages
       self.nixosModules.dotfiles
-      self.nixosModules.git
       self.nixosModules.kitty
       self.nixosModules.neovim
       self.nixosModules.quickshell
