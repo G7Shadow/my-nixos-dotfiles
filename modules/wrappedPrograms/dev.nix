@@ -4,7 +4,7 @@
     { pkgs, config, ... }:
     let
       user = config.preferences.user.name;
-      wrappedGit = self.packages.${pkgs.system}.git;
+      wrappedGit = self.packages.${pkgs.stdenv.hostPlatform.system}.git;
     in
     {
       hjem.users."${user}".packages = with pkgs; [

@@ -18,10 +18,10 @@
         users.users."${config.preferences.user.name}" = {
           isNormalUser = true;
           group = "${config.preferences.user.name}";
-          shell = self.packages.${pkgs.system}.environment;
+          shell = self.packages.${pkgs.stdenv.hostPlatform.system}.environment;
         };
         users.groups."${config.preferences.user.name}" = { };
-        environment.systemPackages = [ self.packages.${pkgs.system}.environment ];
+        environment.systemPackages = [ self.packages.${pkgs.stdenv.hostPlatform.system}.environment ];
       };
     };
 }
