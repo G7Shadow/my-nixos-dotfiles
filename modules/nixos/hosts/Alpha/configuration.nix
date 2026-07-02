@@ -24,7 +24,7 @@
     ];
 
     boot = {
-      kernelParams = [ "amdgpu.gpu_recovery=1" ];
+      kernelPackages = pkgs.linuxPackages_latest;
       loader.systemd-boot.enable = true;
       loader.systemd-boot.configurationLimit = 5;
       loader.timeout = 60;
@@ -85,7 +85,7 @@
     services.displayManager.sddm = {
       enable = true;
       wayland = {
-        enable = true;
+        enable = false;
         compositor = "kwin";
       };
     };
