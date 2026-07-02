@@ -85,7 +85,7 @@
     services.displayManager.sddm = {
       enable = true;
       wayland = {
-        enable = false;
+        enable = true;
         compositor = "kwin";
       };
     };
