@@ -32,12 +32,6 @@
       supportedFilesystems = [ "ntfs" ];
     };
 
-    services.logind.settings.Login = {
-      HandleLidSwitch = "poweroff";
-      HandleLidSwitchExternalPower = "lock";
-      HandleLidSwitchDocked = "ignore";
-    };
-
     programs.nh = {
       enable = true;
       clean.enable = true;
