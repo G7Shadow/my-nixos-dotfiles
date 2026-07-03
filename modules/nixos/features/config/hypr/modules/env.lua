@@ -12,6 +12,7 @@ hl.env("XCURSOR_THEME", "Bibata-Modern-Classic")
 hl.env("XCURSOR_SIZE", "24")
 hl.env("HYPRCURSOR_THEME", "Bibata-Modern-Classic")
 hl.env("HYPRCURSOR_SIZE", "24")
-hl.env("GIO_EXTRA_MODULES", "/etc/profiles/per-user/jeremyl/lib/gio/modules")
-hl.env("GTK_USE_PORTAL", "1")
+
+hl.env("NIXOS_OZONE_WL", "1")
+
 hl.env("QMLLS_BUILD_DIRS", "/etc/profiles/per-user/jeremyl/lib/qt-6/qml")
