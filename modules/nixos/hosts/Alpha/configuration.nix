@@ -21,6 +21,7 @@
       self.nixosModules.quickshell
       self.nixosModules.theme
       self.nixosModules.vscodium
+      self.nixosModules.gaming
     ];
 
     boot = {
@@ -64,17 +65,7 @@
       variant = "";
     };
 
-    security.sudo.enable = false;
-    security.doas = {
-      enable = true;
-      extraRules = [
-        {
-          users = [ config.preferences.user.name ];
-          keepEnv = true;
-          persist = true;
-        }
-      ];
-    };
+    security.sudo.enable = true;
 
     services.displayManager.sddm = {
       enable = true;
@@ -107,25 +98,6 @@
     zramSwap = {
       enable = true;
       algorithm = "zstd";
-    };
-
-    programs.steam = {
-      enable = true;
-      extraCompatPackages = [ pkgs.proton-ge-bin ];
-    };
-
-    programs.gamemode.enable = true;
-
-    nix.settings = {
-      substituters = [
-        "https://hyprland.cachix.org"
-      ];
-      trusted-substituters = [
-        "https://hyprland.cachix.org"
-      ];
-      trusted-public-keys = [
-        "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
-      ];
     };
 
     system.stateVersion = "25.05";

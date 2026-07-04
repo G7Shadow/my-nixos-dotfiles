@@ -7,41 +7,39 @@
         content = {
           type = "gpt";
           partitions = {
-            boot = {
-              name = "boot";
-              size = "1M";
-              type = "EF02";
-            };
+            boot = { size = "1M"; type = "EF02"; };
             esp = {
-              name = "ESP";
-              size = "1G";
-              type = "EF00";
-              content = {
-                type = "filesystem";
-                format = "vfat";
-                mountpoint = "/boot";
-              };
+              size = "1G"; type = "EF00";
+              content = { type = "filesystem"; format = "vfat"; mountpoint = "/boot"; };
             };
-            swap = {
-              size = "16G";
-              content = {
-                type = "swap";
-                resumeDevice = true;
-              };
-            };
+            swap = { size = "16G"; content = { type = "swap"; resumeDevice = true; }; };
             luks = {
-              name = "luks";
               size = "100%";
               content = {
                 type = "luks";
                 name = "crypted";
                 passwordFile = "/tmp/secret.key";
                 content = {
-                  type = "filesystem";
-                  format = "ext4";
-                  mountpoint = "/";
+                  type = "lvm_pv";
+                  vg = "btrfs_vg";
                 };
               };
+            };
+          };
+        };
+      };
+      nodev."/" = { fsType = "tmpfs"; mountOptions = ["size=25%" "mode=755"]; };
+      lvm_vg.btrfs_vg = {
+        type = "lvm_vg";
+        lvs.root = {
+          size = "100%FREE";
+          content = {
+            type = "btrfs";
+            extraArgs = ["-f"];
+            subvolumes = {
+              "/root" = {};
+              "/persist" = { mountOptions = ["subvol=persist" "noatime"]; mountpoint = "/persist"; };
+              "/nix" = { mountOptions = ["subvol=nix" "noatime"]; mountpoint = "/nix"; };
             };
           };
         };

@@ -13,5 +13,9 @@
       security.polkit.enable = true;
       services.dbus.enable = true;
 
+      persistance.cache.directories = [
+        ".local/share/hyprland"
+      ];
+
     };
 }

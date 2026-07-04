@@ -11,7 +11,8 @@
   flake.nixosModules.hostOmega = { config, pkgs, ... }: {
     imports = [
       self.nixosModules.base
-      self.nixosModules.extra_hjem
+      self.nixosModules.impermanence
+      self.nixosModules.general
       self.nixosModules.hostOmega-hardware
       self.nixosModules.audio
       self.nixosModules.hyprland
@@ -26,9 +27,12 @@
       self.nixosModules.quickshell
       self.nixosModules.theme
       self.nixosModules.vscodium
+      self.nixosModules.gaming
 
       inputs.disko.nixosModules.disko
       self.diskoConfigurations.diskoOmega
+
+      inputs.nix-index-database.nixosModules.nix-index
     ];
 
     boot = {
@@ -45,6 +49,8 @@
       clean.extraArgs = "--keep-since 4d --keep 3";
       flake = "/home/${config.preferences.user.name}/my-nixos-dotfiles";
     };
+
+    programs.nix-index-database.comma.enable = true;
 
     nix = {
       gc = {
@@ -71,17 +77,7 @@
       variant = "";
     };
 
-    security.sudo.enable = false;
-    security.doas = {
-      enable = true;
-      extraRules = [
-        {
-          users = [ config.preferences.user.name ];
-          keepEnv = true;
-          persist = true;
-        }
-      ];
-    };
+    security.sudo.enable = true;
 
     services.displayManager.sddm = {
       enable = true;
@@ -109,29 +105,7 @@
       dbus.enable = true;
     };
 
-    zramSwap = {
-      enable = true;
-      algorithm = "zstd";
-    };
-
-    programs.steam = {
-      enable = true;
-      extraCompatPackages = [ pkgs.proton-ge-bin ];
-    };
-
-    programs.gamemode.enable = true;
-
-    nix.settings = {
-      substituters = [
-        "https://hyprland.cachix.org"
-      ];
-      trusted-substituters = [
-        "https://hyprland.cachix.org"
-      ];
-      trusted-public-keys = [
-        "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
-      ];
-    };
+    users.users."jeremyl".initialPassword = "changeme";
 
     system.stateVersion = "25.05";
   };
