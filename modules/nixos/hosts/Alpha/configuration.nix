@@ -19,9 +19,9 @@
       self.nixosModules.kitty
       self.nixosModules.neovim
       self.nixosModules.quickshell
-      self.nixosModules.theme
       self.nixosModules.vscodium
       self.nixosModules.gaming
+      self.nixosModules.theming
     ];
 
     boot = {
