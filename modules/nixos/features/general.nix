@@ -9,25 +9,14 @@
 
     users.users."${config.preferences.user.name}" = {
       isNormalUser = true;
-      extraGroups = [ "wheel" "networkmanager" ];
+      extraGroups = [
+        "wheel"
+        "networkmanager"
+      ];
       shell = self.packages.${pkgs.system}.environment;
       hashedPasswordFile = "/persist/passwd";
       initialPassword = "12345";
     };
-
-    users.groups."${config.preferences.user.name}" = { };
-
-    security.sudo.extraRules = [
-      {
-        users = [ config.preferences.user.name ];
-        commands = [
-          {
-            command = "ALL";
-            options = [ "SETENV" ];
-          }
-        ];
-      }
-    ];
 
     nix.settings.experimental-features = [
       "nix-command"
@@ -53,6 +42,7 @@
     persistance.data.directories = [
       ".ssh"
       ".config/nvim"
+      "my-nixos-dotfiles"
     ];
 
     persistance.cache.directories = [
