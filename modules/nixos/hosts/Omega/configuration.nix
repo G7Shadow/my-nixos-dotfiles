@@ -31,8 +31,6 @@
 
       inputs.disko.nixosModules.disko
       self.diskoConfigurations.diskoOmega
-
-      inputs.nix-index-database.nixosModules.nix-index
     ];
 
     boot = {
@@ -50,18 +48,12 @@
       flake = "/home/${config.preferences.user.name}/my-nixos-dotfiles";
     };
 
-    programs.nix-index-database.comma.enable = true;
-
     nix = {
       gc = {
         dates = "weekly";
         options = "--delete-older-than 14d";
       };
       optimise.automatic = true;
-      settings.experimental-features = [
-        "nix-command"
-        "flakes"
-      ];
     };
 
     networking = {
@@ -77,8 +69,6 @@
       variant = "";
     };
 
-    security.sudo.enable = true;
-
     services.displayManager.sddm = {
       enable = true;
       wayland = {
@@ -89,14 +79,6 @@
 
     services.desktopManager.plasma6.enable = true;
 
-    nixpkgs.config.allowUnfree = true;
-
-    environment.systemPackages = with pkgs; [
-      tree
-      git
-      direnv
-    ];
-
     services = {
       flatpak.enable = true;
       fwupd.enable = true;
@@ -104,8 +86,6 @@
       udisks2.enable = true;
       dbus.enable = true;
     };
-
-    users.users."jeremyl".initialPassword = "changeme";
 
     system.stateVersion = "25.05";
   };

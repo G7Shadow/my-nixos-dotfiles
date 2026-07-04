@@ -11,7 +11,7 @@
   flake.nixosModules.hostAlpha = { config, pkgs, ... }: {
     imports = [
       self.nixosModules.base
-      self.nixosModules.extra_hjem
+      self.nixosModules.general
       self.nixosModules.hostAlpha-hardware
       self.nixosModules.profile-laptop
       self.nixosModules.desktop-packages
@@ -46,10 +46,6 @@
         options = "--delete-older-than 14d";
       };
       optimise.automatic = true;
-      settings.experimental-features = [
-        "nix-command"
-        "flakes"
-      ];
     };
 
     networking = {
@@ -65,8 +61,6 @@
       variant = "";
     };
 
-    security.sudo.enable = true;
-
     services.displayManager.sddm = {
       enable = true;
       wayland = {
@@ -76,14 +70,6 @@
     };
 
     services.desktopManager.plasma6.enable = true;
-
-    nixpkgs.config.allowUnfree = true;
-
-    environment.systemPackages = with pkgs; [
-      tree
-      git
-      direnv
-    ];
 
     hardware.bluetooth.enable = true;
 
