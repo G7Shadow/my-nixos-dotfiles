@@ -5,33 +5,32 @@
 }:
 {
   flake.nixosConfigurations.Omega = inputs.nixpkgs.lib.nixosSystem {
+    specialArgs = { inherit self inputs; };
     modules = [ self.nixosModules.hostOmega ];
   };
 
   flake.nixosModules.hostOmega = { config, pkgs, ... }: {
     imports = [
       self.nixosModules.base
-      self.nixosModules.impermanence
-      self.nixosModules.general
       self.nixosModules.hostOmega-hardware
       self.nixosModules.audio
-      self.nixosModules.hyprland
       self.nixosModules.auto-cpufreq
       self.nixosModules.powersave
-      self.nixosModules.virtualization
       self.nixosModules.drivers-intel
       self.nixosModules.desktop-packages
       self.nixosModules.dotfiles
-      self.nixosModules.kitty
       self.nixosModules.neovim
-      self.nixosModules.quickshell
       self.nixosModules.vscodium
-      self.nixosModules.gaming
-      self.nixosModules.theming
 
       inputs.disko.nixosModules.disko
       self.diskoConfigurations.diskoOmega
     ];
+
+    features = {
+      hyprland.enable = true;
+      impermanence.enable = true;
+      virtualization.enable = true;
+    };
 
     boot = {
       loader.systemd-boot.enable = true;

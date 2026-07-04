@@ -5,23 +5,19 @@
 }:
 {
   flake.nixosConfigurations.Alpha = inputs.nixpkgs.lib.nixosSystem {
+    specialArgs = { inherit self inputs; };
     modules = [ self.nixosModules.hostAlpha ];
   };
 
   flake.nixosModules.hostAlpha = { config, pkgs, ... }: {
     imports = [
       self.nixosModules.base
-      self.nixosModules.general
       self.nixosModules.hostAlpha-hardware
       self.nixosModules.profile-laptop
       self.nixosModules.desktop-packages
       self.nixosModules.dotfiles
-      self.nixosModules.kitty
       self.nixosModules.neovim
-      self.nixosModules.quickshell
       self.nixosModules.vscodium
-      self.nixosModules.gaming
-      self.nixosModules.theming
     ];
 
     boot = {

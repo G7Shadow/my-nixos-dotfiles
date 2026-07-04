@@ -4,9 +4,7 @@
     imports = with self.nixosModules; [
       drivers-amd
       audio
-      hyprland
       auto-cpufreq
-      virtualization
     ];
   };
 }

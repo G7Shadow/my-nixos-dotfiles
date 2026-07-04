@@ -1,11 +1,7 @@
-{ ... }:
+{ pkgs, config, ... }:
+let
+  user = config.preferences.user.name;
+in
 {
-  flake.nixosModules.kitty =
-    { pkgs, config, ... }:
-    let
-      user = config.preferences.user.name;
-    in
-    {
-      hjem.users."${user}".packages = with pkgs; [ kitty ];
-    };
+  hjem.users."${user}".packages = with pkgs; [ kitty ];
 }

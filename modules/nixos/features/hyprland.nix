@@ -1,21 +1,23 @@
-{ ... }:
+{ lib, pkgs, config, ... }:
+let
+  cfg = config.features.hyprland;
+in
 {
-  flake.nixosModules.hyprland =
-    { pkgs, ... }:
-    {
-      programs.hyprland = {
-        enable = true;
-        xwayland.enable = true;
-        package = pkgs.hyprland;
-        portalPackage = pkgs.xdg-desktop-portal-hyprland;
-      };
+  options.features.hyprland.enable = lib.mkEnableOption "Hyprland compositor";
 
-      security.polkit.enable = true;
-      services.dbus.enable = true;
-
-      persistance.cache.directories = [
-        ".local/share/hyprland"
-      ];
-
+  config = lib.mkIf cfg.enable {
+    programs.hyprland = {
+      enable = true;
+      xwayland.enable = true;
+      package = pkgs.hyprland;
+      portalPackage = pkgs.xdg-desktop-portal-hyprland;
     };
+
+    security.polkit.enable = true;
+    services.dbus.enable = true;
+
+    persistance.cache.directories = [
+      ".local/share/hyprland"
+    ];
+  };
 }
