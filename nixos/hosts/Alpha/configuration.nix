@@ -4,35 +4,25 @@
   ...
 }:
 {
-  flake.nixosConfigurations.Omega = inputs.nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit self inputs; };
-    modules = [ self.nixosModules.hostOmega ];
+  flake.nixosConfigurations.Alpha = inputs.nixpkgs.lib.nixosSystem {
+    modules = [ self.nixosModules.hostAlpha ];
   };
 
-  flake.nixosModules.hostOmega = { config, pkgs, ... }: {
+  flake.nixosModules.hostAlpha = { config, pkgs, ... }: {
     imports = [
       self.nixosModules.base
-      self.nixosModules.hostOmega-hardware
-      self.nixosModules.audio
-      self.nixosModules.auto-cpufreq
-      self.nixosModules.powersave
-      self.nixosModules.drivers-intel
-      self.nixosModules.desktop-packages
-      self.nixosModules.dotfiles
-      self.nixosModules.neovim
-      self.nixosModules.vscodium
 
-      inputs.disko.nixosModules.disko
-      self.diskoConfigurations.diskoOmega
+      self.nixosModules.general
+      self.nixosModules.desktop
+      self.nixosModules.quickshell
+      self.nixosModules.pipewire
+      self.nixosModules.powersave
+      self.nixosModules.gaming
+      self.nixosModules.hostAlpha-hardware
     ];
 
-    features = {
-      hyprland.enable = true;
-      impermanence.enable = true;
-      virtualization.enable = true;
-    };
-
     boot = {
+      kernelPackages = pkgs.linuxPackages_latest;
       loader.systemd-boot.enable = true;
       loader.systemd-boot.configurationLimit = 5;
       loader.timeout = 60;
@@ -56,7 +46,7 @@
     };
 
     networking = {
-      hostName = "Omega";
+      hostName = "Alpha";
       networkmanager.enable = true;
     };
 
@@ -78,12 +68,28 @@
 
     services.desktopManager.plasma6.enable = true;
 
+    hardware.cpu.amd.updateMicrocode = true;
+    hardware.graphics = {
+      enable = true;
+      enable32Bit = true;
+      extraPackages = with pkgs; [
+        rocmPackages.clr.icd
+      ];
+    };
+
+    hardware.bluetooth.enable = true;
+
     services = {
       flatpak.enable = true;
       fwupd.enable = true;
       fstrim.enable = true;
       udisks2.enable = true;
       dbus.enable = true;
+    };
+
+    zramSwap = {
+      enable = true;
+      algorithm = "zstd";
     };
 
     system.stateVersion = "25.05";

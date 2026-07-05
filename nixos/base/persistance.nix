@@ -1,5 +1,5 @@
 { ... }: {
-  flake.nixosModules.base_persistance = { lib, ... }: {
+  flake.nixosModules.base = { lib, ... }: {
     options.persistance = {
       enable = lib.mkEnableOption "enable persistance";
 

@@ -1,11 +1,5 @@
-{ lib, pkgs, config, ... }:
-let
-  cfg = config.features.hyprland;
-in
-{
-  options.features.hyprland.enable = lib.mkEnableOption "Hyprland compositor";
-
-  config = lib.mkIf cfg.enable {
+{ ... }: {
+  flake.nixosModules.hyprland = { pkgs, ... }: {
     programs.hyprland = {
       enable = true;
       xwayland.enable = true;

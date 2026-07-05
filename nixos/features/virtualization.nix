@@ -1,12 +1,9 @@
-{ lib, pkgs, config, ... }:
-let
-  user = config.preferences.user.name;
-  cfg = config.features.virtualization;
-in
-{
-  options.features.virtualization.enable = lib.mkEnableOption "Virtualization (libvirt)";
-
-  config = lib.mkIf cfg.enable {
+{ ... }: {
+  flake.nixosModules.virtualization = { pkgs, config, ... }:
+  let
+    user = config.preferences.user.name;
+  in
+  {
     virtualisation.libvirtd = {
       enable = true;
       qemu = {
