@@ -5,16 +5,7 @@
     awww = inputs.awww.packages.${pkgs.stdenv.hostPlatform.system}.awww;
   in
   {
-    programs.dconf = {
-      enable = true;
-      profiles.user.databases = [{
-        lockAll = false;
-        settings."org/gnome/desktop/interface" = {
-          icon-theme = "Papirus-Dark";
-          color-scheme = "prefer-dark";
-        };
-      }];
-    };
+    programs.dconf.enable = true;
 
     environment.variables = {
       XCURSOR_THEME = "Bibata-Modern-Classic";
