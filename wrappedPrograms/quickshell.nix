@@ -6,9 +6,6 @@
       runtimeInputs = [
         pkgs.zoxide
       ];
-      flags = {
-        "-c" = toString ./.;
-      };
     };
   };
 }
