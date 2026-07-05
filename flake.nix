@@ -1,6 +1,4 @@
 {
-  description = "Omega NixOS Configuration";
-
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
@@ -8,15 +6,6 @@
 
     disko = {
       url = "github:nix-community/disko";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    zen-browser.url = "github:0xc000022070/zen-browser-flake";
-    awww.url = "git+https://codeberg.org/LGFae/awww";
-    nix-vscode-extensions.url = "github:nix-community/nix-vscode-extensions";
-
-    quickshell = {
-      url = "git+https://git.outfoxxed.me/outfoxxed/quickshell";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -30,8 +19,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    nix-gaming.url = "github:fufexan/nix-gaming";
-
     hjem = {
       url = "github:feel-co/hjem";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -39,6 +26,12 @@
 
     wrappers.url = "github:Lassulus/wrappers";
     wrapper-modules.url = "github:BirdeeHub/nix-wrapper-modules";
+
+    nix-gaming.url = "github:fufexan/nix-gaming";
+
+    awww.url = "git+https://codeberg.org/LGFae/awww";
+    zen-browser.url = "github:0xc000022070/zen-browser-flake";
+    nix-vscode-extensions.url = "github:nix-community/nix-vscode-extensions";
   };
 
   outputs = inputs: let
@@ -50,9 +43,10 @@
       && file.name != "flake.nix"
       && !lib.hasPrefix "_" file.name;
 
-    importTree = path: toList (fileFilter isNixModule path);
+    importTree = path:
+      toList (fileFilter isNixModule path);
 
-    mkFlake = inputs.flake-parts.lib.mkFlake { inherit inputs; };
+    mkFlake = inputs.flake-parts.lib.mkFlake {inherit inputs;};
   in
-    mkFlake { imports = importTree ./.; };
+    mkFlake {imports = importTree ./.;};
 }
