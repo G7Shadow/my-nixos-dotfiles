@@ -52,19 +52,19 @@
       xdg.config.files = {
         "gtk-3.0/settings.ini".text = ''
           [Settings]
-          gtk-theme-name = adw-gtk3
-          gtk-icon-theme-name = Papirus-Dark
-          gtk-cursor-theme-name = Bibata-Modern-Classic
-          gtk-cursor-theme-size = 24
-          gtk-application-prefer-dark-theme = 1
+          gtk-theme-name=adw-gtk3
+          gtk-icon-theme-name=Papirus-Dark
+          gtk-cursor-theme-name=Bibata-Modern-Classic
+          gtk-cursor-theme-size=24
+          gtk-application-prefer-dark-theme=1
         '';
         "gtk-4.0/settings.ini".text = ''
           [Settings]
-          gtk-theme-name = adw-gtk3
-          gtk-icon-theme-name = Papirus-Dark
-          gtk-cursor-theme-name = Bibata-Modern-Classic
-          gtk-cursor-theme-size = 24
-          gtk-application-prefer-dark-theme = 1
+          gtk-theme-name=adw-gtk3
+          gtk-icon-theme-name=Papirus-Dark
+          gtk-cursor-theme-name=Bibata-Modern-Classic
+          gtk-cursor-theme-size=24
+          gtk-application-prefer-dark-theme=1
         '';
         "gtk-3.0/gtk.css".text = "@import 'colors.css'";
         "gtk-4.0/gtk.css".text = "@import 'colors.css'";

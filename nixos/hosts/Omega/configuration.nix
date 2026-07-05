@@ -33,13 +33,6 @@
       supportedFilesystems = [ "ntfs" ];
     };
 
-    programs.nh = {
-      enable = true;
-      clean.enable = true;
-      clean.extraArgs = "--keep-since 4d --keep 3";
-      flake = "/home/${config.preferences.user.name}/my-nixos-dotfiles";
-    };
-
     nix = {
       gc = {
         dates = "weekly";

@@ -28,6 +28,7 @@
     environment.systemPackages = with pkgs; [
       self.packages.${pkgs.system}.environment
       self.packages.${pkgs.system}.git
+      self.packages.${pkgs.system}.nh
       tree
       direnv
     ];
