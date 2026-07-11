@@ -20,14 +20,14 @@
         alias la="eza -la --icons" lt="eza --tree --icons"
         alias cat="bat" cd="z"
 
-        eval "$(zoxide init zsh)"
-        eval "$(starship init zsh)"
-        eval "$(direnv hook zsh)"
-        eval "$(fzf --zsh)"
+        eval "$(${pkgs.zoxide}/bin/zoxide init zsh)"
+        eval "$(${pkgs.starship}/bin/starship init zsh)"
+        eval "$(${pkgs.direnv}/bin/direnv hook zsh)"
+        eval "$(${pkgs.fzf}/bin/fzf --zsh)"
 
-        if command -v nitch &>/dev/null && [ -z "$TMUX" ] && [ -z "$NITCH_RAN" ]; then
+        if [ -x "${pkgs.nitch}/bin/nitch" ] && [ -z "$TMUX" ] && [ -z "$NITCH_RAN" ]; then
           export NITCH_RAN=1
-          nitch
+          ${pkgs.nitch}/bin/nitch
         fi
       '';
 
