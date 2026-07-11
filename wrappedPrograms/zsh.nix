@@ -40,15 +40,6 @@
       packages.zsh = inputs.wrappers.lib.wrapPackage {
         inherit pkgs;
         package = pkgs.zsh;
-        runtimeInputs = with pkgs; [
-          zoxide
-          fzf
-          starship
-          direnv
-          eza
-          bat
-          nitch
-        ];
         env = {
           ZDOTDIR = "${zdotdir}";
         };
