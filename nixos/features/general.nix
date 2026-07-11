@@ -33,6 +33,18 @@
       direnv
     ];
 
+    programs.nix-ld = {
+      enable = true;
+      libraries = with pkgs; [
+        stdenv.cc.cc.lib
+        zlib
+        brotli
+        unixODBC
+        zstd
+        glib
+      ];
+    };
+
     programs.direnv = {
       enable = true;
       silent = false;
