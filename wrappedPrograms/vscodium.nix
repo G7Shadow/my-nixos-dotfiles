@@ -20,6 +20,7 @@
           marketplace.pkief.material-product-icons
           marketplace.pkief.material-icon-theme
           marketplace.asvetliakov.vscode-neovim
+          marketplace.theqtcompany.qt-qml
         ];
     };
 }
