@@ -33,14 +33,6 @@
       supportedFilesystems = [ "ntfs" ];
     };
 
-    nix = {
-      gc = {
-        dates = "weekly";
-        options = "--delete-older-than 14d";
-      };
-      optimise.automatic = true;
-    };
-
     networking = {
       hostName = "Omega";
       networkmanager.enable = true;
