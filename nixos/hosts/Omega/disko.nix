@@ -7,12 +7,26 @@
         content = {
           type = "gpt";
           partitions = {
-            boot = { size = "1M"; type = "EF02"; };
-            esp = {
-              size = "1G"; type = "EF00";
-              content = { type = "filesystem"; format = "vfat"; mountpoint = "/boot"; };
+            boot = {
+              size = "1M";
+              type = "EF02";
             };
-            swap = { size = "16G"; content = { type = "swap"; resumeDevice = true; }; };
+            esp = {
+              size = "1G";
+              type = "EF00";
+              content = {
+                type = "filesystem";
+                format = "vfat";
+                mountpoint = "/boot";
+              };
+            };
+            swap = {
+              size = "16G";
+              content = {
+                type = "swap";
+                resumeDevice = true;
+              };
+            };
             luks = {
               size = "100%";
               content = {
@@ -28,7 +42,10 @@
           };
         };
       };
-      nodev."/" = { fsType = "tmpfs"; mountOptions = ["size=25%" "mode=755"]; };
+      nodev."/" = {
+        fsType = "tmpfs";
+        mountOptions = ["size=25%" "mode=755"];
+      };
       lvm_vg.btrfs_vg = {
         type = "lvm_vg";
         lvs.root = {
@@ -38,8 +55,14 @@
             extraArgs = ["-f"];
             subvolumes = {
               "/root" = {};
-              "/persist" = { mountOptions = ["subvol=persist" "noatime"]; mountpoint = "/persist"; };
-              "/nix" = { mountOptions = ["subvol=nix" "noatime"]; mountpoint = "/nix"; };
+              "/persist" = {
+                mountOptions = ["subvol=persist" "noatime"];
+                mountpoint = "/persist";
+              };
+              "/nix" = {
+                mountOptions = ["subvol=nix" "noatime"];
+                mountpoint = "/nix";
+              };
             };
           };
         };
