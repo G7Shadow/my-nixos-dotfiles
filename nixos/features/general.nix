@@ -1,5 +1,13 @@
-{ self, inputs, ... }: {
-  flake.nixosModules.general = { pkgs, config, ... }: {
+{
+  self,
+  inputs,
+  ...
+}: {
+  flake.nixosModules.general = {
+    pkgs,
+    config,
+    ...
+  }: {
     imports = [
       self.nixosModules.extra_hjem
       inputs.nix-index-database.nixosModules.nix-index
@@ -39,7 +47,7 @@
         stdenv.cc.cc.lib
         zlib
         brotli
-        unixODBC
+        unixodbc
         zstd
         glib
       ];
