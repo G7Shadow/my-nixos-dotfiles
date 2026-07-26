@@ -2,6 +2,7 @@
   flake.nixosModules.desktop = { ... }: {
     imports = [
       self.nixosModules.hyprland
+      self.nixosModules.hyprglass
       self.nixosModules.kitty
       self.nixosModules.theming
       self.nixosModules.virtualization

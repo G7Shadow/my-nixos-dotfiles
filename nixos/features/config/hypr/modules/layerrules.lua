@@ -1,9 +1,4 @@
 hl.layer_rule({
-  match     = { namespace = "rofi" },
-  animation = "popin 95%",
-})
-
-hl.layer_rule({
-  match     = { namespace = "my-ags-bar" },
-  animation = "slide top",
+  match     = { namespace = "quickshell:bar" },
+  no_anim   = true,
 })

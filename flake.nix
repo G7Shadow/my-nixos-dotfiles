@@ -32,6 +32,11 @@
     awww.url = "git+https://codeberg.org/LGFae/awww";
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
     nix-vscode-extensions.url = "github:nix-community/nix-vscode-extensions";
+
+    hyprglass = {
+      url = "github:hyprnux/hyprglass/v0.6.4";
+      flake = false;
+    };
   };
 
   outputs = inputs: let

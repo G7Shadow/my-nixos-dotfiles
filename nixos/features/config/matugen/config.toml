@@ -47,7 +47,7 @@ output_path = '~/.local/state/quickshell/generated/colors.json'
 [templates.pywalfox]
 input_path = '~/.config/matugen/templates/pywalfox-colors.json'
 output_path = '~/.cache/wal/colors.json'
-post_hook = 'pgrep -x firefox && pywalfox update || true'
+post_hook = 'pywalfox update --profile-path ~/.zen || true'
 
 #[templates.vesktop]
 #input_path = '~/.config/matugen/templates/midnight-discord.css'
