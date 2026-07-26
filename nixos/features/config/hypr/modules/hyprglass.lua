@@ -1,5 +1,6 @@
 -- HyprGlass: Liquid Glass effect plugin
--- Loads after decoration so glass settings layer on top.
+-- Loads the .so first, then configures it.
+
 hl.config({
   plugin = "/etc/hypr/hyprglass.so",
 })
@@ -12,8 +13,17 @@ if hl.plugin.hyprglass then
     default_preset = "subtle",
     tint_color = 0x8899aa22,
 
-    brightness = 0.9,
+    blur_strength = 1.5,
+    refraction_strength = 0.4,
+    chromatic_aberration = 0.3,
+    fresnel_strength = 0.5,
+    specular_strength = 0.6,
+    glass_opacity = 0.85,
+    edge_thickness = 0.04,
+
     dark = { brightness = 0.82 },
+    light = { adaptive_boost = 0.4 },
+
     layers = { enabled = true },
   })
 
