@@ -55,21 +55,17 @@ cp "$HOME/.config/vesktop/themes/custom/wallust.theme.css" \
    "$HOME/.config/vesktop/settings/quickCss.css" 2>/dev/null || true
 # foot: new windows pick up colors. quickshell: live FileView.
 # zen: userChrome.css is written directly to both profiles by wallust.
-#       Firefox/Zen loads userChrome.css once at startup — no live reload
-#       UNLESS the Browser Toolbox is open (Ctrl+Shift+Alt+I).
-#       Try RDP first; fall back to kill+relaunch.
+#       Firefox/Zen loads userChrome.css once at startup — restart to apply.
 if pgrep -f 'zen-beta' >/dev/null 2>&1; then
-    if ! python3 "$HOME/.config/wallust/zen-reload-css.py" 2>/dev/null; then
-        pkill -f 'zen-beta'
-        for i in $(seq 1 50); do
-            pgrep -f 'zen-beta' >/dev/null 2>&1 || break
-            sleep 0.1
-        done
-        pkill -9 -f 'zen-beta' 2>/dev/null || true
-        sleep 0.5
-        zen-beta --name=zen-beta --class=zen-beta &>/dev/null &
-        disown
-    fi
+    pkill -f 'zen-beta'
+    for i in $(seq 1 50); do
+        pgrep -f 'zen-beta' >/dev/null 2>&1 || break
+        sleep 0.1
+    done
+    pkill -9 -f 'zen-beta' 2>/dev/null || true
+    sleep 0.5
+    zen-beta --name=zen-beta --class=zen-beta &>/dev/null &
+    disown
 fi
 
 # --- GTK: set gtk-theme-name in settings.ini (nwg-look / GTK native) ---
