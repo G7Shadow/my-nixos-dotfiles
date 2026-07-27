@@ -1,18 +1,18 @@
 * {
-  --base:             {{ background | darken(0.40) | strip }};
-  --surface:          {{ background | darken(0.35) | strip }};
-  --overlay:          {{ background | darken(0.30) | strip }};
-  --hl_low:           {{ background | darken(0.20) | strip }};
-  --hl_med:           {{ background | darken(0.10) | strip }};
-  --hl_high:          {{ background | strip }};
-  --outline:          {{ color8 | strip }};
-  --muted:            {{ color7 | strip }};
-  --subtle:           {{ foreground | strip }};
-  --text:             {{ color7 | strip }};
-  --primary:          {{ color2 | strip }};
-  --secondary:        {{ foreground | strip }};
-  --tertiary:         {{ color7 | strip }};
-  --error:            {{ color1 | strip }};
+  --base:             {{ background | darken(0.40) }};
+  --surface:          {{ background | darken(0.35) }};
+  --overlay:          {{ background | darken(0.30) }};
+  --hl_low:           {{ background | darken(0.20) }};
+  --hl_med:           {{ background | darken(0.10) }};
+  --hl_high:          {{ background }};
+  --outline:          {{ color8 }};
+  --muted:            {{ color7 }};
+  --subtle:           {{ foreground }};
+  --text:             {{ color7 }};
+  --primary:          {{ color2 }};
+  --secondary:        {{ foreground }};
+  --tertiary:         {{ color7 }};
+  --error:            {{ color1 }};
 }
 
 :root {
@@ -49,6 +49,11 @@
   --sidebar-text-color: var(--text) !important;
   --lwt-sidebar-text-color: var(--text) !important;
   --lwt-sidebar-background-color: var(--base) !important;
+}
+
+/* --- Hide Window Controls (minimize, maximize, close) --- */
+*|*:root .titlebar-buttonbox {
+  display: none !important;
 }
 
 /* --- Sidebar & Layout --- */

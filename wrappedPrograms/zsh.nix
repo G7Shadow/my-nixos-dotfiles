@@ -4,6 +4,7 @@
     let
       zshrc = pkgs.writeText "zshrc" ''
         export EDITOR=nvim
+        export PATH="$HOME/.local/bin:$PATH"
         export HISTFILE="$HOME/.zsh_history"
         export HISTSIZE=10000
         export SAVEHIST=10000
