@@ -53,6 +53,11 @@ if hl.plugin.hyprglass then
 
   hg.layer("quickshell:bar", { exclude = true })
 
+  hl.window_rule({ match = { class = "mpv" }, tag = "+hyprglass_disabled" })
+  hl.window_rule({ match = { fullscreen = true }, tag = "+hyprglass_disabled" })
+  hl.window_rule({ match = { class = "zen-broswer" }, tag = "+hyprglass_theme_light" })
+  hl.window_rule({ match = { class = "myterminal" }, tag = "+hyprglass_preset_high_contrast" })
+
   hg.config({
     enabled = true,
     default_theme = "dark",

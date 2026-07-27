@@ -14,6 +14,7 @@
         obsidian
         netflix
         localsend
+        librewolf
         prismlauncher
         zed-editor
         obs-studio
