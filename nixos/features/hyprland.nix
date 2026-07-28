@@ -4,7 +4,7 @@
     lib,
     ...
   }: let
-    hyprglass = pkgs.stdenv.mkDerivation {
+    hyprglass = (pkgs.hyprlandPlugins.mkHyprlandPlugin {
       pname = "hyprglass";
       version = "0.6.4";
       src = inputs.hyprglass;
@@ -12,12 +12,6 @@
       nativeBuildInputs = with pkgs; [
         pkg-config
         glslang
-      ];
-
-      buildInputs = with pkgs; [
-        hyprland.dev
-        aquamarine
-        wayland
       ];
 
       buildPhase = ''
@@ -35,7 +29,10 @@
         license = lib.licenses.mit;
         platforms = lib.platforms.linux;
       };
-    };
+    }).overrideAttrs (old: {
+      pname = "hyprglass";
+      version = "0.6.4";
+    });
   in {
     programs.hyprland = {
       enable = true;
@@ -44,6 +41,7 @@
       package = pkgs.hyprland;
       portalPackage = pkgs.xdg-desktop-portal-hyprland;
       plugins = [ hyprglass ];
+      topPrefixes = [ "plugin = ${hyprglass}/lib/libhyprglass.so" ];
       extraConfig = "source = ~/.config/hypr/hyprland.lua";
     };
 
