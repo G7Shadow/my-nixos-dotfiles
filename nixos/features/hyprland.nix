@@ -4,7 +4,7 @@
     lib,
     ...
   }: let
-    hyprglass = pkgs.hyprlandPlugins.mkHyprlandPlugin {
+    hyprglass = pkgs.stdenv.mkDerivation {
       pname = "hyprglass";
       version = "0.6.4";
       src = inputs.hyprglass;
@@ -12,6 +12,12 @@
       nativeBuildInputs = with pkgs; [
         pkg-config
         glslang
+      ];
+
+      buildInputs = with pkgs; [
+        hyprland.dev
+        aquamarine
+        wayland
       ];
 
       buildPhase = ''
