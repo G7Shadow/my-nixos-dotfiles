@@ -1,7 +1,14 @@
-{ self, ... }: {
-  flake.nixosModules.quickshell = { pkgs, config, ... }: {
-    hjem.users."${config.preferences.user.name}".packages = [
-      self.packages.${pkgs.system}.quickshellWrapped
-    ];
-  };
+{ moduleWithSystem, ... }: {
+  flake.nixosModules.quickshell = moduleWithSystem (
+    { self', ... }:
+    { config, ... }:
+    let
+      user = config.preferences.user.name;
+    in
+    {
+      hjem.users."${user}".packages = [
+        self'.packages.quickshellWrapped
+      ];
+    }
+  );
 }

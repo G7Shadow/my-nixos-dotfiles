@@ -1,16 +1,13 @@
 {
+  moduleWithSystem,
   self,
   inputs,
   ...
 }:
 {
-  flake.nixosModules.general =
-    {
-      pkgs,
-      config,
-      ...
-    }:
-    {
+  flake.nixosModules.general = moduleWithSystem (
+    { self', ... }:
+    { pkgs, config, ... }: {
       imports = [
         self.nixosModules.extra_hjem
         inputs.nix-index-database.nixosModules.nix-index
@@ -24,7 +21,7 @@
           "wheel"
           "networkmanager"
         ];
-        shell = self.packages.${pkgs.system}.environment;
+        shell = self'.packages.environment;
         hashedPasswordFile = "/persist/passwd";
         initialPassword = "12345";
       };
@@ -35,9 +32,9 @@
       ];
       nixpkgs.config.allowUnfree = true;
       environment.systemPackages = with pkgs; [
-        self.packages.${pkgs.system}.environment
-        self.packages.${pkgs.system}.git
-        self.packages.${pkgs.system}.nh
+        self'.packages.environment
+        self'.packages.git
+        self'.packages.nh
         tree
         direnv
       ];
@@ -75,5 +72,6 @@
         ".cache/wallust"
         ".cache/matugen"
       ];
-    };
+    }
+  );
 }
