@@ -297,23 +297,6 @@
         "type": "github"
       }
     },
-    "hyprglass": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1781269936,
-        "narHash": "sha256-coVoTJyRhn6eKZ8oJXus93p/G1gblgqcQNhNXBhx+G4=",
-        "owner": "hyprnux",
-        "repo": "hyprglass",
-        "rev": "22acd5db6ef73fa34cad2d5ce8b76cf37e9acaa5",
-        "type": "github"
-      },
-      "original": {
-        "owner": "hyprnux",
-        "ref": "v0.6.4",
-        "repo": "hyprglass",
-        "type": "github"
-      }
-    },
     "hyprgraphics": {
       "inputs": {
         "hyprutils": [
@@ -787,11 +770,11 @@
     },
     "nixpkgs_4": {
       "locked": {
-        "lastModified": 1781577229,
-        "narHash": "sha256-lrp67w8AulE9Ks53n27I45ADSzbOCn4H+CNW1Ck8B+8=",
+        "lastModified": 1785090369,
+        "narHash": "sha256-m0pDuRJG7EDo9ri+4Ksu83VsI+PlxNC9lNBfydejce4=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "567a49d1913ce81ac6e9582e3553dd90a955875f",
+        "rev": "624af665418d3c65d544145b4d34ad696439570e",
         "type": "github"
       },
       "original": {
@@ -877,7 +860,6 @@
         "disko": "disko",
         "flake-parts": "flake-parts",
         "hjem": "hjem",
-        "hyprglass": "hyprglass",
         "hyprland": "hyprland",
         "impermanence": "impermanence",
         "nix-gaming": "nix-gaming",

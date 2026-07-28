@@ -31,10 +31,6 @@
       url = "github:hyprwm/Hyprland";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    hyprglass = {
-      url = "github:hyprnux/hyprglass/v0.6.4";
-      flake = false;
-    };
     nix-gaming.url = "github:fufexan/nix-gaming";
 
     # Apps
