@@ -27,10 +27,6 @@
     wrapper-modules.url = "github:BirdeeHub/nix-wrapper-modules";
 
     # Desktop
-    hyprland = {
-      url = "github:hyprwm/Hyprland";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     nix-gaming.url = "github:fufexan/nix-gaming";
 
     # Apps

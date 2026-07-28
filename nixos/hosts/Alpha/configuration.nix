@@ -7,7 +7,6 @@
   flake.nixosConfigurations.Alpha = inputs.nixpkgs.lib.nixosSystem {
     modules = [
       self.nixosModules.hostAlpha
-      inputs.hyprland.nixosModules.default
     ];
   };
 

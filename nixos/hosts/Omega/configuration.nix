@@ -7,7 +7,6 @@
   flake.nixosConfigurations.Omega = inputs.nixpkgs.lib.nixosSystem {
     modules = [
       self.nixosModules.hostOmega
-      inputs.hyprland.nixosModules.default
     ];
   };
 
