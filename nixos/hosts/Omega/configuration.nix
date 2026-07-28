@@ -5,7 +5,10 @@
 }:
 {
   flake.nixosConfigurations.Omega = inputs.nixpkgs.lib.nixosSystem {
-    modules = [ self.nixosModules.hostOmega ];
+    modules = [
+      self.nixosModules.hostOmega
+      inputs.hyprland.nixosModules.default
+    ];
   };
 
   flake.nixosModules.hostOmega = { config, pkgs, ... }: {
