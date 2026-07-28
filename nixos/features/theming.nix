@@ -35,7 +35,6 @@
         cava
         waybar
         hyprpaper
-        hyprlock
         hypridle
         wlogout
         waypaper

@@ -9,7 +9,6 @@
       hjem.users."${user}".packages = with pkgs; [
         kitty
         htop
-        btop
         lsof
         tree
         wget
