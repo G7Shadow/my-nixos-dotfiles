@@ -38,12 +38,11 @@ if [ -z "$wp" ] || [ ! -f "$wp" ]; then
     wp="$(find "$wpdir" -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) 2>/dev/null | sort | head -1)"
 fi
 if command -v jq >/dev/null 2>&1 && [ -f "$cfg" ]; then
-    tmp="$(mktemp)"
     if [ -n "$wp" ] && [ -f "$wp" ]; then
-        jq --arg t "$name" --arg w "$wp" '.theme=$t | .wallpaper=$w' "$cfg" >"$tmp" && mv "$tmp" "$cfg" || rm -f "$tmp"
+        jq --arg t "$name" --arg w "$wp" '.theme=$t | .wallpaper=$w' "$cfg" > "$cfg.tmp" && cat "$cfg.tmp" > "$cfg" && rm "$cfg.tmp" || rm -f "$cfg.tmp"
         "$HOME/.config/wallust/wallpaper-record.sh" "$name" "$wp" 2>/dev/null || true
     else
-        jq --arg t "$name" '.theme=$t' "$cfg" >"$tmp" && mv "$tmp" "$cfg" || rm -f "$tmp"
+        jq --arg t "$name" '.theme=$t' "$cfg" > "$cfg.tmp" && cat "$cfg.tmp" > "$cfg" && rm "$cfg.tmp" || rm -f "$cfg.tmp"
     fi
 fi
 

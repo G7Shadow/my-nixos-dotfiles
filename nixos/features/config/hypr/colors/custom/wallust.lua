@@ -8,18 +8,18 @@ colors = {
     bg3    = "rgb(3D3F40)",
     bg4    = "rgb(4A4D4D)",
 
-    fg     = "rgb(D4BE98)",
+    fg     = "rgb(EBDBB2)",
 
-    red    = "rgb(EA6962)",
-    orange = "rgb(D8A657)",
-    yellow = "rgb(D8A657)",
-    green  = "rgb(A9B665)",
-    aqua   = "rgb(89B482)",
-    blue   = "rgb(7DAEA3)",
-    purple = "rgb(D3869B)",
-    pink   = "rgb(D3869B)",
+    red    = "rgb(CC231C)",
+    orange = "rgb(D79920)",
+    yellow = "rgb(D79920)",
+    green  = "rgb(989719)",
+    aqua   = "rgb(689D69)",
+    blue   = "rgb(448488)",
+    purple = "rgb(B16185)",
+    pink   = "rgb(B16185)",
 
     grey0  = "rgb(1D2021)",
     grey1  = "rgb(1D2021)",
-    grey2  = "rgb(A89984)",
+    grey2  = "rgb(A89983)",
 }
