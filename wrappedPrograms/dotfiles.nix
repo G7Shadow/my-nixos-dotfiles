@@ -15,6 +15,7 @@
         matugen = "matugen";
         waybar = "waybar";
         tmux = "tmux";
+        uwsm = "uwsm";
         wallust = "wallust";
         colorschemes = "colorschemes";
       };
