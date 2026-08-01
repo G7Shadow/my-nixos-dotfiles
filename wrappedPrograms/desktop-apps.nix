@@ -19,6 +19,7 @@
         obs-studio
         thunar
         nautilus
+        kdePackages.dolphin
         file-roller
         virt-manager
       ];
