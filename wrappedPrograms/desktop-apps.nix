@@ -1,13 +1,14 @@
-{ inputs, ... }:
+{ moduleWithSystem, ... }:
 {
-  flake.nixosModules.desktop-apps =
+  flake.nixosModules.desktop-apps = moduleWithSystem (
+    { inputs', ... }:
     { pkgs, config, ... }:
     let
       user = config.preferences.user.name;
     in
     {
       hjem.users."${user}".packages = with pkgs; [
-        inputs.zen-browser.packages.${pkgs.stdenv.hostPlatform.system}.default
+        inputs'.zen-browser.packages.default
         discord
         vesktop
         spotify
@@ -23,5 +24,6 @@
         file-roller
         virt-manager
       ];
-    };
+    }
+  );
 }

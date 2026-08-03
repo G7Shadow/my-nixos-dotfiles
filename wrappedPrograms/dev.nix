@@ -1,10 +1,11 @@
-{ self, ... }:
+{ moduleWithSystem, ... }:
 {
-  flake.nixosModules.dev =
+  flake.nixosModules.dev = moduleWithSystem (
+    { self', ... }:
     { pkgs, config, ... }:
     let
       user = config.preferences.user.name;
-      wrappedGit = self.packages.${pkgs.stdenv.hostPlatform.system}.git;
+      wrappedGit = self'.packages.git;
     in
     {
       hjem.users."${user}".packages = with pkgs; [
@@ -37,5 +38,6 @@
         tree-sitter
         kdePackages.qtdeclarative
       ];
-    };
+    }
+  );
 }

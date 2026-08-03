@@ -1,6 +1,7 @@
-{ inputs, ... }:
+{ moduleWithSystem, ... }:
 {
-  flake.nixosModules.vscodium =
+  flake.nixosModules.vscodium = moduleWithSystem (
+    { inputs', ... }:
     { pkgs, config, ... }:
     let
       user = config.preferences.user.name;
@@ -8,8 +9,7 @@
     {
       hjem.users."${user}".packages =
         let
-          marketplace =
-            inputs.nix-vscode-extensions.extensions.${pkgs.stdenv.hostPlatform.system}.vscode-marketplace;
+          marketplace = inputs'.nix-vscode-extensions.extensions.vscode-marketplace;
         in
         [
           pkgs.vscodium
@@ -22,5 +22,6 @@
           marketplace.asvetliakov.vscode-neovim
           marketplace.theqtcompany.qt-qml
         ];
-    };
+    }
+  );
 }
