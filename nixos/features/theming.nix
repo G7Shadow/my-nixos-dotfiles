@@ -16,18 +16,22 @@
         HYPRCURSOR_SIZE = "24";
       };
 
+      fonts.packages = with pkgs; [
+        nerd-fonts.jetbrains-mono
+        rubik
+        inputs'.apple-fonts.packages.sf-pro
+        inputs'.apple-fonts.packages.sf-pro-nerd
+        inputs'.apple-fonts.packages.sf-mono
+        inputs'.apple-fonts.packages.sf-mono-nerd
+        noto-fonts-cjk-sans
+      ];
+
       hjem.users."${user}" = {
         packages = with pkgs; [
           matugen
           wallust
+          apple-cursor
           bibata-cursors
-          nerd-fonts.jetbrains-mono
-          rubik
-          inputs'.apple-fonts.packages.sf-pro
-          inputs'.apple-fonts.packages.sf-pro-nerd
-          inputs'.apple-fonts.packages.sf-mono
-          inputs'.apple-fonts.packages.sf-mono-nerd
-          noto-fonts-cjk-sans
           adwaita-icon-theme
           (papirus-icon-theme.override { color = "black"; })
           glib
