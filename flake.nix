@@ -29,6 +29,12 @@
     # Desktop
     nix-gaming.url = "github:fufexan/nix-gaming";
 
+    # Fonts
+    apple-fonts = {
+      url = "github:Lyndeno/apple-fonts.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Apps
     awww.url = "git+https://codeberg.org/LGFae/awww";
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
