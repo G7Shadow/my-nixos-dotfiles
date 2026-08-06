@@ -7,6 +7,8 @@
       user = config.preferences.user.name;
     in
     {
+      services.gvfs.enable = true;
+
       hjem.users."${user}".packages = with pkgs; [
         inputs'.zen-browser.packages.default
         discord
