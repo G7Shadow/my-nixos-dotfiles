@@ -10,9 +10,9 @@
       programs.dconf.enable = true;
 
       environment.variables = {
-        XCURSOR_THEME = "Bibata-Modern-Classic";
+        XCURSOR_THEME = "macOS";
         XCURSOR_SIZE = "24";
-        HYPRCURSOR_THEME = "Bibata-Modern-Classic";
+        HYPRCURSOR_THEME = "macOS";
         HYPRCURSOR_SIZE = "24";
       };
 
@@ -63,7 +63,7 @@
             [Settings]
             gtk-theme-name=adw-gtk3
             gtk-icon-theme-name=Papirus-Dark
-            gtk-cursor-theme-name=Bibata-Modern-Classic
+            gtk-cursor-theme-name=macOS
             gtk-cursor-theme-size=24
             gtk-application-prefer-dark-theme=1
           '';
@@ -71,7 +71,7 @@
             [Settings]
             gtk-theme-name=adw-gtk3
             gtk-icon-theme-name=Papirus-Dark
-            gtk-cursor-theme-name=Bibata-Modern-Classic
+            gtk-cursor-theme-name=macOS
             gtk-cursor-theme-size=24
             gtk-application-prefer-dark-theme=1
           '';

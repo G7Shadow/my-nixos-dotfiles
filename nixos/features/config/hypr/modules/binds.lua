@@ -13,6 +13,17 @@ hl.bind(mainMod .. " + R", hl.dsp.exec_cmd(menu))
 hl.bind(mainMod .. " + P", hl.dsp.window.pseudo())
 hl.bind(mainMod .. " + J", hl.dsp.layout("togglesplit"))
 
+-- Master layout
+hl.bind(mainMod .. " + SHIFT + M", hl.dsp.layout("addmaster"))
+hl.bind(mainMod .. " + CTRL + M", hl.dsp.layout("removemaster"))
+hl.bind(mainMod .. " + equal", hl.dsp.layout("mfact +0.05"))
+hl.bind(mainMod .. " + minus", hl.dsp.layout("mfact -0.05"))
+hl.bind(mainMod .. " + SHIFT + Return", hl.dsp.layout("swapwithmaster master"))
+hl.bind(mainMod .. " + F", hl.dsp.layout("focusmaster"))
+hl.bind(mainMod .. " + Tab", hl.dsp.layout("cyclenext"))
+hl.bind(mainMod .. " + SHIFT + Tab", hl.dsp.layout("cycleprev"))
+hl.bind(mainMod .. " + O", hl.dsp.layout("orientationnext"))
+
 -- Focus
 hl.bind(mainMod .. " + l", hl.dsp.focus({ direction = "l" }))
 hl.bind(mainMod .. " + h", hl.dsp.focus({ direction = "r" }))
