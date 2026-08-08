@@ -18,8 +18,8 @@ Item {
     implicitHeight: column.implicitHeight      // this is what tells the island how tall to be
     clip: true
 
-    readonly property int rowH: 48
-    readonly property int listCap: rowH * 7
+    readonly property int rowH: Config.launcherRowHeight
+    readonly property int listCap: rowH * Config.launcherMaxRows
 
     // ----- mode + query -----
     readonly property string mode: {
@@ -238,7 +238,7 @@ Item {
 
                     width: ListView.view.width
                     implicitHeight: root.rowH
-                    baseColor: Theme.background     // opaque so reflowing rows cover each other (no text bleed during the filter anims)
+                    baseColor: Theme.base     // opaque BLACK (matches the island), not the wallpaper-tinted bg, so reflowing rows cover each other (no text bleed during the filter anims)
                     selected: index === root.index
                     onClicked: { root.index = index; root.activate(); }
                     onEntered: root.index = index

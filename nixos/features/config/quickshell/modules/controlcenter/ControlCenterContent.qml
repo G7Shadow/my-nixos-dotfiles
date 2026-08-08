@@ -216,7 +216,7 @@ Item {
                     Rectangle {
                         id: mcard
                         width: parent.width
-                        height: 148
+                        height: Config.ccMediaHeight
                         radius: Theme.rXl
                         clip: true
                         color: Theme.surfaceOverlay
@@ -335,7 +335,7 @@ Item {
                     ListView {
                         visible: Notifications.list.length > 0
                         width: parent.width
-                        height: Math.min(contentHeight, 200)
+                        height: Math.min(contentHeight, Config.notifHistoryHeight)
                         clip: true
                         spacing: Theme.s1
                         model: Notifications.list

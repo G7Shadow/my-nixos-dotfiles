@@ -1,4 +1,4 @@
-# Dynamite Desktop
+# quickshell desktop
 
 My whole desktop, written in QML on [Quickshell](https://quickshell.org) for Hyprland. No
 C++, no waybar, no rofi, no swaync. One process draws a "dynamic island" status bar that

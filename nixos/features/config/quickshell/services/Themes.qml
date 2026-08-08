@@ -17,12 +17,22 @@ Singleton {
     Process {
         id: lsProc
         running: true
-        command: ["bash", "-c",
-            "for f in ~/.config/wallust/colorschemes/*.json; do " +
-            "n=$(basename \"$f\" .json); " +
-            "bg=$(jq -r '.special.background' \"$f\" 2>/dev/null); " +
-            "ac=$(jq -r '.colors[6]' \"$f\" 2>/dev/null); " +
-            "echo \"$n|$bg|$ac\"; done"]
+        // Pull each scheme's bg + accent with python3, NOT jq. jq isn't guaranteed to be
+        // installed, and the day it went missing every swatch rendered empty/black (bg and
+        // accent came back as empty strings). python3 is basically always there.
+        command: ["python3", "-c", `
+import glob, json, os
+for f in sorted(glob.glob(os.path.expanduser('~/.config/wallust/colorschemes/*.json'))):
+    n = os.path.basename(f)[:-5]
+    try:
+        d = json.load(open(f))
+        bg = d.get('special', {}).get('background', '')
+        c = d.get('colors')
+        ac = c[6] if isinstance(c, list) and len(c) > 6 else ''
+    except Exception:
+        bg, ac = '', ''
+    print(n + '|' + bg + '|' + ac)
+`]
         stdout: StdioCollector {
             onStreamFinished: {
                 const out = [];

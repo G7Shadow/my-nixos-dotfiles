@@ -1,6 +1,7 @@
 import QtQuick
 import "../../theme"
 import "../../components"
+import "../../config"
 
 // A Material-You quick-settings tile: rounded, fills with accent when `on`, with an icon
 // badge plus a label and sublabel. On tiles that have a settings menu (`hasMenu`), pressing
@@ -19,7 +20,7 @@ Rectangle {
     signal toggled()
     signal menu()
 
-    implicitHeight: 64
+    implicitHeight: Config.ccTileHeight
     radius: Theme.rXl
     color: on ? Theme.accent : Theme.surfaceOverlay
     Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }

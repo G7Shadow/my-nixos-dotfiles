@@ -32,7 +32,7 @@ Item {
     function close() { GlobalState.logoutOpen = false; }
 
     function execute(id) {
-        if (id === "logout")        Quickshell.execDetached(["loginctl", "terminate-user", "jeremyl"]);
+        if (id === "logout")        Hyprland.dispatch("exit");
         else if (id === "lock")     GlobalState.requestLock();
         else if (id === "suspend")  Quickshell.execDetached(["systemctl", "suspend"]);
         else if (id === "reboot")   Quickshell.execDetached(["systemctl", "reboot"]);

@@ -2,6 +2,7 @@ import QtQuick
 import "../../theme"
 import "../../services"
 import "../../components"
+import "../../config"
 
 // OSD content that lives INSIDE the bar island. Bump the volume or brightness and the
 // island morphs into this compact level pill, then snaps back (see Bar.qml; it's a notch
@@ -100,7 +101,7 @@ Item {
         anchors.leftMargin: Theme.s3
         anchors.rightMargin: Theme.s3
         anchors.verticalCenter: parent.verticalCenter
-        height: 8
+        height: Config.osdBarHeight
         radius: height / 2
         color: Theme.fillHigh
 

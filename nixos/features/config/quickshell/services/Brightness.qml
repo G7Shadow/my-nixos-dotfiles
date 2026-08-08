@@ -3,6 +3,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
+import "../config"
 
 // Per-display backlight. Internal panels (eDP/LVDS) go through brightnessctl; external
 // monitors go through ddcutil over DDC/CI, mapped from DRM connector name -> i2c bus by
@@ -46,9 +47,24 @@ Singleton {
         }
     }
 
-    // Sniff out the DDC-capable external displays once, at startup.
+    // Sniff out which DRM connectors have a DDC-controllable bus. Runs at startup AND on
+    // every monitor hotplug, 'cause i2c bus numbers shift on replug and a freshly connected
+    // external isn't in the map until we look again. Debounced, since a replug fires
+    // screensChanged a few times in a row and ddcutil detect is dog slow.
+    function detectDdc() { if (!ddcDetect.running) ddcDetect.running = true; }
+    Component.onCompleted: detectDdc()
+    Connections {
+        target: Quickshell
+        function onScreensChanged() { redetect.restart(); }
+    }
+    Timer {
+        id: redetect
+        interval: 1000   // give the new monitor's i2c bus a beat to come up before we look
+        onTriggered: { if (ddcDetect.running) restart(); else ddcDetect.running = true; }
+    }
+
     Process {
-        running: true
+        id: ddcDetect
         command: ["ddcutil", "detect", "--terse"]
         stdout: StdioCollector {
             onStreamFinished: {
@@ -78,18 +94,24 @@ Singleton {
             required property var modelData
 
             readonly property string name: modelData ? modelData.name : ""
+            // Classify by CONNECTOR, not by whether we found a DDC bus. eDP/LVDS/DSI are the
+            // built-in panel (brightnessctl); everything else (DP/HDMI) is external (ddcutil).
+            // This is the bug fix: if you key off "do we have a bus", a freshly hotplugged
+            // DP-1 (bus not detected yet) looks internal and brightnessctl dims the laptop
+            // panel instead. An external monitor must NEVER touch brightnessctl.
+            readonly property bool internal: /^(eDP|LVDS|DSI)/i.test(name)
             readonly property int ddcBus: root.ddcBuses[name] ?? -1
-            readonly property bool external: ddcBus >= 0
+            readonly property bool external: !internal
             readonly property bool ready: percentage >= 0
             property int percentage: -1
 
             onPercentageChanged: if (percentage >= 0) root.changed(name, percentage)
 
             function refresh() {
-                if (external)
-                    ddcGet.running = true;
-                else
+                if (internal)
                     intGet.running = true;
+                else if (ddcBus >= 0)   // external, but only once we know its bus
+                    ddcGet.running = true;
             }
 
             // External write path, coalesced so a held key tracks as fast as ddcutil can
@@ -107,14 +129,18 @@ Singleton {
 
             function setBrightness(pct) {
                 const p = Math.max(0, Math.min(100, Math.round(pct)));
-                percentage = p; // optimistic, so the OSD + control center move instantly
-                if (external) {
-                    extPending = p;
-                    flushExt();
-                } else {
+                if (internal) {
+                    percentage = p; // optimistic, so the OSD + control center move instantly
                     intSet.command = ["brightnessctl", "set", `${p}%`];
                     intSet.running = true;
+                } else if (ddcBus >= 0) {
+                    percentage = p;
+                    extPending = p;
+                    flushExt();
                 }
+                // external whose bus we haven't sniffed out yet: do NOTHING. Falling back to
+                // brightnessctl here is exactly what dimmed the wrong monitor. The re-detect
+                // on hotplug (below) gives us the bus in a beat and then it works.
             }
 
             // --- internal (brightnessctl) ---
@@ -154,7 +180,7 @@ Singleton {
 
             // Poll the internal panel only (it's fast); externals get read once via refreshAll().
             Timer {
-                interval: 2000
+                interval: Config.brightnessPoll
                 running: !mon.external
                 repeat: true
                 onTriggered: mon.refresh()

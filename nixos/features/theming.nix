@@ -18,6 +18,7 @@
 
       fonts.packages = with pkgs; [
         nerd-fonts.jetbrains-mono
+        material-symbols
         rubik
         inputs'.apple-fonts.packages.sf-pro
         inputs'.apple-fonts.packages.sf-pro-nerd

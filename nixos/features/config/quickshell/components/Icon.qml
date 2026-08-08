@@ -14,7 +14,7 @@ Item {
     property string name: ""
     property real size: Theme.iconSize
     property color color: Theme.inkPrimary
-    property real strokeWidth: 2.2          // in 24-space; the Scale transform shrinks it to ~1.65px at size 18
+    property real strokeWidth: Theme.iconStroke   // in 24-space; the Scale transform shrinks it at render size
 
     implicitWidth: size
     implicitHeight: size
@@ -32,6 +32,8 @@ Item {
         "pause":      { d: "M7,5 H10.5 V19 H7 Z M13.5,5 H17 V19 H13.5 Z", filled: true },
         "prev":       { d: "M7,5 H9.2 V19 H7 Z M17,5 L9.2,12 L17,19 Z", filled: true },
         "next":       { d: "M14.8,5 H17 V19 H14.8 Z M7,5 L14.8,12 L7,19 Z", filled: true },
+        "rewind":     { d: "M11.5,6 L4.5,12 L11.5,18 Z M19,6 L12,12 L19,18 Z", filled: true },
+        "forward":    { d: "M12.5,6 L19.5,12 L12.5,18 Z M5,6 L12,12 L5,18 Z", filled: true },
         "search":     { d: "M4,10.5 a6.5,6.5 0 1,0 13,0 a6.5,6.5 0 1,0 -13,0 M15.2,15.2 L20,20", filled: false },
         "clipboard":  { d: "M7.5,6 H16.5 a1,1 0 0,1 1,1 V19.5 a1,1 0 0,1 -1,1 H7.5 a1,1 0 0,1 -1,-1 V7 a1,1 0 0,1 1,-1 Z M10,6 V5 a2,2 0 0,1 4,0 V6", filled: false },
         "calculator": { d: "M6.5,3.5 H17.5 a1,1 0 0,1 1,1 V19.5 a1,1 0 0,1 -1,1 H6.5 a1,1 0 0,1 -1,-1 V4.5 a1,1 0 0,1 1,-1 Z M8.5,6.5 H15.5 V9 H8.5 Z M9.5,13 h0 M14.5,13 h0 M9.5,16.5 h0 M14.5,16.5 h0", filled: false },
@@ -42,7 +44,8 @@ Item {
         "lock":       { d: "M6.5,11 H17.5 a1,1 0 0,1 1,1 V19 a1,1 0 0,1 -1,1 H6.5 a1,1 0 0,1 -1,-1 V12 a1,1 0 0,1 1,-1 Z M8.5,11 V8 a3.5,3.5 0 0,1 7,0 V11", filled: false },
         "restart":    { d: "M18.5,9 A7,7 0 1,0 19,12 M18.5,4.5 V9 H14", filled: false },
         "logout":     { d: "M14,8 V6 a1,1 0 0,0 -1,-1 H6 a1,1 0 0,0 -1,1 V18 a1,1 0 0,0 1,1 H13 a1,1 0 0,0 1,-1 V16 M10,12 H20 M17,9 L20,12 L17,15", filled: false },
-        "display":    { d: "M4,5 H20 a1,1 0 0,1 1,1 V15 a1,1 0 0,1 -1,1 H4 a1,1 0 0,1 -1,-1 V6 a1,1 0 0,1 1,-1 Z M9,20 H15 M12,16 V20", filled: false }
+        "display":    { d: "M4,5 H20 a1,1 0 0,1 1,1 V15 a1,1 0 0,1 -1,1 H4 a1,1 0 0,1 -1,-1 V6 a1,1 0 0,1 1,-1 Z M9,20 H15 M12,16 V20", filled: false },
+        "person":     { d: "M12,4.3 a3.9,3.9 0 1,0 0.01,0 Z M4.8,20 C4.8,14.6 8,12.9 12,12.9 C16,12.9 19.2,14.6 19.2,20 Z", filled: true }
     })
     readonly property var _def: _icons[name] ?? ({ d: "", filled: false })
 

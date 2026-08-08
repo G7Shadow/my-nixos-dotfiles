@@ -6,9 +6,9 @@ import "../../components"
 
 // Calendar shown INSIDE the bar island: it morphs into this when you press the
 // clock (see Bar.qml). Flat, compact month grid: today is the one accent mark, the
-// other months dimmed. ◀ / ▶ page through months; tapping the title (or the arrow
-// keys) jumps back to today. PRESS-AND-HOLD ◀ to bail out of the calendar (back to
-// the previous view). Esc and click-outside dismiss too (the bar handles that).
+// other months dimmed. ◀ / ▶ page through months (identical buttons); tapping the
+// title (or the arrow keys) jumps back to today. Esc and click-outside dismiss (the
+// bar handles that).
 Item {
     id: root
 
@@ -73,8 +73,10 @@ Item {
         // header: ◀ Month Year ▶
         Item {
             width: parent.width
-            height: 32
+            height: Config.calendarCellHeight
 
+            // previous month. Identical to nextBtn below in look + behaviour (only the
+            // anchor side, arrow direction, and offset step differ).
             Rectangle {
                 id: prevBtn
                 anchors.left: parent.left
@@ -83,16 +85,12 @@ Item {
                 color: prevMa.pressed ? Theme.accent : prevMa.containsMouse ? Theme.fillHigh : Theme.fillLow
                 Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
                 Icon { anchors.centerIn: parent; name: "back"; size: 14; color: prevMa.pressed ? Theme.onAccent : Theme.inkPrimary }
-                // short tap → previous month; press-and-hold → bail out of the calendar
                 MouseArea {
                     id: prevMa
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    property bool held: false
-                    onPressed: held = false
-                    onPressAndHold: { held = true; root.close(); }
-                    onClicked: if (!held) root.monthOffset--
+                    onClicked: root.monthOffset--
                 }
             }
 
@@ -115,15 +113,22 @@ Item {
                 MouseArea { id: titleMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.monthOffset = 0 }
             }
 
+            // next month. Mirror of prevBtn.
             Rectangle {
                 id: nextBtn
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
                 width: 30; height: 30; radius: 15
-                color: nextMa.containsMouse ? Theme.fillHigh : Theme.fillLow
+                color: nextMa.pressed ? Theme.accent : nextMa.containsMouse ? Theme.fillHigh : Theme.fillLow
                 Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
-                Icon { anchors.centerIn: parent; name: "back"; rotation: 180; size: 14; color: Theme.inkPrimary }
-                MouseArea { id: nextMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.monthOffset++ }
+                Icon { anchors.centerIn: parent; name: "back"; rotation: 180; size: 14; color: nextMa.pressed ? Theme.onAccent : Theme.inkPrimary }
+                MouseArea {
+                    id: nextMa
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.monthOffset++
+                }
             }
         }
 

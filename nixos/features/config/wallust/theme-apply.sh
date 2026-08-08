@@ -37,59 +37,47 @@ wp=""
 if [ -z "$wp" ] || [ ! -f "$wp" ]; then
     wp="$(find "$wpdir" -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) 2>/dev/null | sort | head -1)"
 fi
-if command -v jq >/dev/null 2>&1 && [ -f "$cfg" ]; then
-    if [ -n "$wp" ] && [ -f "$wp" ]; then
-        jq --arg t "$name" --arg w "$wp" '.theme=$t | .wallpaper=$w' "$cfg" > "$cfg.tmp" && cat "$cfg.tmp" > "$cfg" && rm "$cfg.tmp" || rm -f "$cfg.tmp"
-        "$HOME/.config/wallust/wallpaper-record.sh" "$name" "$wp" 2>/dev/null || true
-    else
-        jq --arg t "$name" '.theme=$t' "$cfg" > "$cfg.tmp" && cat "$cfg.tmp" > "$cfg" && rm "$cfg.tmp" || rm -f "$cfg.tmp"
+# Write the theme (and this theme's wallpaper, if we found one) into config.json with
+# python3, NOT jq. jq isn't guaranteed to be installed, and when it went missing this
+# silently no-op'd, so the theme switcher looked dead. python3 is basically always there.
+# Single writer: the in-shell switcher no longer touches config.json, so no write race.
+if command -v python3 >/dev/null 2>&1 && [ -f "$cfg" ]; then
+    if python3 - "$cfg" "$name" "$wp" <<'PY'
+import json, os, sys
+cfg, name, wp = sys.argv[1], sys.argv[2], sys.argv[3]
+try:
+    d = json.load(open(cfg))
+except Exception:
+    d = {}
+d["theme"] = name
+if wp and os.path.isfile(wp):
+    d["wallpaper"] = wp
+tmp = cfg + ".tmp"
+with open(tmp, "w") as f:
+    json.dump(d, f, indent=4)
+os.replace(tmp, cfg)   # atomic
+PY
+    then
+        if [ -n "$wp" ] && [ -f "$wp" ]; then
+            "$HOME/.config/wallust/wallpaper-record.sh" "$name" "$wp" 2>/dev/null || true
+        fi
     fi
 fi
 
 # --- non-GTK reloads (cs skips wallust [hooks]) ---
 hyprctl reload    >/dev/null 2>&1 || true
 pkill -USR1 kitty 2>/dev/null      || true
-tmux source-file ~/.config/tmux/tmux.conf 2>/dev/null || true
-# vesktop: copy to quickCss.css (watched + auto-reloaded by Vencord)
-cp "$HOME/.config/vesktop/themes/custom/wallust.theme.css" \
-   "$HOME/.config/vesktop/settings/quickCss.css" 2>/dev/null || true
-# foot: new windows pick up colors. quickshell: live FileView.
-# zen: userChrome.css is written directly to both profiles by wallust.
-#       Firefox/Zen loads userChrome.css once at startup — restart to apply.
-if pgrep -f 'zen-beta' >/dev/null 2>&1; then
-    pkill -f 'zen-beta'
-    for i in $(seq 1 50); do
-        pgrep -f 'zen-beta' >/dev/null 2>&1 || break
-        sleep 0.1
-    done
-    pkill -9 -f 'zen-beta' 2>/dev/null || true
-    sleep 0.5
-    zen-beta --name=zen-beta --class=zen-beta &>/dev/null &
-    disown
-fi
+# foot: new windows pick up colors. vesktop: hot-reloads CSS. quickshell: live FileView.
 
-# --- GTK: set gtk-theme-name in settings.ini (nwg-look / GTK native) ---
+# --- GTK (option B): switch the matching custom GTK 3/4 theme, if one exists ---
 csdir="$HOME/.config/colorschemes/$name"
+if [ -d "$csdir/gtk-4.0" ]; then
+    ln -sf  "$csdir/gtk-4.0/gtk.css"      "$HOME/.config/gtk-4.0/gtk.css"      2>/dev/null || true
+    ln -sf  "$csdir/gtk-4.0/gtk-dark.css" "$HOME/.config/gtk-4.0/gtk-dark.css" 2>/dev/null || true
+    [ -e "$csdir/gtk-4.0/assets" ] && ln -sfn "$csdir/gtk-4.0/assets" "$HOME/.config/gtk-4.0/assets" 2>/dev/null || true
+fi
 if [ -f "$csdir/gtk-theme" ]; then
-    gtkname="$(cat "$csdir/gtk-theme")"
-    # gtk-3.0 settings.ini
-    if grep -q "^gtk-theme-name" "$HOME/.config/gtk-3.0/settings.ini" 2>/dev/null; then
-        sed -i "s|^gtk-theme-name=.*|gtk-theme-name=$gtkname|" "$HOME/.config/gtk-3.0/settings.ini"
-    else
-        echo "gtk-theme-name=$gtkname" >> "$HOME/.config/gtk-3.0/settings.ini"
-    fi
-    # gtkrc (GTK 2)
-    if [ -f "$HOME/.config/gtkrc" ] && grep -q '^gtk-theme-name=' "$HOME/.config/gtkrc" 2>/dev/null; then
-        sed -i "s|^gtk-theme-name=.*|gtk-theme-name=\"$gtkname\"|" "$HOME/.config/gtkrc"
-    fi
-    # dconf → xdg-desktop-portal-gtk → live reload running GTK apps
-    dconf write /org/gnome/desktop/interface/gtk-theme "'$gtkname'" 2>/dev/null || true
-    # xsettingsd: live-reload X11 GTK apps
-    xscfg="$HOME/.config/xsettingsd/xsettingsd.conf"
-    if [ -f "$xscfg" ]; then
-        sed -i "s|^Net/ThemeName.*|Net/ThemeName \"$gtkname\"|" "$xscfg"
-        pkill -HUP xsettingsd 2>/dev/null || true
-    fi
+    gsettings set org.gnome.desktop.interface gtk-theme "$(cat "$csdir/gtk-theme")" 2>/dev/null || true
 fi
 
 # --- spicetify (option B: curated Sleek color schemes; best-effort name match) ---
@@ -105,19 +93,22 @@ if command -v spicetify >/dev/null 2>&1; then
     done
 fi
 
-# --- neovim: write theme name to cache file for lazy.lua + autocmds.lua ---
-nvim_theme="$name"
-[ -f "$csdir/nvim-theme" ] && nvim_theme="$(cat "$csdir/nvim-theme")"
-printf "%s" "$nvim_theme" > "$HOME/.cache/nvim-dynamite-theme"
+# --- nvim / NvChad (option B): patch the theme name in the live chadrc ---
+nvchadrc="$HOME/.config/nvim/lua/chadrc.lua"
+if [ -f "$csdir/nvim/lua/chadrc.lua" ] && [ -f "$nvchadrc" ]; then
+    nvtheme="$(grep -oP 'theme\s*=\s*"\K[^"]+' "$csdir/nvim/lua/chadrc.lua" 2>/dev/null | head -1)"
+    [ -n "$nvtheme" ] && sed -i "s/theme = \"[^\"]*\"/theme = \"$nvtheme\"/" "$nvchadrc" 2>/dev/null || true
+fi
 
-# --- vscodium: set workbench.colorTheme via sed (settings.json has trailing commas, jq can't parse) ---
+# --- vscodium (option B): set workbench.colorTheme to the named extension theme ---
 vscfg="$HOME/.config/VSCodium/User/settings.json"
-if [ -f "$csdir/vscodium-theme" ] && [ -f "$vscfg" ]; then
+if [ -f "$csdir/vscodium-theme" ] && [ -f "$vscfg" ] && command -v jq >/dev/null 2>&1; then
     vsname="$(cat "$csdir/vscodium-theme")"
-    if grep -q '"workbench.colorTheme"' "$vscfg"; then
-        sed -i 's|"workbench.colorTheme": "[^"]*"|"workbench.colorTheme": "'"$vsname"'"|' "$vscfg"
+    tmp="$(mktemp)"
+    if jq --arg t "$vsname" '.["workbench.colorTheme"]=$t' "$vscfg" >"$tmp" 2>/dev/null; then
+        mv "$tmp" "$vscfg"
     else
-        sed -i '1s|{|{"workbench.colorTheme": "'"$vsname"'",\n|' "$vscfg"
+        rm -f "$tmp"
     fi
 fi
 

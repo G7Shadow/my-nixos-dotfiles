@@ -64,7 +64,11 @@ Item {
             width: parent.width
             height: Math.min(contentHeight, 348)
             clip: true
-            cellWidth: Math.floor(width / 3)
+            // keep the thumbnails about this wide and let columns flow to fill the panel,
+            // instead of stretching a fixed 3 columns (a wider panel = more thumbs, not bigger ones)
+            readonly property int targetCell: 186
+            readonly property int cols: Math.max(1, Math.round(width / targetCell))
+            cellWidth: Math.floor(width / cols)
             cellHeight: Math.round(cellWidth * 0.62)
             model: Wallpapers.model
             boundsBehavior: Flickable.StopAtBounds

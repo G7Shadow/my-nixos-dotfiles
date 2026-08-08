@@ -15,19 +15,20 @@ Singleton {
     property bool settingsOpen: false
     property bool calendarOpen: false
 
-    // Only ONE panel open at a time. We enforce it here, not at the call sites, so it
-    // holds no matter how a panel got opened: a toggle, an IPC open(), or one picker
+    // Only ONE island panel open at a time. We enforce it here, not at the call sites, so
+    // it holds no matter how a panel got opened: a toggle, an IPC open(), or one picker
     // handing off to another. Whenever one flips true, the rest get forced false. Setting
     // a bool that's already false is a no-op, so this never recurses on itself. (polkit
     // isn't a GlobalState panel; the bar already mutes everything else while an auth
-    // prompt is up.)
+    // prompt is up.) settings is DELIBERATELY excluded: it's its own floating window now,
+    // not an island morph, so it coexists with the island. Clicking the island (which opens
+    // one of these panels) must NOT close the settings window, and vice versa.
     function keepOnly(which) {
         if (which !== "launcher")  launcherOpen = false;
         if (which !== "cc")        controlCenterOpen = false;
         if (which !== "logout")    logoutOpen = false;
         if (which !== "wallpaper") wallpaperPickerOpen = false;
         if (which !== "theme")     themeSwitcherOpen = false;
-        if (which !== "settings")  settingsOpen = false;
         if (which !== "calendar")  calendarOpen = false;
     }
     onLauncherOpenChanged:        if (launcherOpen)         keepOnly("launcher");
@@ -35,7 +36,6 @@ Singleton {
     onLogoutOpenChanged:          if (logoutOpen)           keepOnly("logout");
     onWallpaperPickerOpenChanged: if (wallpaperPickerOpen)  keepOnly("wallpaper");
     onThemeSwitcherOpenChanged:   if (themeSwitcherOpen)    keepOnly("theme");
-    onSettingsOpenChanged:        if (settingsOpen)         keepOnly("settings");
     onCalendarOpenChanged:        if (calendarOpen)         keepOnly("calendar");
 
     // Do Not Disturb: suppresses notification popups, though history still records them.

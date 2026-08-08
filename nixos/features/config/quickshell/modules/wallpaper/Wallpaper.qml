@@ -52,7 +52,7 @@ PanelWindow {
         sourceSize.width: w.screen ? w.screen.width : 0
         sourceSize.height: w.screen ? w.screen.height : 0
         opacity: w.showA ? 1 : 0
-        Behavior on opacity { NumberAnimation { duration: 450; easing.type: Easing.InOutQuad } }
+        Behavior on opacity { NumberAnimation { duration: Config.wallpaperFade; easing.type: Easing.InOutQuad } }
         onStatusChanged: if (status === Image.Ready && !w.showA) w.showA = true
     }
 
@@ -65,7 +65,7 @@ PanelWindow {
         sourceSize.width: w.screen ? w.screen.width : 0
         sourceSize.height: w.screen ? w.screen.height : 0
         opacity: w.showA ? 0 : 1
-        Behavior on opacity { NumberAnimation { duration: 450; easing.type: Easing.InOutQuad } }
+        Behavior on opacity { NumberAnimation { duration: Config.wallpaperFade; easing.type: Easing.InOutQuad } }
         onStatusChanged: if (status === Image.Ready && w.showA) w.showA = false
     }
 }

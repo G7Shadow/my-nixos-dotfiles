@@ -51,11 +51,28 @@ Item {
         Behavior on scale { NumberAnimation { duration: Theme.dur(Theme.dFast); easing.type: Theme.easeOut } }
     }
 
+    // Hit area, deliberately TALLER than the 6px track: grabbing a slider shouldn't need
+    // pixel-accurate aim at a hairline. Extends `grab` px above and below the item (a
+    // MouseArea may spill past its parent as long as nothing clips it), so the whole band
+    // around the track drags. Also takes the wheel, so you can nudge a value by scrolling
+    // anywhere over that band instead of dragging the handle.
+    readonly property int grab: 11
+    readonly property real wheelStep: (to - from) / 25
+
     MouseArea {
         id: ma
         anchors.fill: parent
+        anchors.topMargin: -root.grab
+        anchors.bottomMargin: -root.grab
         cursorShape: Qt.PointingHandCursor
         onPressed: root.applyAt(mouseX)
         onPositionChanged: if (pressed) root.applyAt(mouseX)
+        // consumed here (not left to the page), so a scroll over a slider tunes it
+        onWheel: (wheel) => {
+            const dy = wheel.angleDelta.y !== 0 ? wheel.angleDelta.y : wheel.pixelDelta.y;
+            if (dy === 0) return;
+            const next = root.value + (dy > 0 ? root.wheelStep : -root.wheelStep);
+            root.moved(Math.max(root.from, Math.min(root.to, next)));
+        }
     }
 }

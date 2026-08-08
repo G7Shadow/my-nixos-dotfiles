@@ -3,6 +3,7 @@ import Quickshell
 import "../../theme"
 import "../../services"
 import "../../components"
+import "../../config"
 
 // Notification content that lives INSIDE the bar island. The island morphs to show this,
 // then snaps back (see Bar.qml). Compact: app-icon badge, app name, summary, body.
@@ -75,7 +76,7 @@ Item {
             width: parent.width
             elide: Text.ElideRight
             variant: "caption"
-            visible: !!(root.notif && root.notif.body)
+            visible: Config.notifShowBody && !!(root.notif && root.notif.body)
             text: root.notif ? (root.notif.body || "") : ""
             textFormat: Text.PlainText
             color: Theme.inkDim

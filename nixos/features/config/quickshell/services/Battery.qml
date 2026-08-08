@@ -1,6 +1,7 @@
 pragma Singleton
 import Quickshell
 import Quickshell.Services.UPower
+import "../config"
 
 // Aggregate system battery (UPower's display device), reactive. `available` is false on
 // desktops or anywhere there's no laptop battery, so the bar knows to hide the indicator.
@@ -15,5 +16,5 @@ Singleton {
     // charging: a plugged-in laptop holding at 80% reports PendingCharge, not Charging.
     readonly property bool charging: device ? device.state === UPowerDeviceState.Charging : false
     readonly property bool discharging: device ? device.state === UPowerDeviceState.Discharging : false
-    readonly property bool low: available && discharging && percentage <= 20
+    readonly property bool low: available && discharging && percentage <= Config.batteryLowThreshold
 }

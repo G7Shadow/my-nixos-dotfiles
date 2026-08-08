@@ -29,7 +29,7 @@ Singleton {
     onPopupHoveredChanged: { if (popupHovered) dismissTimer.stop(); else if (showing) dismissTimer.restart(); }
     Timer {
         id: dismissTimer
-        interval: (root.showing && root.showing.urgency === NotificationUrgency.Critical) ? 12000 : 6000
+        interval: (root.showing && root.showing.urgency === NotificationUrgency.Critical) ? Config.notifTimeoutCritical : Config.notifTimeout
         onTriggered: if (root.showing) root.hidePopup(root.showing)
     }
 

@@ -1,6 +1,7 @@
 pragma Singleton
 import QtQuick
 import Quickshell
+import "../config"
 
 // Shared state for the on-screen display. Only one OSD at a time: every show() kicks
 // the hide timer back to zero (so spamming volume/brightness refreshes the same OSD
@@ -37,7 +38,7 @@ Singleton {
 
     Timer {
         id: hideTimer
-        interval: 1500
+        interval: Config.osdTimeout
         onTriggered: root.active = false
     }
 }

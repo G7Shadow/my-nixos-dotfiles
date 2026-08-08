@@ -1,5 +1,6 @@
 pragma Singleton
 import Quickshell
+import "../config"
 
 // Night light (blue-light filter) via hyprsunset. On: fire up hyprsunset at a warm
 // temperature (a detached daemon that hangs onto the gamma). Off: kill it, which
@@ -14,7 +15,7 @@ Singleton {
     readonly property string iconName: "night"
 
     property bool enabled: false
-    property int temperature: 3000   // warm, in K
+    property int temperature: Config.nightLightTemp   // warm, in K
 
     function toggle() { enabled = !enabled; apply(); }
 

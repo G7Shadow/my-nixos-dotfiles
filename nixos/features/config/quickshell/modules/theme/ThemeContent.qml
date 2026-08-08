@@ -18,6 +18,11 @@ Item {
 
     function close() { GlobalState.themeSwitcherOpen = false; }
     function apply(name) {
+        // DON'T set Config.theme here. theme-apply.sh is the single writer of config.json:
+        // it sets both the theme AND this theme's wallpaper. If we also touch Config, the
+        // shell serializes the WHOLE config (with the OLD wallpaper still in it) and that
+        // write races the script's, so the wallpaper sometimes gets stomped back to the old
+        // one. We just kick off the script; the FileView reload pulls in theme + wallpaper.
         Quickshell.execDetached(["bash", `${Quickshell.env("HOME")}/.config/wallust/theme-apply.sh`, name]);
     }
 

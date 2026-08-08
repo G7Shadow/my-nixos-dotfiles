@@ -29,7 +29,7 @@ Item {
         border.width: root.hairline ? 1 : 0
         border.color: root.hairlineColor
         antialiasing: true
-        layer.enabled: root.floating
+        layer.enabled: root.floating && Theme.shadows
         layer.effect: MultiEffect {
             shadowEnabled: true
             shadowColor: Theme.shadow
