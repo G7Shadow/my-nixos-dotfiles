@@ -93,12 +93,10 @@ if command -v spicetify >/dev/null 2>&1; then
     done
 fi
 
-# --- nvim / NvChad (option B): patch the theme name in the live chadrc ---
-nvchadrc="$HOME/.config/nvim/lua/chadrc.lua"
-if [ -f "$csdir/nvim/lua/chadrc.lua" ] && [ -f "$nvchadrc" ]; then
-    nvtheme="$(grep -oP 'theme\s*=\s*"\K[^"]+' "$csdir/nvim/lua/chadrc.lua" 2>/dev/null | head -1)"
-    [ -n "$nvtheme" ] && sed -i "s/theme = \"[^\"]*\"/theme = \"$nvtheme\"/" "$nvchadrc" 2>/dev/null || true
-fi
+# --- nvim (option B): write the theme name to the cache file nvim watches ---
+nvim_theme="$name"
+[ -f "$csdir/nvim-theme" ] && nvim_theme="$(cat "$csdir/nvim-theme")"
+printf "%s" "$nvim_theme" > "$HOME/.cache/nvim-dynamite-theme"
 
 # --- vscodium (option B): set workbench.colorTheme to the named extension theme ---
 vscfg="$HOME/.config/VSCodium/User/settings.json"

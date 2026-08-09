@@ -12,7 +12,6 @@ hl.config({
 
     resize_on_border = false,
     allow_tearing    = false,
-    layout           = "master",
   },
 
   decoration = {
@@ -38,25 +37,6 @@ hl.config({
     },
   },
 
-  dwindle = {
-    force_split = 2,
-    preserve_split = true,
-  },
-
-  master = {
-    allow_small_split = false,
-    new_status = "slave",
-    new_on_top = false,
-    new_on_active = "before",
-    smart_resizing = true,
-    drop_at_cursor = true,
-    always_keep_position = false,
-  },
-
-  misc = {
-    force_default_wallpaper = -1,
-    disable_hyprland_logo   = false,
-  },
   xwayland = {
     force_zero_scaling = true,
   },

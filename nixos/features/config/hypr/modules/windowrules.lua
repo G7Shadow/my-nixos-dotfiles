@@ -1,3 +1,20 @@
+hl.layer_rule({
+  match     = { namespace = "quickshell:bar" },
+  no_anim   = true,
+})
+
+hl.window_rule({
+  name  = "hyprglass-off-fullscreen",
+  match = { fullscreen = true },
+  tag   = "+hyprglass_disabled",
+})
+
+hl.window_rule({
+  name  = "hyprglass-off-mpv",
+  match = { class = "mpv" },
+  tag   = "+hyprglass_disabled",
+})
+
 hl.window_rule({
   name  = "suppress-maximize-events",
   match = { class = ".*" },
