@@ -13,19 +13,20 @@
 
       services.power-profiles-daemon.enable = false;
 
-      services.auto-cpufreq = {
-        enable = true;
-        settings = {
-          charger = {
-            governor = "performance";
-            turbo = "auto";
-          };
-          battery = {
-            governor = "powersave";
-            turbo = "auto";
+        services.auto-cpufreq = {
+          enable = true;
+          settings = {
+            charger = {
+              governor = "performance";
+              turbo = "always";
+              scaling_min_freq = 2000000;
+            };
+            battery = {
+              governor = "schedutil";
+              turbo = "auto";
+            };
           };
         };
-      };
     }
   );
 }

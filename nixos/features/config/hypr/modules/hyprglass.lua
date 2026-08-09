@@ -55,7 +55,7 @@ if hl.plugin.hyprglass then
   hg.layer("quickshell:bar", { exclude = true })
 
   hg.config({
-    enabled = true,
+    enabled = false,
     default_theme = "dark",
     default_preset = "apple",
     layers = { enabled = true },
