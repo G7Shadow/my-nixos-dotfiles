@@ -78,6 +78,14 @@
         dbus.enable = true;
       };
 
+      nix.gc = {
+        automatic = true;
+        dates = "weekly";
+        options = "--delete-older-than 7d";
+      };
+
+      nix.optimise.automatic = true;
+
       zramSwap = {
         enable = true;
         algorithm = "zstd";
