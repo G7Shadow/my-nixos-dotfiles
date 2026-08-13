@@ -1,6 +1,17 @@
 hl.layer_rule({
-  match     = { namespace = "quickshell:bar" },
-  no_anim   = true,
+match     = { namespace = "quickshell:bar" },
+  blur = true,
+  ignore_alpha = 0.5,
+})
+
+hl.window_rule({
+  name = "center-qs-settings",
+  match = {
+    class = "org.quickshell",
+    title = "Settings"
+  },
+  float = true,
+  center = true
 })
 
 hl.window_rule({

@@ -19,7 +19,6 @@
           charger = {
             governor = "performance";
             turbo = "auto";
-            scaling_min_freq = 2000000;
           };
           battery = {
             governor = "schedutil";

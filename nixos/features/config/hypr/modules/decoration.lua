@@ -15,24 +15,27 @@ hl.config({
   },
 
   decoration = {
-    rounding         = 15,
-    rounding_power   = 2,
+    rounding         = 25,
+    rounding_power   = 10,
     active_opacity   = 1.0,
     inactive_opacity = 0.8,
+
     shadow           = {
       enabled      = true,
+
       range        = 10,
-      render_power = 5,
+      render_power = 3,
       color        = c.shadow,
     },
 
     blur             = {
       enabled           = true,
 
-      size              = 3,
-      passes            = 1,
-      vibrancy          = 0.5,
-      vibrancy_darkness = 0.2,
+      size              = 10,
+      passes            = 2,
+      noise             = 0.01,
+      contrast          = 0.8,
+      vibrancy          = 0.2,
       new_optimizations = true,
     },
   },
@@ -41,4 +44,3 @@ hl.config({
     force_zero_scaling = true,
   },
 })
-
