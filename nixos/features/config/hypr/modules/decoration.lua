@@ -1,13 +1,11 @@
-local c = require("colors.matugen")
-
 hl.config({
   general = {
-    gaps_in          = 10,
+    gaps_in          = 8,
     gaps_out         = 20,
-    border_size      = 2,
+    border_size      = 1,
     col              = {
-      active_border   = c.background,
-      inactive_border = c.inverse_primary,
+      active_border   = colors.bg2,
+      inactive_border = colors.bg1,
     },
 
     resize_on_border = false,
@@ -22,20 +20,19 @@ hl.config({
 
     shadow           = {
       enabled      = true,
-      range        = 10,
+      range        = 28,
       render_power = 3,
-      color        = c.s,
+      color        = 0x890a0a0a,
     },
 
     blur             = {
-      enabled           = true,
+      enabled  = true,
 
-      size              = 10,
-      passes            = 2,
-      noise             = 0.1,
-      contrast          = 0.8,
-      vibrancy          = 0.2,
-      new_optimizations = true,
+      size     = 10,
+      passes   = 2,
+      noise    = 0.01,
+      contrast = 0.8,
+      vibrancy = 0.2,
     },
   },
 

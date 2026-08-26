@@ -14,6 +14,7 @@
         discord
         vesktop
         spotify
+        firefox
         obsidian
         netflix
         localsend
