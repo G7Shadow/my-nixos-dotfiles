@@ -10,7 +10,7 @@
     {
       packages.environment = inputs.wrappers.lib.wrapPackage {
         inherit pkgs;
-        package = self'.packages.zsh;
+        package = self'.packages.fish;
         runtimeInputs = with pkgs; [
           zoxide
           fzf

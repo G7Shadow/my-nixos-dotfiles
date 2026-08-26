@@ -70,6 +70,7 @@
         ".local/share/zoxide"
         ".local/share/direnv"
         ".local/share/nvim"
+        ".local/share/fish"
         ".mozilla"
         ".cache/wallust"
         ".cache/matugen"

@@ -14,7 +14,6 @@
         discord
         vesktop
         spotify
-        firefox
         obsidian
         netflix
         localsend
@@ -23,7 +22,6 @@
         obs-studio
         thunar
         nautilus
-        kdePackages.dolphin
         file-roller
         virt-manager
       ];
