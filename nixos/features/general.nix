@@ -14,6 +14,7 @@
       ];
 
       programs.nix-index-database.comma.enable = true;
+      programs.fish.enable = true;
 
       users.users."${config.preferences.user.name}" = {
         isNormalUser = true;
