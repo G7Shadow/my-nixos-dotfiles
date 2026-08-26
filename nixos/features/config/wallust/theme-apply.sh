@@ -70,14 +70,34 @@ pkill -USR1 kitty 2>/dev/null      || true
 # foot: new windows pick up colors. vesktop: hot-reloads CSS. quickshell: live FileView.
 
 # --- GTK (option B): switch the matching custom GTK 3/4 theme, if one exists ---
+# Symlink the colorscheme's empty gtk.css over the Nix-managed @import 'colors.css',
+# letting the per-theme CSS in ~/.themes/<Name>/ take full control. Remove stale
+# per-theme overrides (gtk-dark.css, assets) so the theme's own directory provides
+# them. Toggle color-scheme to force running GTK apps to live-reload their CSS.
 csdir="$HOME/.config/colorschemes/$name"
-if [ -d "$csdir/gtk-4.0" ]; then
-    ln -sf  "$csdir/gtk-4.0/gtk.css"      "$HOME/.config/gtk-4.0/gtk.css"      2>/dev/null || true
-    ln -sf  "$csdir/gtk-4.0/gtk-dark.css" "$HOME/.config/gtk-4.0/gtk-dark.css" 2>/dev/null || true
-    [ -e "$csdir/gtk-4.0/assets" ] && ln -sfn "$csdir/gtk-4.0/assets" "$HOME/.config/gtk-4.0/assets" 2>/dev/null || true
+theme_name=""
+[ -f "$csdir/gtk-theme" ] && theme_name="$(cat "$csdir/gtk-theme")"
+
+for ver in gtk-3.0 gtk-4.0; do
+    if [ -f "$csdir/$ver/gtk.css" ]; then
+        rm -f "$HOME/.config/$ver/gtk.css"
+        ln -sf "$csdir/$ver/gtk.css" "$HOME/.config/$ver/gtk.css" 2>/dev/null || true
+    fi
+    rm -f "$HOME/.config/$ver/gtk-dark.css"
+    rm -f "$HOME/.config/$ver/assets"
+done
+
+if [ -n "$theme_name" ]; then
+    dconf write /org/gnome/desktop/interface/gtk-theme "'$theme_name'" 2>/dev/null || true
 fi
-if [ -f "$csdir/gtk-theme" ]; then
-    gsettings set org.gnome.desktop.interface gtk-theme "$(cat "$csdir/gtk-theme")" 2>/dev/null || true
+
+current_scheme="$(dconf read /org/gnome/desktop/interface/color-scheme 2>/dev/null)"
+if [[ "$current_scheme" == "'prefer-dark'" ]]; then
+    dconf write /org/gnome/desktop/interface/color-scheme "'prefer-light'" 2>/dev/null || true
+    dconf write /org/gnome/desktop/interface/color-scheme "'prefer-dark'"  2>/dev/null || true
+else
+    dconf write /org/gnome/desktop/interface/color-scheme "'prefer-dark'"  2>/dev/null || true
+    dconf write /org/gnome/desktop/interface/color-scheme "'prefer-light'" 2>/dev/null || true
 fi
 
 # --- spicetify (option B: curated Sleek color schemes; best-effort name match) ---
