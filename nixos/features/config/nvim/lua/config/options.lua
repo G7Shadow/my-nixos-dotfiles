@@ -1,8 +1,6 @@
 vim.g.mapleader = " "
 
-if vim.g.vscode then
-  vim.opt.swapfile = false
-end
+vim.opt.swapfile = false
 
 vim.opt.number = true
 vim.opt.shell = "zsh"

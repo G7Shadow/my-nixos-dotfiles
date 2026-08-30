@@ -2,6 +2,7 @@
   flake.nixosModules.powersave = moduleWithSystem (
     { ... }:
     { ... }: {
+
       services.thermald.enable = true;
       powerManagement.powertop.enable = true;
 
@@ -18,11 +19,11 @@
         settings = {
           charger = {
             governor = "performance";
-            turbo = "auto";
+            turbo = "always";
           };
           battery = {
             governor = "schedutil";
-            turbo = "auto";
+            turbo = "never";
           };
         };
       };

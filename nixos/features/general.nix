@@ -14,7 +14,6 @@
       ];
 
       programs.nix-index-database.comma.enable = true;
-      programs.fish.enable = true;
 
       users.users."${config.preferences.user.name}" = {
         isNormalUser = true;
@@ -71,7 +70,6 @@
         ".local/share/zoxide"
         ".local/share/direnv"
         ".local/share/nvim"
-        ".local/share/fish"
         ".mozilla"
         ".cache/wallust"
         ".cache/matugen"
