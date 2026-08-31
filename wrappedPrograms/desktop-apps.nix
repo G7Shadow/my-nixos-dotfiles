@@ -13,6 +13,7 @@
         inputs'.zen-browser.packages.default
         discord
         vesktop
+        spotify
         obsidian
         netflix
         localsend
