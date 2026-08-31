@@ -5,12 +5,12 @@
     { pkgs, config, ... }:
     let
       user = config.preferences.user.name;
-      # Mirrors the Noctalia Zen template: discover every profile (by prefs.js),
-      # ensure its chrome dir exists, and enable native custom-stylesheet loading
-      # via user.js (which Zen applies on next full restart).
+      # Mirrors the Noctalia Zen template: discover every profile, ensure its
+      # chrome dir exists, and enable native custom-stylesheet loading via
+      # user.js (which Zen applies on next full restart).
       zenSetup = ''
-        find "/home/${user}/.zen" -maxdepth 1 -type d -name '*.Default Profile' -print0 \
-          | while IFS= read -r -d '' profile; do
+        for profile in /home/${user}/.zen/*.Default\ Profile; do
+            [ -d "$profile" ] || continue
             mkdir -p "$profile/chrome"
             touch "$profile/chrome/userChrome.css" "$profile/chrome/userContent.css"
             if [ ! -f "$profile/user.js" ] \
@@ -19,7 +19,7 @@
                 'user_pref("toolkit.legacyUserProfileCustomizations.stylesheets", true);' \
                 'user_pref("devtools.chrome.enabled", true);' >> "$profile/user.js"
             fi
-          done
+        done
       '';
     in
     {
