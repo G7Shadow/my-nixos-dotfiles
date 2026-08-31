@@ -36,7 +36,6 @@
           adwaita-icon-theme
           (papirus-icon-theme.override { color = "black"; })
           glib
-          adwsteamgtk
           nwg-look
           xsettingsd
           adw-gtk3
