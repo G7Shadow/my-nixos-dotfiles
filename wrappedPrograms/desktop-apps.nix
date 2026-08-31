@@ -5,18 +5,22 @@
     { pkgs, config, ... }:
     let
       user = config.preferences.user.name;
-      zenProfiles = [
-        "hz3ab4gh.Default Profile"
-        "4hnn7g3c.Default Profile"
-      ];
-      chromeDir = "/home/${user}/my-nixos-dotfiles/nixos/features/config/zen";
-      mkProfileLinks = builtins.concatStringsSep "\n" (
-        map (profile: ''
-          mkdir -p "/home/${user}/.zen/${profile}/chrome"
-          cp "${chromeDir}/userChrome.js" "/home/${user}/.zen/${profile}/chrome/userChrome.js"
-          printf '%s\n' '// Enable userChrome.css and userChrome.js loading' 'user_pref("toolkit.legacyUserProfileCustomizations.stylesheets", true);' > "/home/${user}/.zen/${profile}/user.js"
-        '') zenProfiles
-      );
+      # Mirrors the Noctalia Zen template: discover every profile (by prefs.js),
+      # ensure its chrome dir exists, and enable native custom-stylesheet loading
+      # via user.js (which Zen applies on next full restart).
+      zenSetup = ''
+        find "/home/${user}/.zen" -maxdepth 1 -type d -name '*.Default Profile' -print0 \
+          | while IFS= read -r -d '' profile; do
+            mkdir -p "$profile/chrome"
+            touch "$profile/chrome/userChrome.css" "$profile/chrome/userContent.css"
+            if [ ! -f "$profile/user.js" ] \
+               || ! grep -q "toolkit.legacyUserProfileCustomizations.stylesheets" "$profile/user.js"; then
+              printf '%s\n' \
+                'user_pref("toolkit.legacyUserProfileCustomizations.stylesheets", true);' \
+                'user_pref("devtools.chrome.enabled", true);' >> "$profile/user.js"
+            fi
+          done
+      '';
     in
     {
       services.gvfs.enable = true;
@@ -38,8 +42,8 @@
         virt-manager
       ];
 
-      system.activationScripts.zenHotReload = {
-        text = mkProfileLinks;
+      system.activationScripts.zenChromeSetup = {
+        text = zenSetup;
         deps = [ ];
       };
     }
