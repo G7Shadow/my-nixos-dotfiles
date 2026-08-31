@@ -67,6 +67,7 @@ fi
 # --- non-GTK reloads (cs skips wallust [hooks]) ---
 hyprctl reload    >/dev/null 2>&1 || true
 pkill -USR1 kitty 2>/dev/null      || true
+pkill -USR1 librewolf 2>/dev/null  || true
 # foot: new windows pick up colors. vesktop: hot-reloads CSS. quickshell: live FileView.
 
 # --- GTK (option B): switch the matching custom GTK 3/4 theme, if one exists ---

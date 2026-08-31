@@ -20,6 +20,8 @@ zen_chrome_hz3ab4gh   = { template = 'zen-userChrome.css',  target = '~/.zen/hz3
 zen_content_hz3ab4gh  = { template = 'zen-userContent.css',  target = '~/.zen/hz3ab4gh.Default Profile/chrome/userContent.css' }
 zen_chrome_4hnn7g3c   = { template = 'zen-userChrome.css',  target = '~/.zen/4hnn7g3c.Default Profile/chrome/userChrome.css' }
 zen_content_4hnn7g3c  = { template = 'zen-userContent.css',  target = '~/.zen/4hnn7g3c.Default Profile/chrome/userContent.css' }
+librewolf_chrome      = { template = 'librewolf-userChrome.css',  target = '~/.librewolf/default/chrome/userChrome.css' }
+librewolf_content     = { template = 'librewolf-userContent.css', target = '~/.librewolf/default/chrome/userContent.css' }
 # GTK is NOT templated by wallust (option B): the custom GTK 3/4 themes are kept
 # and switched by theme-apply.sh (symlink the per-theme gtk-4.0 + gsettings name).
 

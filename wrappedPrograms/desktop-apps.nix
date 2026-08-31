@@ -16,6 +16,7 @@
         spotify
         obsidian
         netflix
+        librewolf
         localsend
         prismlauncher
         zed-editor
@@ -25,6 +26,13 @@
         file-roller
         virt-manager
       ];
+
+      system.activationScripts.librewolfChrome = {
+        text = ''
+          mkdir -p "/home/${user}/.librewolf/default/chrome"
+        '';
+        deps = [ ];
+      };
     }
   );
 }
