@@ -155,6 +155,17 @@ PY
         if command -v adwaita-steam-gtk >/dev/null 2>&1; then
             adwaita-steam-gtk -i >/dev/null 2>&1 || true
         fi
+        # Steam dev-mode (-dev) hot reload: the client watches steamui/ for newly
+        # created files and re-reads the theme when one appears (the Adwaita-for-Steam
+        # install.py dev_reload trick). Create a uniquely named empty file, give Steam
+        # a moment to pick it up, then remove it. No-op if Steam isn't running.
+        steamui="$HOME/.local/share/Steam/steamui"
+        if [ -d "$steamui" ] && pgrep -f 'steamwebhelper' >/dev/null 2>&1; then
+            reload="$steamui/.theme-reload-$$-$RANDOM"
+            : > "$reload"
+            sleep 3
+            rm -f "$reload"
+        fi
     fi
 fi
 
