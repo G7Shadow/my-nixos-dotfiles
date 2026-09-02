@@ -26,15 +26,10 @@
           '') configs
         )
       );
-      # Launch Steam with -dev so theme-apply.sh's hot-reload trigger works.
-      steamEntry = ''
-        mkdir -p "/home/${user}/.local/share/applications"
-        ln -sfn "${dotfiles}/applications/steam.desktop" "/home/${user}/.local/share/applications/steam.desktop"
-      '';
     in
     {
       system.activationScripts.dotfileSymlinks = {
-        text = links + "\n" + steamEntry;
+        text = links;
         deps = [ ];
       };
     };
