@@ -36,6 +36,7 @@
         prismlauncher
         zed-editor
         obs-studio
+        adwsteamgtk
         thunar
         nautilus
         file-roller
