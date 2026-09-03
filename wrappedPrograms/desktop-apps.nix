@@ -27,6 +27,7 @@
 
       hjem.users."${user}".packages = with pkgs; [
         inputs'.zen-browser.packages.default
+        brave
         discord
         vesktop
         spotify
