@@ -28,8 +28,7 @@
       hjem.users."${user}".packages = with pkgs; [
         inputs'.zen-browser.packages.default
         brave
-        discord
-        vesktop
+        (vesktop.override { withSystemVencord = true; })
         spotify
         obsidian
         netflix

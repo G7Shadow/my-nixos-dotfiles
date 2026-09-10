@@ -81,25 +81,31 @@ Singleton {
     // for the true desktop base (wallpaper fallback / scrim). Accents are untouched.
     readonly property color base: "#000000"
 
+    // The shell's island is solid black, so EVERYTHING in it must read on black. The palette
+    // fg only reads there when it's LIGHT (dark themes). Light themes (e-ink) hand us a DARK
+    // fg; ink flips to a light neutral in that case, or the whole shell would be dark-on-black.
+    // This is the single source of truth for ink; accents are handled separately by onAccent.
+    readonly property color inkBase: lum(foreground) > 0.4 ? foreground : "#f5f5f5"
+
     // surface fills (base / panel / modal): opaque near-black elevation steps. The step size
     // is user-tunable (settings → Appearance → "Surface lift"); each level is roughly double
     // the one below so the three stay distinguishable at any setting.
     readonly property real surfaceStep: Config.surfaceTint / 100
-    readonly property color surfaceBase: mix(base, foreground, surfaceStep)
-    readonly property color surfacePanel: mix(base, foreground, surfaceStep * 2)
-    readonly property color surfaceOverlay: mix(base, foreground, surfaceStep * 3.3)
+    readonly property color surfaceBase: mix(base, inkBase, surfaceStep)
+    readonly property color surfacePanel: mix(base, inkBase, surfaceStep * 2)
+    readonly property color surfaceOverlay: mix(base, inkBase, surfaceStep * 3.3)
 
 
-    // ink (text/icon), derived from fg so it adapts to light schemes
-    readonly property color inkPrimary: foreground
-    readonly property color inkDim: alpha(foreground, Config.inkDimAlpha / 100)
-    readonly property color inkFaint: alpha(foreground, Config.inkFaintAlpha / 100)
+    // ink (text/icon), derived from inkBase so it stays readable on the black shell
+    readonly property color inkPrimary: inkBase
+    readonly property color inkDim: alpha(inkBase, Config.inkDimAlpha / 100)
+    readonly property color inkFaint: alpha(inkBase, Config.inkFaintAlpha / 100)
 
     // flat fill tints (solid-looking, NOT glass, nothing blurs behind them) +
-    // hairline (borders/dividers). Derived from fg so they adapt to light schemes.
-    readonly property color fillLow: alpha(foreground, Config.fillLowAlpha / 100)
-    readonly property color fillHigh: alpha(foreground, Config.fillHighAlpha / 100)
-    readonly property color hairline: alpha(foreground, Config.hairlineAlpha / 100)
+    // hairline (borders/dividers). From inkBase so they show up on light schemes too.
+    readonly property color fillLow: alpha(inkBase, Config.fillLowAlpha / 100)
+    readonly property color fillHigh: alpha(inkBase, Config.fillHighAlpha / 100)
+    readonly property color hairline: alpha(inkBase, Config.hairlineAlpha / 100)
     // legacy aliases (pre-flat name); move call sites over to fill* over time
     readonly property color glassLow: fillLow
     readonly property color glassHigh: fillHigh

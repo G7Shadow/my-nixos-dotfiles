@@ -58,15 +58,15 @@
       variant = "";
     };
 
-    services.displayManager.sddm = {
+    services.greetd = {
       enable = true;
-      wayland = {
-        enable = true;
-        compositor = "kwin";
+      settings = {
+        default_session = {
+          command = "${pkgs.greetd.tuigreet}/bin/tuigreet --time --remember --remember-session";
+          user = "greeter";
+        };
       };
     };
-
-    services.desktopManager.plasma6.enable = true;
 
     services = {
       flatpak.enable = true;

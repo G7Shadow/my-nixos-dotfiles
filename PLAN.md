@@ -18,7 +18,7 @@
 - Imports: `base`, `general`, `desktop`, `quickshell`, `pipewire`, `powersave`, `gaming`, `hostAlpha-hardware`
 - Boot: `linuxPackages_latest`, systemd-boot, 5 config limit, NTFS
 - AMD GPU: ROCm ICD, `amdgpu.overdrive`, LACT daemon with power-profile sync
-- Display: SDDM (Wayland/KWin), KDE Plasma 6
+- Display: greetd (tuigreet), Hyprland
 - Swap: zram (zstd)
 - No disko, no impermanence
 
