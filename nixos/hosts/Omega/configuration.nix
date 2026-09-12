@@ -58,13 +58,11 @@
       variant = "";
     };
 
-    services.greetd = {
-      enable = true;
-      settings = {
-        default_session = {
-          command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --remember-session";
-          user = "greeter";
-        };
+    services.displayManager = {
+      defaultSession = "hyprland-uwsm";
+      sddm = {
+        enable = true;
+        wayland.enable = true;
       };
     };
 

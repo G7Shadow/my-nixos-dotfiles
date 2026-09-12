@@ -44,7 +44,10 @@
       };
       nodev."/" = {
         fsType = "tmpfs";
-        mountOptions = ["size=25%" "mode=755"];
+        mountOptions = [
+          "size=25%"
+          "mode=755"
+        ];
       };
       lvm_vg.btrfs_vg = {
         type = "lvm_vg";
@@ -52,15 +55,21 @@
           size = "100%FREE";
           content = {
             type = "btrfs";
-            extraArgs = ["-f"];
+            extraArgs = [ "-f" ];
             subvolumes = {
-              "/root" = {};
+              "/root" = { };
               "/persist" = {
-                mountOptions = ["subvol=persist" "noatime"];
+                mountOptions = [
+                  "subvol=persist"
+                  "noatime"
+                ];
                 mountpoint = "/persist";
               };
               "/nix" = {
-                mountOptions = ["subvol=nix" "noatime"];
+                mountOptions = [
+                  "subvol=nix"
+                  "noatime"
+                ];
                 mountpoint = "/nix";
               };
             };
