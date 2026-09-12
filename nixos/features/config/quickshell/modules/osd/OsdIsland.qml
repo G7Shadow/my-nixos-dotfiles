@@ -47,7 +47,7 @@ Item {
             size: 18
         }
         StyledText {
-            anchors.verticalCenter: parent.verticalCenter
+            capCentreIn: parent
             variant: "label"
             font.weight: Theme.wMedium
             text: OsdState.modeLabel
@@ -82,7 +82,7 @@ Item {
     StyledText {
         id: pct
         anchors.right: parent.right
-        anchors.verticalCenter: parent.verticalCenter
+        capCentreIn: parent
         width: 38
         horizontalAlignment: Text.AlignRight
         variant: "caption"

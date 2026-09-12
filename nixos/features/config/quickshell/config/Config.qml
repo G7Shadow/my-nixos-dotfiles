@@ -1,6 +1,7 @@
 pragma Singleton
 import Quickshell
 import Quickshell.Io
+import "CcLayout.js" as CcLayout
 
 // User settings, persisted to ~/.config/quickshell/config.json via FileView +
 // JsonAdapter. Fields round-trip to JSON on their own; add more as the settings panel
@@ -14,7 +15,6 @@ Singleton {
     property alias notchFlare: adapter.notchFlare             // px the notch's top corners flare out (concave teardrop); 0 = square
     property alias islandCollapsedWidth: adapter.islandCollapsedWidth // px, the resting pill
     property alias islandExpandedHeight: adapter.islandExpandedHeight // px, hover/pinned height
-    property alias islandMinWidth: adapter.islandMinWidth     // px floor; it grows past this to fit the media + date
     property alias islandGap: adapter.islandGap               // px above the floating island (and below, via exclusiveZone)
     property alias islandPadding: adapter.islandPadding       // px of extra inset inside the expanded island
     property alias islandRadius: adapter.islandRadius         // px corner radius, collapsed
@@ -22,14 +22,10 @@ Singleton {
     property alias hyprGapsOut: adapter.hyprGapsOut           // must match Hyprland general:gaps_out (top)
     property alias gameBarHeight: adapter.gameBarHeight       // px, Game Mode's full-width bar
     property alias gameClusterGap: adapter.gameClusterGap     // px between each card and the clock in bar form
+    property alias statusPill: adapter.statusPill             // the battery ring + Wi-Fi circle beside the island
+    property alias artPill: adapter.artPill                   // album-art circle on the island's left while a music player is open
+    property alias islandStage: adapter.islandStage           // px the island (and the circles) step forward on hover; 0 = no stage effect
 
-    // ── media (the island's now-playing card) ──
-    property alias mediaTitleWidth: adapter.mediaTitleWidth   // px of song name shown before it elides
-    property alias mediaArtSize: adapter.mediaArtSize         // px, album art square
-    property alias mediaShowAlbum: adapter.mediaShowAlbum     // show the album line
-    property alias mediaShowArtist: adapter.mediaShowArtist   // show the artist line
-    property alias mediaShowTransport: adapter.mediaShowTransport // show prev / play / next
-    property alias mediaScrollSwitch: adapter.mediaScrollSwitch   // scroll over the art to change track
 
     // ── date knob (the dial under the expanded clock) ──
     property alias dateKnobShow: adapter.dateKnobShow         // show it at all
@@ -47,7 +43,9 @@ Singleton {
     property alias launcherRowHeight: adapter.launcherRowHeight
     property alias launcherMaxRows: adapter.launcherMaxRows   // rows visible before it scrolls
     property alias calendarWidth: adapter.calendarWidth
+    property alias mediaPlayerWidth: adapter.mediaPlayerWidth   // px, the media player card
     property alias wallpaperPickerWidth: adapter.wallpaperPickerWidth
+    property alias themeSwitcherWidth: adapter.themeSwitcherWidth
     property alias notificationWidth: adapter.notificationWidth
     property alias osdWidth: adapter.osdWidth
 
@@ -107,11 +105,6 @@ Singleton {
     property alias shadowOffsetY: adapter.shadowOffsetY       // px
     property alias shadowSpread: adapter.shadowSpread         // px, MultiEffect blurMax
 
-    // ── control center sizing ──
-    property alias ccTileHeight: adapter.ccTileHeight
-    property alias ccRowHeight: adapter.ccRowHeight           // wifi / bluetooth / audio device rows
-    property alias ccMediaHeight: adapter.ccMediaHeight       // now-playing card
-
     // ── system ──
     property alias brightnessStep: adapter.brightnessStep     // % per key press
     property alias brightnessPoll: adapter.brightnessPoll     // ms between internal-backlight reads
@@ -119,85 +112,137 @@ Singleton {
     property alias nightLightTemp: adapter.nightLightTemp     // Kelvin
     property alias wallpaperFade: adapter.wallpaperFade       // ms crossfade when the wallpaper changes
 
-    // Control center layout (all editable from the settings panel)
-    property alias ccColumns: adapter.ccColumns            // grid width
-    property alias ccSliders: adapter.ccSliders            // show the volume/brightness sliders
-    property alias ccMedia: adapter.ccMedia                // show the now-playing media card
-    property alias ccNotifications: adapter.ccNotifications// show the notifications section
-    property alias ccTiles: adapter.ccTiles                // JSON [{key,span,enabled}]: stored order + overrides
+    // ── control center layout ──
+    // A FREE-PLACEMENT grid (iOS 18 / macOS Tahoe style: gaps allowed, they persist) of
+    // square cells, edited by drag and drop in Settings. Persisted as ONE JSON string,
+    // {"v":2,"columns":7,"items":[{"key","x","y","w","h"}]}. The CODE owns which controls
+    // exist and which sizes each supports (ccRegistry below); the file only carries the
+    // user's arrangement, so a control added here later just shows up in the gallery.
+    // All geometry and collision logic is in CcLayout.js — pure functions, exercised from
+    // node, because a drag-and-drop editor is the one thing that can't be verified by
+    // dragging things around from a script.
+    property alias ccLayout: adapter.ccLayout
 
-    // The canonical quick-settings tiles. The CODE owns what tiles EXIST and each one's
-    // default size; the stored ccTiles only carries the user's order + overrides. So a
-    // tile you add here later just shows up on its own (appended, enabled). To add one:
-    // drop an entry here plus a case in ControlCenterContent's delegate, and that's it.
+    // sizes are [w,h] in cells; w = 0 means "full width" and resolves to the column count.
+    // `def` is the size a control gets when added (and in the default mosaic).
     readonly property var ccRegistry: [
-        { key: "wifi",       label: "Wi-Fi",       span: 2 },
-        { key: "audio",      label: "Audio",       span: 2 },
-        { key: "bluetooth",  label: "Bluetooth",   span: 2 },
-        { key: "display",    label: "Display",     span: 2 },
-        { key: "peace",      label: "Peace",       span: 1 },
-        { key: "nightlight", label: "Night Light", span: 1 }
+        { key: "wifi",          label: "Wi-Fi",         kind: "toggle",        icon: "",           sizes: [[1,1],[2,1],[3,1],[4,1],[2,2],[3,2]],                    def: [4,1] },
+        { key: "bluetooth",     label: "Bluetooth",     kind: "toggle",        icon: "bluetooth",  sizes: [[1,1],[2,1],[3,1],[4,1],[2,2],[3,2]],                    def: [4,1] },
+        { key: "focus",         label: "Focus",         kind: "toggle",        icon: "dnd",        sizes: [[1,1],[2,1],[3,1],[4,1],[2,2],[3,2]],                    def: [4,1] },
+        { key: "nightlight",    label: "Night Light",   kind: "toggle",        icon: "night",      sizes: [[1,1],[2,1],[3,1],[4,1],[2,2]],                          def: [1,1] },
+        { key: "gamemode",      label: "Game Mode",     kind: "toggle",        icon: "controller", sizes: [[1,1],[2,1],[3,1],[4,1],[2,2]],                          def: [1,1] },
+        { key: "lock",          label: "Lock",          kind: "action",        icon: "lock",       sizes: [[1,1],[2,1],[3,1]],                                      def: [1,1] },
+        { key: "display",       label: "Display",       kind: "slider",        icon: "brightness", sizes: [[3,1],[4,1],[5,1],[6,1],[0,1],[1,2],[2,2],[0,2]],        def: [0,1] },
+        { key: "sound",         label: "Sound",         kind: "slider",        icon: "volume",     sizes: [[3,1],[4,1],[5,1],[6,1],[0,1],[1,2],[2,2],[0,2]],        def: [0,1] },
+        { key: "media",         label: "Now Playing",   kind: "media",         icon: "music",      sizes: [[1,1],[2,1],[4,1],[0,1],[2,2],[3,2],[4,2],[0,2]],        def: [3,2] },
+        { key: "notifications", label: "Notifications", kind: "notifications", icon: "bell",       sizes: [[0,1],[0,2],[0,3],[0,4]],                                def: [0,2] }
     ]
-    function _ccReg(key) {
-        for (let i = 0; i < ccRegistry.length; i++)
-            if (ccRegistry[i].key === key) return ccRegistry[i];
+    function ccReg(key) {
+        for (let i = 0; i < ccRegistry.length; i++) if (ccRegistry[i].key === key) return ccRegistry[i];
         return null;
     }
 
-    // The resolved, ordered tile layout: stored order/overrides first (unknown keys get
-    // dropped), then any registry tiles not stored yet. Shape is [{key,label,span,enabled}].
-    readonly property var ccLayout: {
-        let stored = [];
-        try { stored = JSON.parse(ccTiles || "[]"); } catch (e) { stored = []; }
-        const out = [];
-        const seen = ({});
-        for (let i = 0; i < stored.length; i++) {
-            const s = stored[i];
-            if (!s) continue;
-            const reg = _ccReg(s.key);
-            if (!reg || seen[s.key]) continue;
-            seen[s.key] = true;
-            out.push({ key: s.key, label: reg.label,
-                       span: (s.span === 1 || s.span === 2) ? s.span : reg.span,
-                       enabled: s.enabled !== false });
+    // geometry. The control center rides the launcher's width, minus the morph host's s4
+    // insets; the gap is the shell's s3. Both are derived from Config (not Theme) so the
+    // layout math has no import cycle. The row budget is a PIXEL cap — the panel has to
+    // stay on screen — so narrower grids (bigger cells) hold fewer rows.
+    readonly property int ccGap: spacingUnit * 3
+    readonly property int ccContentW: launcherWidth - spacingUnit * 8
+    readonly property int ccMaxPx: 620
+    readonly property int ccMinColumns: 5
+    readonly property int ccMaxColumns: 9
+
+    readonly property var _ccParsed: {
+        try { const o = JSON.parse(ccLayout || ""); return (o && typeof o === "object") ? o : null; }
+        catch (e) { return null; }
+    }
+    readonly property int ccColumns: Math.max(ccMinColumns, Math.min(ccMaxColumns, (_ccParsed && _ccParsed.columns) ? (_ccParsed.columns | 0) : 7))
+    readonly property real ccCell: CcLayout.cellSize(ccContentW, ccColumns, ccGap)
+    readonly property int ccMaxRows: CcLayout.maxRowsFor(ccContentW, ccColumns, ccGap, ccMaxPx)
+    // the validated arrangement: unknown keys dropped, sizes snapped, overlaps repaired
+    readonly property var ccItems: (_ccParsed && Array.isArray(_ccParsed.items))
+        ? CcLayout.normalize(_ccParsed.items, ccRegistry, ccColumns, ccMaxRows)
+        : CcLayout.defaults(ccRegistry, ccColumns, ccMaxRows)
+    readonly property int ccRows: Math.max(1, CcLayout.rows(ccItems))
+    // registry entries not currently placed (the gallery)
+    readonly property var ccAvailable: ccRegistry.filter(r => !ccItems.some(i => i.key === r.key))
+
+    function ccItem(key) {
+        for (let i = 0; i < ccItems.length; i++) if (ccItems[i].key === key) return ccItems[i];
+        return null;
+    }
+    function ccSizesFor(key) { const r = ccReg(key); return r ? CcLayout.sizesFor(r, ccColumns) : []; }
+    function ccSnapSize(key, w, h) { const r = ccReg(key); return r ? CcLayout.snapSize(r, ccColumns, w, h) : [1, 1]; }
+    function ccFits(x, y, w, h, skip) { return CcLayout.fits(ccItems, ccColumns, ccMaxRows, x, y, w, h, skip); }
+
+    // single-step undo, session-only (Android 16's editor has exactly this)
+    property string ccUndoJson: ""
+    readonly property bool ccCanUndo: ccUndoJson !== ""
+    function _ccWrite(items, cols) {
+        ccUndoJson = ccLayout;
+        ccLayout = JSON.stringify({ v: 2, columns: cols, items: items });
+    }
+    function ccUndo() {
+        if (!ccCanUndo) return;
+        const prev = ccUndoJson;
+        ccUndoJson = "";
+        ccLayout = prev;
+    }
+
+    // Every mutation returns true if it was applied. A false means "doesn't fit" — nothing
+    // is ever dropped silently; the editor shows the refusal instead.
+    function ccPlace(key, x, y, w, h) {
+        const cur = ccItem(key);
+        if (!cur && !ccReg(key)) return false;
+        const sz = ccSnapSize(key, w, h);
+        const next = CcLayout.place(ccItems, ccColumns, ccMaxRows, key, x, y, sz[0], sz[1]);
+        if (!next || next.length < (cur ? ccItems.length : ccItems.length + 1)) return false;
+        _ccWrite(next, ccColumns);
+        return true;
+    }
+    function ccResize(key, w, h) {
+        const cur = ccItem(key);
+        if (!cur) return false;
+        const sz = ccSnapSize(key, w, h);
+        // keep the top-left, but pull back inside the grid if the new size would poke out
+        const x = Math.min(cur.x, ccColumns - sz[0]);
+        const y = Math.min(cur.y, ccMaxRows - sz[1]);
+        return ccPlace(key, x, y, sz[0], sz[1]);
+    }
+    function ccNudge(key, dx, dy) {
+        const cur = ccItem(key);
+        if (!cur) return false;
+        return ccPlace(key, cur.x + dx, cur.y + dy, cur.w, cur.h);
+    }
+    function ccRemove(key) {
+        if (!ccItem(key)) return false;
+        _ccWrite(ccItems.filter(i => i.key !== key), ccColumns);
+        return true;
+    }
+    // add at (x,y) if given, else at the first free footprint (iOS: "lands at the first free spot")
+    function ccAdd(key, x, y) {
+        const r = ccReg(key);
+        if (!r || ccItem(key)) return false;
+        const sz = CcLayout.resolveSize(r.def, ccColumns);
+        if (x === undefined || y === undefined) {
+            const spot = CcLayout.firstFree(ccItems, ccColumns, ccMaxRows, sz[0], sz[1], null, 0, 0);
+            if (!spot) return false;
+            x = spot.x; y = spot.y;
         }
-        for (let i = 0; i < ccRegistry.length; i++) {
-            const r = ccRegistry[i];
-            if (seen[r.key]) continue;
-            out.push({ key: r.key, label: r.label, span: r.span, enabled: true });
-        }
-        return out;
+        return ccPlace(key, x, y, sz[0], sz[1]);
     }
-    // the tiles that actually render, in order
-    readonly property var ccVisibleTiles: ccLayout.filter(t => t.enabled)
-
-    function _ccClone() {
-        return ccLayout.map(t => ({ key: t.key, span: t.span, enabled: t.enabled }));
+    function ccTidy() { _ccWrite(CcLayout.tidy(ccItems, ccColumns, ccMaxRows), ccColumns); return true; }
+    function ccReset() { _ccWrite(CcLayout.defaults(ccRegistry, 7, CcLayout.maxRowsFor(ccContentW, 7, ccGap, ccMaxPx)), 7); return true; }
+    // refused when the current layout would not survive the new cell budget
+    function ccSetColumns(n) {
+        n = Math.max(ccMinColumns, Math.min(ccMaxColumns, n | 0));
+        if (n === ccColumns) return true;
+        const rowsAt = CcLayout.maxRowsFor(ccContentW, n, ccGap, ccMaxPx);
+        const next = CcLayout.normalize(ccItems, ccRegistry, n, rowsAt);
+        if (next.length < ccItems.length) return false;
+        _ccWrite(next, n);
+        return true;
     }
-    function _ccPersist(arr) { ccTiles = JSON.stringify(arr); }
-
-    function ccSetEnabled(key, on) {
-        const a = _ccClone();
-        for (let i = 0; i < a.length; i++) if (a[i].key === key) a[i].enabled = on;
-        _ccPersist(a);
-    }
-    function ccSetSpan(key, span) {
-        const a = _ccClone();
-        for (let i = 0; i < a.length; i++) if (a[i].key === key) a[i].span = span;
-        _ccPersist(a);
-    }
-    function ccMove(key, dir) {
-        const a = _ccClone();
-        let i = -1;
-        for (let j = 0; j < a.length; j++) if (a[j].key === key) { i = j; break; }
-        if (i < 0) return;
-        const t = i + dir;
-        if (t < 0 || t >= a.length) return;
-        const tmp = a[i]; a[i] = a[t]; a[t] = tmp;
-        _ccPersist(a);
-    }
-
-
 
     FileView {
         path: `${Quickshell.env("HOME")}/.config/quickshell/config.json`
@@ -213,7 +258,6 @@ Singleton {
             property int notchFlare: 14
             property int islandCollapsedWidth: 150
             property int islandExpandedHeight: 120
-            property int islandMinWidth: 500
             property int islandGap: 8
             property int islandPadding: 2
             property int islandRadius: 20
@@ -221,13 +265,10 @@ Singleton {
             property int hyprGapsOut: 15
             property int gameBarHeight: 50
             property int gameClusterGap: 180
+            property bool statusPill: true
+            property bool artPill: true
+            property int islandStage: 7
             // media
-            property int mediaTitleWidth: 104
-            property int mediaArtSize: 90
-            property bool mediaShowAlbum: true
-            property bool mediaShowArtist: true
-            property bool mediaShowTransport: true
-            property bool mediaScrollSwitch: true
             // date knob
             property bool dateKnobShow: true
             property int dateKnobDays: 7
@@ -242,7 +283,9 @@ Singleton {
             property int launcherRowHeight: 48
             property int launcherMaxRows: 7
             property int calendarWidth: 360
+            property int mediaPlayerWidth: 440
             property int wallpaperPickerWidth: 1040
+            property int themeSwitcherWidth: 860
             property int notificationWidth: 480
             property int osdWidth: 300
             // notifications
@@ -295,22 +338,14 @@ Singleton {
             property int shadowBlur: 100         // %
             property int shadowOffsetY: 8
             property int shadowSpread: 80
-            // control center sizing
-            property int ccTileHeight: 64
-            property int ccRowHeight: 40
-            property int ccMediaHeight: 148
             // system
             property int brightnessStep: 5
             property int brightnessPoll: 2000
             property int batteryLowThreshold: 20
             property int nightLightTemp: 3000
             property int wallpaperFade: 450
-            // control center
-            property int ccColumns: 4
-            property bool ccSliders: true
-            property bool ccMedia: true
-            property bool ccNotifications: true
-            property string ccTiles: ""
+            // control center layout (see ccRegistry / CcLayout.js)
+            property string ccLayout: ""
         }
     }
 }

@@ -75,37 +75,47 @@ Singleton {
     readonly property color accentDeep: Qt.darker(accent, 1.18)          // for pressed/active
     readonly property color onAccent: lum(accent) > 0.55 ? "#0b0b0b" : "#f6f6f6" // readable ink on accent
 
-    // The shell (island + all its surfaces) is solid BLACK, so elevation is built from
-    // relatives of black, NOT the wallpaper-tinted `background`: near-black greys that carry
-    // a whisper of the fg hue so they still fit the scheme. `background` stays palette-derived
-    // for the true desktop base (wallpaper fallback / scrim). Accents are untouched.
-    readonly property color base: "#000000"
+    // Scheme polarity. "Light" means the text is darker than the paper — the one test that
+    // holds for any scheme, curated or dynamic, with no magic luminance cutoff to mis-fire.
+    readonly property bool isLight: lum(background) > lum(foreground)
 
-    // The shell's island is solid black, so EVERYTHING in it must read on black. The palette
-    // fg only reads there when it's LIGHT (dark themes). Light themes (e-ink) hand us a DARK
-    // fg; ink flips to a light neutral in that case, or the whole shell would be dark-on-black.
-    // This is the single source of truth for ink; accents are handled separately by onAccent.
-    readonly property color inkBase: lum(foreground) > 0.4 ? foreground : "#f5f5f5"
+    // The shell (island + all its surfaces) is solid BLACK on a dark scheme, so elevation is
+    // built from relatives of black, NOT the wallpaper-tinted `background`: near-black greys
+    // that carry a whisper of the fg hue so they still fit the scheme. `background` stays
+    // palette-derived for the true desktop base (wallpaper fallback). Accents are untouched.
+    //
+    // A LIGHT scheme (e-ink) flips the base to the scheme's own paper tone. The same
+    // mix-toward-ink elevation steps then DARKEN it, which is how a light UI reads depth too.
+    // Black was hardcoded here before, and under e-ink's #0a0a0a foreground that collapsed
+    // ink and surface into the same near-black: every panel rendered as black text on black.
+    readonly property color base: isLight ? background : "#000000"
+
+    // a RECESSED fill (slider troughs, wells): sinks toward black on dark, toward ink on light
+    readonly property color sunken: isLight ? alpha(foreground, 0.08) : Qt.rgba(0, 0, 0, 0.45)
 
     // surface fills (base / panel / modal): opaque near-black elevation steps. The step size
     // is user-tunable (settings → Appearance → "Surface lift"); each level is roughly double
     // the one below so the three stay distinguishable at any setting.
     readonly property real surfaceStep: Config.surfaceTint / 100
-    readonly property color surfaceBase: mix(base, inkBase, surfaceStep)
-    readonly property color surfacePanel: mix(base, inkBase, surfaceStep * 2)
-    readonly property color surfaceOverlay: mix(base, inkBase, surfaceStep * 3.3)
+    readonly property color surfaceBase: mix(base, foreground, surfaceStep)
+    readonly property color surfacePanel: mix(base, foreground, surfaceStep * 2)
+    readonly property color surfaceOverlay: mix(base, foreground, surfaceStep * 3.3)
 
 
-    // ink (text/icon), derived from inkBase so it stays readable on the black shell
-    readonly property color inkPrimary: inkBase
-    readonly property color inkDim: alpha(inkBase, Config.inkDimAlpha / 100)
-    readonly property color inkFaint: alpha(inkBase, Config.inkFaintAlpha / 100)
+    // ink (text/icon), derived from fg so it adapts to light schemes
+    readonly property color inkPrimary: foreground
+    readonly property color inkDim: alpha(foreground, Config.inkDimAlpha / 100)
+    readonly property color inkFaint: alpha(foreground, Config.inkFaintAlpha / 100)
 
     // flat fill tints (solid-looking, NOT glass, nothing blurs behind them) +
-    // hairline (borders/dividers). From inkBase so they show up on light schemes too.
-    readonly property color fillLow: alpha(inkBase, Config.fillLowAlpha / 100)
-    readonly property color fillHigh: alpha(inkBase, Config.fillHighAlpha / 100)
-    readonly property color hairline: alpha(inkBase, Config.hairlineAlpha / 100)
+    // hairline (borders/dividers). Derived from fg so they adapt to light schemes.
+    readonly property color fillLow: alpha(foreground, Config.fillLowAlpha / 100)
+    readonly property color fillHigh: alpha(foreground, Config.fillHighAlpha / 100)
+    readonly property color hairline: alpha(foreground, Config.hairlineAlpha / 100)
+    // the RIM on control-center tiles: a step QUIETER than a divider hairline. A tile's edge
+    // only has to hint at where the surface ends against the black island; at full hairline
+    // strength it read as an outline.
+    readonly property color rim: alpha(foreground, Config.hairlineAlpha / 100 * 0.6)
     // legacy aliases (pre-flat name); move call sites over to fill* over time
     readonly property color glassLow: fillLow
     readonly property color glassHigh: fillHigh

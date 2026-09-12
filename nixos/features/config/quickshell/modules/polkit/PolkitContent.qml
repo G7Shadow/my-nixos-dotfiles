@@ -3,8 +3,11 @@ import Quickshell
 import "../../theme"
 import "../../services"
 import "../../components"
+import "../controlcenter"
 
-// Polkit auth prompt shown INSIDE the bar island (it morphs into this, see Bar.qml).
+// Polkit auth prompt shown INSIDE the bar island (it morphs into this, see Bar.qml), in the
+// control center's language: a sheet header with a live disc, a hero card carrying the
+// request, a sunken pill for the secret with the key in its own disc, chips for the verbs.
 // Same security rules as the old standalone dialog, don't loosen any of 'em:
 //  * shows the REAL action (message + action id) so an app can't fake a generic prompt;
 //  * the island holds EXCLUSIVE keyboard focus while morphed (Bar sets that) so
@@ -19,23 +22,24 @@ Item {
     clip: true
 
     readonly property var flow: Polkit.flow
-
-    readonly property string statusText: {
+    readonly property bool waiting: !!flow && flow.isResponseRequired
+    readonly property bool checking: !!flow && !flow.isResponseRequired && !flow.isCompleted
+    readonly property string errorText: {
         const f = Polkit.flow;
         if (!f) return "";
-        if (!f.isResponseRequired && !f.isCompleted) return "Authenticating…";
-        if ((f.supplementaryMessage || "") !== "") return f.supplementaryMessage;
-        if (f.failed) return "Authentication failed, try again";
+        if ((f.supplementaryMessage || "") !== "" && f.supplementaryIsError) return f.supplementaryMessage;
+        if (f.failed) return "That password was not accepted";
         return "";
     }
-    readonly property bool statusIsError: {
+    readonly property string infoText: {
         const f = Polkit.flow;
-        return f ? (f.failed || f.supplementaryIsError) : false;
+        if (!f) return "";
+        return ((f.supplementaryMessage || "") !== "" && !f.supplementaryIsError) ? f.supplementaryMessage : "";
     }
 
     function cancel() { if (Polkit.flow) Polkit.flow.cancelAuthenticationRequest(); }
     function submit() {
-        if (Polkit.flow && Polkit.flow.isResponseRequired) {
+        if (Polkit.flow && Polkit.flow.isResponseRequired && pwField.text !== "") {
             Polkit.flow.submit(pwField.text);
             pwField.text = "";
         }
@@ -48,12 +52,13 @@ Item {
         }
     }
 
-    // Wrong password? Clear it and refocus so they can have another go.
+    // Wrong password? Clear it, shake the field once, refocus so they can have another go.
     Connections {
         target: Polkit.flow
         ignoreUnknownSignals: true
         function onAuthenticationFailed() {
             pwField.text = "";
+            shake.restart();
             pwField.forceActiveFocus();
         }
     }
@@ -65,104 +70,165 @@ Item {
         anchors.top: parent.top
         spacing: Theme.s3
 
-        // header: lock icon + title
-        Row {
-            spacing: Theme.s2
-            Icon {
+        // ── header: the sheet header's row, a live disc where the back disc would be ──
+        Item {
+            width: parent.width
+            height: 32
+            CcSheetBits.Disc {
+                id: headDisc
+                anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
-                name: "lock"; color: Theme.accent
+                size: 32
+                live: true
+                Icon { anchors.centerIn: parent; name: "lock"; size: 16; color: Theme.onAccent }
             }
             StyledText {
-                anchors.verticalCenter: parent.verticalCenter
+                anchors.left: headDisc.right
+                anchors.leftMargin: Theme.s3
+                capCentreIn: parent
                 variant: "header"
-                text: "Authentication Required"
+                text: "Authentication required"
                 color: Theme.inkPrimary
             }
         }
 
-        // the real action they're authorizing, so a rogue app can't spoof a vague one
-        StyledText {
-            width: parent.width
-            wrapMode: Text.Wrap
-            variant: "body"
-            text: root.flow ? (root.flow.message || "An application is requesting elevated privileges.") : ""
-            color: Theme.inkPrimary
-        }
-        StyledText {
-            width: parent.width
-            visible: root.flow && (root.flow.actionId || "") !== ""
-            elide: Text.ElideRight
-            variant: "caption"
-            text: root.flow ? root.flow.actionId : ""
-            color: Theme.inkDim
-        }
-
-        // password field, masked unless polkit says the response should show
+        // ── hero: what is actually being asked, verbatim from polkit ──
         Rectangle {
+            id: hero
             width: parent.width
-            height: 44
-            radius: Theme.rMd
+            implicitHeight: heroCol.implicitHeight + Theme.s3 * 2
+            radius: Theme.rLg
             color: Theme.fillLow
-            border.color: root.statusIsError ? Theme.bad : Theme.hairline
-            border.width: 1
-
-            TextInput {
-                id: pwField
-                anchors.fill: parent
-                anchors.leftMargin: Theme.s3
-                anchors.rightMargin: Theme.s3
-                verticalAlignment: TextInput.AlignVCenter
-                echoMode: (root.flow && root.flow.responseVisible) ? TextInput.Normal : TextInput.Password
-                passwordCharacter: "•"
-                color: Theme.inkPrimary
-                font.family: Theme.fontBody
-                font.pixelSize: Theme.fsBody
-                clip: true
-                enabled: root.flow ? root.flow.isResponseRequired : false
-                onAccepted: root.submit()
-                Keys.onEscapePressed: root.cancel()
-
+            Rectangle { anchors.fill: parent; radius: parent.radius; color: "transparent"; border.width: 1; border.color: Theme.rim }
+            Column {
+                id: heroCol
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.margins: Theme.s3
+                spacing: 3
                 StyledText {
-                    anchors.verticalCenter: parent.verticalCenter
-                    visible: pwField.text === ""
+                    width: parent.width
+                    wrapMode: Text.Wrap
                     variant: "body"
-                    text: (root.flow && root.flow.inputPrompt) ? root.flow.inputPrompt : "Password"
-                    color: Theme.inkFaint
+                    font.weight: Theme.wMedium
+                    text: root.flow ? (root.flow.message || "An application is requesting elevated privileges.") : ""
+                    color: Theme.inkPrimary
+                }
+                StyledText {
+                    width: parent.width
+                    visible: root.flow && (root.flow.actionId || "") !== ""
+                    elide: Text.ElideRight
+                    variant: "caption"
+                    text: root.flow ? root.flow.actionId : ""
+                    color: Theme.inkDim
                 }
             }
         }
 
-        // status line: "Authenticating..." while it checks, error on a failure
+        // ── eyebrow: the field's label, or the pulse while polkitd checks ──
+        CcSheetBits.SectionLabel {
+            text: root.checking ? "" : ((root.flow && root.flow.inputPrompt) ? root.flow.inputPrompt.replace(/:\s*$/, "") : "Password")
+            busy: root.checking
+            busyText: "Authenticating"
+        }
+
+        // ── the secret: a sunken pill with the key in its own disc (the sheets' Track form) ──
+        Item {
+            id: fieldWrap
+            width: parent.width
+            height: 44
+            transform: Translate { id: shakeT; x: 0 }
+            SequentialAnimation {
+                id: shake
+                NumberAnimation { target: shakeT; property: "x"; to: -7; duration: 45 }
+                NumberAnimation { target: shakeT; property: "x"; to: 6; duration: 70 }
+                NumberAnimation { target: shakeT; property: "x"; to: -3; duration: 60 }
+                NumberAnimation { target: shakeT; property: "x"; to: 0; duration: Theme.dur(Theme.dFast); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier }
+            }
+            Rectangle {
+                id: field
+                anchors.fill: parent
+                radius: Theme.rPill
+                color: Theme.sunken
+                border.width: 1
+                border.color: root.errorText !== "" ? Theme.bad : pwField.activeFocus ? Theme.alpha(Theme.accent, 0.55) : Theme.rim
+                Behavior on border.color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
+                opacity: root.waiting ? 1 : 0.55
+                Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dFast) } }
+
+                CcSheetBits.Disc {
+                    id: keyDisc
+                    anchors.left: parent.left
+                    anchors.leftMargin: 6
+                    anchors.verticalCenter: parent.verticalCenter
+                    size: 32
+                    live: pwField.text !== ""
+                    Icon { anchors.centerIn: parent; name: "lock"; size: 15; color: keyDisc.live ? Theme.onAccent : Theme.inkDim }
+                }
+                TextInput {
+                    id: pwField
+                    anchors.left: keyDisc.right
+                    anchors.leftMargin: Theme.s3
+                    anchors.right: parent.right
+                    anchors.rightMargin: Theme.s4
+                    anchors.verticalCenter: parent.verticalCenter
+                    echoMode: (root.flow && root.flow.responseVisible) ? TextInput.Normal : TextInput.Password
+                    passwordCharacter: "•"
+                    color: Theme.inkPrimary
+                    font.family: Theme.fontBody
+                    font.pixelSize: Theme.fsBody
+                    clip: true
+                    enabled: root.waiting
+                    onAccepted: root.submit()
+                    Keys.onEscapePressed: root.cancel()
+                    StyledText {
+                        capCentreIn: parent
+                        visible: pwField.text === "" && root.waiting
+                        variant: "body"
+                        text: "Enter your password"
+                        color: Theme.inkFaint
+                    }
+                }
+            }
+        }
+
+        // ── status: an error in red, or polkit's own note ──
         StyledText {
             width: parent.width
             wrapMode: Text.Wrap
-            visible: root.statusText !== ""
+            visible: text !== ""
             variant: "caption"
-            text: root.statusText
-            color: root.statusIsError ? Theme.bad : Theme.inkDim
+            text: root.errorText !== "" ? root.errorText : root.infoText
+            color: root.errorText !== "" ? Theme.bad : Theme.inkDim
         }
 
-        // buttons
-        Row {
-            anchors.right: parent.right
-            spacing: Theme.s2
-
-            Rectangle {
-                width: cancelLabel.implicitWidth + Theme.s4
-                height: 34
-                radius: Theme.rMd
-                color: cancelMa.containsMouse ? Theme.fillHigh : Theme.fillLow
-                Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
-                StyledText { id: cancelLabel; anchors.centerIn: parent; variant: "label"; text: "Cancel"; color: Theme.inkPrimary }
-                MouseArea { id: cancelMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.cancel() }
-            }
-            Rectangle {
-                width: authLabel.implicitWidth + Theme.s4
-                height: 34
-                radius: Theme.rMd
-                color: Theme.accent
-                StyledText { id: authLabel; anchors.centerIn: parent; variant: "label"; font.weight: Theme.wMedium; text: "Authenticate"; color: Theme.onAccent }
-                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.submit() }
+        // ── verbs: a quiet chip and an accent one, the sheets' chip form at button height ──
+        Item {
+            width: parent.width
+            height: 34
+            Row {
+                anchors.right: parent.right
+                spacing: Theme.s2
+                Rectangle {
+                    width: cancelLabel.implicitWidth + Theme.s4 * 2
+                    height: 34
+                    radius: 17
+                    color: cancelMa.containsMouse ? Theme.fillHigh : Theme.fillLow
+                    Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
+                    StyledText { id: cancelLabel; anchors.horizontalCenter: parent.horizontalCenter; capCentreIn: parent; variant: "label"; font.weight: Theme.wMedium; text: "Cancel"; color: Theme.inkPrimary }
+                    MouseArea { id: cancelMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.cancel() }
+                }
+                Rectangle {
+                    width: authLabel.implicitWidth + Theme.s4 * 2
+                    height: 34
+                    radius: 17
+                    color: Theme.accent
+                    opacity: root.waiting ? (authMa.containsMouse ? 0.9 : 1) : 0.45
+                    Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dFast) } }
+                    StyledText { id: authLabel; anchors.horizontalCenter: parent.horizontalCenter; capCentreIn: parent; variant: "label"; font.weight: Theme.wMedium; text: "Authenticate"; color: Theme.onAccent }
+                    MouseArea { id: authMa; anchors.fill: parent; hoverEnabled: true; enabled: root.waiting; cursorShape: Qt.PointingHandCursor; onClicked: root.submit() }
+                }
             }
         }
     }

@@ -1,4 +1,13 @@
 //@ pragma UseQApplication
+// EVERY text surface renders through fontconfig. Qt Quick's own default is QtTextRendering
+// — a distance field, which ignores hinting and does grayscale-only AA, so none of
+// ~/.config/fontconfig (hintslight, rgb subpixel, lcddefault) reaches it. This flips the
+// application-wide default to native, which is what actually reads those settings. It
+// matters because the shell is full of raw Text/TextInput elements that don't go through
+// StyledText — the search fields, the lock screen, the settings window — and those follow
+// the default, not StyledText's explicit setting. Read once at startup: needs a full
+// restart, not a hot reload.
+//@ pragma NativeTextRendering
 import QtQuick
 import Quickshell
 import Quickshell.Hyprland
@@ -257,6 +266,14 @@ ShellRoot {
         function toggle() { GlobalState.toggleCalendar(); }
         function open() { GlobalState.calendarOpen = true; }
         function close() { GlobalState.calendarOpen = false; }
+    }
+
+    // qs ipc call media toggle|open|close
+    IpcHandler {
+        target: "media"
+        function toggle() { GlobalState.toggleMediaPlayer(); }
+        function open() { GlobalState.mediaPlayerOpen = true; }
+        function close() { GlobalState.mediaPlayerOpen = false; }
     }
 
     // qs ipc call nightlight toggle  /  qs ipc call gamemode toggle

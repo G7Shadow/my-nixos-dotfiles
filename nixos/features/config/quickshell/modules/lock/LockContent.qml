@@ -180,8 +180,6 @@ Item {
             font.weight: 600
             font.pixelSize: Math.round(root.height * 0.024)
             color: Qt.rgba(1, 1, 1, 0.82)
-            renderType: Text.QtRendering
-            renderTypeQuality: Text.VeryHighRenderTypeQuality   // macOS-match: big distance-field texture so QtRendering isn't soft
             layer.enabled: true
             layer.effect: MultiEffect { shadowEnabled: true; shadowColor: Qt.rgba(0,0,0,0.35); shadowBlur: 0.5; shadowVerticalOffset: 1; blurMax: 16 }
         }
@@ -194,8 +192,6 @@ Item {
             font.letterSpacing: -7
             font.weight: 600
             color: Qt.rgba(1, 1, 1, 0.82)
-            renderType: Text.QtRendering
-            renderTypeQuality: Text.VeryHighRenderTypeQuality   // macOS-match: big distance-field texture so QtRendering isn't soft
             layer.enabled: true
             layer.effect: MultiEffect {
                 shadowEnabled: true
@@ -245,8 +241,6 @@ Item {
             font.letterSpacing: -0.5
             font.pixelSize: Math.round(root.height * 0.017)
             color: Qt.rgba(1, 1, 1, 0.95)
-            renderType: Text.QtRendering
-            renderTypeQuality: Text.VeryHighRenderTypeQuality   // macOS-match: big distance-field texture so QtRendering isn't soft
             layer.enabled: true
             layer.effect: MultiEffect { shadowEnabled: true; shadowColor: Qt.rgba(0,0,0,0.3); shadowBlur: 0.5; shadowVerticalOffset: 1; blurMax: 12 }
         }
@@ -269,8 +263,6 @@ Item {
                 font.letterSpacing: -0.5
                 font.pixelSize: Math.round(root.height * 0.0135)
                 color: Qt.rgba(1, 1, 1, 0.6)
-                renderType: Text.QtRendering
-                renderTypeQuality: Text.VeryHighRenderTypeQuality   // macOS-match: big distance-field texture so QtRendering isn't soft
                 layer.enabled: true
                 layer.effect: MultiEffect { shadowEnabled: true; shadowColor: Qt.rgba(0,0,0,0.3); shadowBlur: 0.5; shadowVerticalOffset: 1; blurMax: 10 }
             }
@@ -340,8 +332,6 @@ Item {
                         font.weight: 700
                         font.letterSpacing: -0.5
                         color: Qt.rgba(1, 1, 1, 0.6)
-                        renderType: Text.QtRendering
-                        renderTypeQuality: Text.VeryHighRenderTypeQuality
                     }
                 }
             }

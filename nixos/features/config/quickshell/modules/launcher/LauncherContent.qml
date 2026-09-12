@@ -160,7 +160,7 @@ Item {
                 Keys.onEscapePressed: root.close()
 
                 StyledText {
-                    anchors.verticalCenter: parent.verticalCenter
+                    capCentreIn: parent
                     visible: field.text.length === 0
                     variant: "body"
                     color: Theme.inkFaint

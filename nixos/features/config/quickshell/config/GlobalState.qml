@@ -13,7 +13,11 @@ Singleton {
     property bool wallpaperPickerOpen: false
     property bool themeSwitcherOpen: false
     property bool settingsOpen: false
+    // which Settings page to land on when it next opens ("" = wherever it was left). The
+    // control center's "Edit in Settings" chip sets it so you arrive on the layout editor.
+    property string settingsPage: ""
     property bool calendarOpen: false
+    property bool mediaPlayerOpen: false
 
     // Only ONE island panel open at a time. We enforce it here, not at the call sites, so
     // it holds no matter how a panel got opened: a toggle, an IPC open(), or one picker
@@ -23,13 +27,18 @@ Singleton {
     // prompt is up.) settings is DELIBERATELY excluded: it's its own floating window now,
     // not an island morph, so it coexists with the island. Clicking the island (which opens
     // one of these panels) must NOT close the settings window, and vice versa.
+    // The control center and the media player are the exception to each other: each grows
+    // out of its own circle into its own host, so both can be up at once. (When one of them
+    // has to morph the island instead, the bar closes the other itself.)
     function keepOnly(which) {
+        const circles = (which === "cc" || which === "media");
         if (which !== "launcher")  launcherOpen = false;
-        if (which !== "cc")        controlCenterOpen = false;
+        if (which !== "cc" && !circles)        controlCenterOpen = false;
         if (which !== "logout")    logoutOpen = false;
         if (which !== "wallpaper") wallpaperPickerOpen = false;
         if (which !== "theme")     themeSwitcherOpen = false;
         if (which !== "calendar")  calendarOpen = false;
+        if (which !== "media" && !circles)     mediaPlayerOpen = false;
     }
     onLauncherOpenChanged:        if (launcherOpen)         keepOnly("launcher");
     onControlCenterOpenChanged:   if (controlCenterOpen)    keepOnly("cc");
@@ -37,6 +46,7 @@ Singleton {
     onWallpaperPickerOpenChanged: if (wallpaperPickerOpen)  keepOnly("wallpaper");
     onThemeSwitcherOpenChanged:   if (themeSwitcherOpen)    keepOnly("theme");
     onCalendarOpenChanged:        if (calendarOpen)         keepOnly("calendar");
+    onMediaPlayerOpenChanged:     if (mediaPlayerOpen)      keepOnly("media");
 
     // Do Not Disturb: suppresses notification popups, though history still records them.
     property bool dnd: false
@@ -54,4 +64,5 @@ Singleton {
     function toggleThemeSwitcher() { themeSwitcherOpen = !themeSwitcherOpen; }
     function toggleSettings() { settingsOpen = !settingsOpen; }
     function toggleCalendar() { calendarOpen = !calendarOpen; }
+    function toggleMediaPlayer() { mediaPlayerOpen = !mediaPlayerOpen; }
 }

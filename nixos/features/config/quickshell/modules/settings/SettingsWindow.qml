@@ -29,17 +29,30 @@ FloatingWindow {
     // shapes the name text into its icon), `desc` the header blurb.
     readonly property var cats: [
         { key: "bar",        label: "Bar & Island",   glyph: "web_asset",        c: "#3b82f6", desc: "Shape and size of the island, the notch, and the Game Mode bar." },
-        { key: "media",      label: "Media",          glyph: "music_note",       c: "#e0457b", desc: "The now-playing card inside the expanded island." },
         { key: "clock",      label: "Clock & Date",   glyph: "schedule",         c: "#f2a33c", desc: "Time format and the date dial under the clock." },
         { key: "appearance", label: "Appearance",     glyph: "palette",          c: "#7c6cf0", desc: "Theme, wallpaper, fonts, corners, and surface depth." },
         { key: "motion",     label: "Motion",         glyph: "animation",        c: "#22b8cf", desc: "How fast the shell animates, or whether it animates at all." },
         { key: "launcher",   label: "Launcher",       glyph: "search",           c: "#2fb463", desc: "Size of the app launcher and its result rows." },
         { key: "notif",      label: "Notifications",  glyph: "notifications",    c: "#ef4444", desc: "How long popups stay up and how much they show." },
-        { key: "cc",         label: "Control Center", glyph: "tune",             c: "#14b8a6", desc: "Grid columns, sections, sizing, and the tiles inside." },
+        { key: "cc",         label: "Control Center", glyph: "tune",             c: "#14b8a6", desc: "Arrange, resize, add and remove the controls." },
         { key: "lock",       label: "Lock Screen",    glyph: "lock",             c: "#8b5cf6", desc: "Blur, dimming, and the password field." },
         { key: "system",     label: "System",         glyph: "settings",         c: "#94a3b8", desc: "Key steps, thresholds, and hardware polling." }
     ]
     readonly property var cat: cats[currentIndex]
+
+    // Openers can ask for a page (GlobalState.settingsPage, e.g. the control center's
+    // "edit layout" button). Consumed on open so a later plain toggle lands wherever the
+    // user left off, not back on that page.
+    Connections {
+        target: GlobalState
+        function onSettingsOpenChanged() {
+            if (GlobalState.settingsOpen && GlobalState.settingsPage !== "") {
+                const i = win.cats.findIndex(c => c.key === GlobalState.settingsPage);
+                if (i >= 0) win.currentIndex = i;
+                GlobalState.settingsPage = "";
+            }
+        }
+    }
 
     // ── reusable grouped-row bits (a card is just a rounded surfacePanel wrapping these) ──
 
@@ -66,7 +79,8 @@ FloatingWindow {
             variant: "label"; text: sr.label; color: Theme.inkPrimary
         }
         StyledText {
-            anchors { right: parent.right; rightMargin: Theme.s4; verticalCenter: srLabel.verticalCenter }
+            anchors { right: parent.right; rightMargin: Theme.s4 }
+            capCentreIn: srLabel
             variant: "label"; font.features: { "tnum": 1 }
             text: Math.round(sr.value) + (sr.unit ? " " + sr.unit : "")
             color: Theme.inkDim
@@ -93,7 +107,8 @@ FloatingWindow {
             height: 1; color: Theme.hairline
         }
         StyledText {
-            anchors { left: parent.left; leftMargin: Theme.s4; verticalCenter: parent.verticalCenter }
+            anchors { left: parent.left; leftMargin: Theme.s4 }
+            capCentreIn: parent
             variant: "label"; text: tr.label; color: Theme.inkPrimary
         }
         Toggle {
@@ -123,13 +138,14 @@ FloatingWindow {
             height: 1; color: Theme.hairline
         }
         StyledText {
-            anchors { left: parent.left; leftMargin: Theme.s4; verticalCenter: parent.verticalCenter }
+            anchors { left: parent.left; leftMargin: Theme.s4 }
+            capCentreIn: parent
             variant: "label"; text: lr.label; color: Theme.inkPrimary
         }
         Row {
             anchors { right: parent.right; rightMargin: Theme.s4; verticalCenter: parent.verticalCenter }
             spacing: Theme.s1
-            StyledText { anchors.verticalCenter: parent.verticalCenter; variant: "label"; text: lr.value; color: Theme.inkDim }
+            StyledText { capCentreIn: parent; variant: "label"; text: lr.value; color: Theme.inkDim }
             Icon { anchors.verticalCenter: parent.verticalCenter; name: "back"; rotation: 180; size: 14; color: Theme.inkFaint }
         }
         MouseArea {
@@ -156,7 +172,8 @@ FloatingWindow {
             height: 1; color: Theme.hairline
         }
         StyledText {
-            anchors { left: parent.left; leftMargin: Theme.s4; verticalCenter: parent.verticalCenter }
+            anchors { left: parent.left; leftMargin: Theme.s4 }
+            capCentreIn: parent
             variant: "label"; text: txr.label; color: Theme.inkPrimary
         }
         Rectangle {
@@ -330,7 +347,7 @@ FloatingWindow {
                                     }
                                 }
                                 StyledText {
-                                    anchors.verticalCenter: parent.verticalCenter
+                                    capCentreIn: parent
                                     variant: "label"
                                     text: modelData.label
                                     color: Theme.inkPrimary
@@ -467,14 +484,16 @@ FloatingWindow {
                                 SliderRow { label: "Bar height"; unit: "px"; from: 24; to: 64; value: Config.barHeight; onMoved: Config.barHeight = Math.round(v) }
                                 SliderRow { label: "Collapsed width"; unit: "px"; from: 90; to: 400; value: Config.islandCollapsedWidth; onMoved: Config.islandCollapsedWidth = Math.round(v) }
                                 SliderRow { label: "Expanded height"; unit: "px"; from: 80; to: 200; value: Config.islandExpandedHeight; onMoved: Config.islandExpandedHeight = Math.round(v) }
-                                SliderRow { label: "Minimum expanded width"; unit: "px"; from: 360; to: 1200; value: Config.islandMinWidth; onMoved: Config.islandMinWidth = Math.round(v) }
                                 SliderRow { label: "Gap from screen edge"; unit: "px"; from: 0; to: 32; value: Config.islandGap; onMoved: Config.islandGap = Math.round(v) }
                                 SliderRow { label: "Inner padding"; unit: "px"; from: 0; to: 16; value: Config.islandPadding; onMoved: Config.islandPadding = Math.round(v) }
                                 SliderRow { label: "Corner radius"; unit: "px"; from: 0; to: 40; value: Config.islandRadius; onMoved: Config.islandRadius = Math.round(v) }
                                 SliderRow { label: "Corner radius (expanded)"; unit: "px"; from: 0; to: 48; value: Config.islandRadiusOpen; onMoved: Config.islandRadiusOpen = Math.round(v) }
+                                ToggleRow { label: "Status circle (battery and Wi-Fi)"; checked: Config.statusPill; onToggled: v => Config.statusPill = v }
+                                ToggleRow { label: "Album art circle while a player is open"; checked: Config.artPill; onToggled: v => Config.artPill = v }
+                                SliderRow { label: "Stage lift on hover"; unit: "px"; from: 0; to: 20; value: Config.islandStage; onMoved: Config.islandStage = Math.round(v) }
                             }
                         }
-                        SectionLabel { text: "GAME MODE" }
+                        SectionLabel { text: "Game mode" }
                         Rectangle {
                             width: parent.width; radius: Theme.rMd; color: Theme.surfacePanel
                             implicitHeight: gameCol.implicitHeight
@@ -485,7 +504,7 @@ FloatingWindow {
                                 SliderRow { label: "Cluster gap"; unit: "px"; from: 40; to: 400; value: Config.gameClusterGap; onMoved: Config.gameClusterGap = Math.round(v) }
                             }
                         }
-                        SectionLabel { text: "PANEL WIDTHS" }
+                        SectionLabel { text: "Panel widths" }
                         Rectangle {
                             width: parent.width; radius: Theme.rMd; color: Theme.surfacePanel
                             implicitHeight: panelCol.implicitHeight
@@ -494,12 +513,14 @@ FloatingWindow {
                                 width: parent.width
                                 SliderRow { first: true; label: "Launcher"; unit: "px"; from: 380; to: 1000; value: Config.launcherWidth; onMoved: Config.launcherWidth = Math.round(v) }
                                 SliderRow { label: "Calendar"; unit: "px"; from: 260; to: 560; value: Config.calendarWidth; onMoved: Config.calendarWidth = Math.round(v) }
+                                SliderRow { label: "Media player"; unit: "px"; from: 340; to: 640; value: Config.mediaPlayerWidth; onMoved: Config.mediaPlayerWidth = Math.round(v) }
                                 SliderRow { label: "Wallpaper picker"; unit: "px"; from: 600; to: 1600; value: Config.wallpaperPickerWidth; onMoved: Config.wallpaperPickerWidth = Math.round(v) }
+                                SliderRow { label: "Theme switcher"; unit: "px"; from: 480; to: 1400; value: Config.themeSwitcherWidth; onMoved: Config.themeSwitcherWidth = Math.round(v) }
                                 SliderRow { label: "Notification"; unit: "px"; from: 320; to: 800; value: Config.notificationWidth; onMoved: Config.notificationWidth = Math.round(v) }
                                 SliderRow { label: "Volume / brightness OSD"; unit: "px"; from: 200; to: 520; value: Config.osdWidth; onMoved: Config.osdWidth = Math.round(v) }
                             }
                         }
-                        SectionLabel { text: "WINDOW MANAGER" }
+                        SectionLabel { text: "Window manager" }
                         Rectangle {
                             width: parent.width; radius: Theme.rMd; color: Theme.surfacePanel
                             implicitHeight: wmCol.implicitHeight
@@ -507,36 +528,6 @@ FloatingWindow {
                                 id: wmCol
                                 width: parent.width
                                 SliderRow { first: true; label: "Hyprland gaps_out"; unit: "px"; from: 0; to: 40; value: Config.hyprGapsOut; onMoved: Config.hyprGapsOut = Math.round(v) }
-                            }
-                        }
-                    }
-
-                    // ── MEDIA ──
-                    Column {
-                        visible: win.cat.key === "media"
-                        width: parent.width
-                        spacing: Theme.s3
-                        Rectangle {
-                            width: parent.width; radius: Theme.rMd; color: Theme.surfacePanel
-                            implicitHeight: mediaCol.implicitHeight
-                            Column {
-                                id: mediaCol
-                                width: parent.width
-                                SliderRow { first: true; label: "Song name width"; unit: "px"; from: 60; to: 300; value: Config.mediaTitleWidth; onMoved: Config.mediaTitleWidth = Math.round(v) }
-                                SliderRow { label: "Album art size"; unit: "px"; from: 40; to: 140; value: Config.mediaArtSize; onMoved: Config.mediaArtSize = Math.round(v) }
-                            }
-                        }
-                        SectionLabel { text: "WHAT TO SHOW" }
-                        Rectangle {
-                            width: parent.width; radius: Theme.rMd; color: Theme.surfacePanel
-                            implicitHeight: mediaShowCol.implicitHeight
-                            Column {
-                                id: mediaShowCol
-                                width: parent.width
-                                ToggleRow { first: true; label: "Album line"; checked: Config.mediaShowAlbum; onToggled: v => Config.mediaShowAlbum = v }
-                                ToggleRow { label: "Artist line"; checked: Config.mediaShowArtist; onToggled: v => Config.mediaShowArtist = v }
-                                ToggleRow { label: "Transport buttons"; checked: Config.mediaShowTransport; onToggled: v => Config.mediaShowTransport = v }
-                                ToggleRow { label: "Scroll to change track"; checked: Config.mediaScrollSwitch; onToggled: v => Config.mediaScrollSwitch = v }
                             }
                         }
                     }
@@ -557,7 +548,7 @@ FloatingWindow {
                                 ToggleRow { label: "Music bars beside the clock"; checked: Config.clockViz; onToggled: v => Config.clockViz = v }
                             }
                         }
-                        SectionLabel { text: "DATE DIAL" }
+                        SectionLabel { text: "Date dial" }
                         Rectangle {
                             width: parent.width; radius: Theme.rMd; color: Theme.surfacePanel
                             implicitHeight: knobCol.implicitHeight
@@ -570,7 +561,7 @@ FloatingWindow {
                                 SliderRow { visible: Config.dateKnobShow; label: "Dial radius"; unit: "px"; from: 40; to: 200; value: Config.dateKnobRadius; onMoved: Config.dateKnobRadius = Math.round(v) }
                             }
                         }
-                        SectionLabel { text: "CALENDAR" }
+                        SectionLabel { text: "Calendar" }
                         Rectangle {
                             width: parent.width; radius: Theme.rMd; color: Theme.surfacePanel
                             implicitHeight: calCol.implicitHeight
@@ -599,7 +590,7 @@ FloatingWindow {
                                 LinkRow { label: "Wallpaper"; value: "Choose…"; onActivated: { GlobalState.settingsOpen = false; GlobalState.wallpaperPickerOpen = true; } }
                             }
                         }
-                        SectionLabel { text: "TYPE" }
+                        SectionLabel { text: "Type" }
                         Rectangle {
                             width: parent.width; radius: Theme.rMd; color: Theme.surfacePanel
                             implicitHeight: typeCol.implicitHeight
@@ -611,7 +602,7 @@ FloatingWindow {
                                 TextRow { label: "Display font"; value: Config.fontDisplay; onCommitted: t => Config.fontDisplay = t }
                             }
                         }
-                        SectionLabel { text: "SHAPE & DEPTH" }
+                        SectionLabel { text: "Shape & depth" }
                         Rectangle {
                             width: parent.width; radius: Theme.rMd; color: Theme.surfacePanel
                             implicitHeight: shapeCol.implicitHeight
@@ -628,7 +619,7 @@ FloatingWindow {
                                 SliderRow { label: "Icon stroke"; unit: "×10"; from: 10; to: 34; value: Config.iconStroke; onMoved: Config.iconStroke = Math.round(v) }
                             }
                         }
-                        SectionLabel { text: "SURFACES & INK" }
+                        SectionLabel { text: "Surfaces & ink" }
                         Rectangle {
                             width: parent.width; radius: Theme.rMd; color: Theme.surfacePanel
                             implicitHeight: surfCol.implicitHeight
@@ -644,7 +635,7 @@ FloatingWindow {
                                 SliderRow { label: "Modal dim"; unit: "%"; from: 0; to: 90; value: Config.scrimOpacity; onMoved: Config.scrimOpacity = Math.round(v) }
                             }
                         }
-                        SectionLabel { text: "SHADOW" }
+                        SectionLabel { text: "Shadow" }
                         Rectangle {
                             width: parent.width; radius: Theme.rMd; color: Theme.surfacePanel
                             implicitHeight: shadCol.implicitHeight
@@ -657,7 +648,7 @@ FloatingWindow {
                                 SliderRow { label: "Spread"; unit: "px"; from: 0; to: 160; value: Config.shadowSpread; onMoved: Config.shadowSpread = Math.round(v) }
                             }
                         }
-                        SectionLabel { text: "WALLPAPER" }
+                        SectionLabel { text: "Wallpaper" }
                         Rectangle {
                             width: parent.width; radius: Theme.rMd; color: Theme.surfacePanel
                             implicitHeight: wpCol.implicitHeight
@@ -779,117 +770,22 @@ FloatingWindow {
                     }
 
                     // ── CONTROL CENTER ──
+                    // The mosaic is a free-placement grid the user arranges by hand, so this
+                    // page IS the editor: the real controls at their real size, dragged,
+                    // resized and swapped in place (CcLayoutEditor, writing Config.ccLayout).
                     Column {
                         visible: win.cat.key === "cc"
                         width: parent.width
                         spacing: Theme.s3
 
-                        Rectangle {
+                        SectionLabel { text: "Layout" }
+                        CcLayoutEditor { width: parent.width }
+                        StyledText {
                             width: parent.width
-                            radius: Theme.rMd
-                            color: Theme.surfacePanel
-                            implicitHeight: ccColsCol.implicitHeight
-                            Column {
-                                id: ccColsCol
-                                width: parent.width
-                                SliderRow { first: true; label: "Grid columns"; from: 2; to: 6; value: Config.ccColumns; onMoved: Config.ccColumns = Math.round(v) }
-                            }
-                        }
-
-                        SectionLabel { text: "SIZING" }
-                        Rectangle {
-                            width: parent.width
-                            radius: Theme.rMd
-                            color: Theme.surfacePanel
-                            implicitHeight: ccSizeCol.implicitHeight
-                            Column {
-                                id: ccSizeCol
-                                width: parent.width
-                                SliderRow { first: true; label: "Tile height"; unit: "px"; from: 44; to: 110; value: Config.ccTileHeight; onMoved: Config.ccTileHeight = Math.round(v) }
-                                SliderRow { label: "List row height"; unit: "px"; from: 28; to: 64; value: Config.ccRowHeight; onMoved: Config.ccRowHeight = Math.round(v) }
-                                SliderRow { label: "Media card height"; unit: "px"; from: 100; to: 240; value: Config.ccMediaHeight; onMoved: Config.ccMediaHeight = Math.round(v) }
-                            }
-                        }
-
-                        SectionLabel { text: "SECTIONS" }
-                        Rectangle {
-                            width: parent.width
-                            radius: Theme.rMd
-                            color: Theme.surfacePanel
-                            implicitHeight: ccSecCol.implicitHeight
-                            Column {
-                                id: ccSecCol
-                                width: parent.width
-                                ToggleRow { first: true; label: "Sliders"; checked: Config.ccSliders; onToggled: v => Config.ccSliders = v }
-                                ToggleRow { label: "Media player"; checked: Config.ccMedia; onToggled: v => Config.ccMedia = v }
-                                ToggleRow { label: "Notifications"; checked: Config.ccNotifications; onToggled: v => Config.ccNotifications = v }
-                            }
-                        }
-
-                        SectionLabel { text: "TILES" }
-                        Rectangle {
-                            width: parent.width
-                            radius: Theme.rMd
-                            color: Theme.surfacePanel
-                            implicitHeight: tilesCol.implicitHeight
-                            Column {
-                                id: tilesCol
-                                width: parent.width
-                                Repeater {
-                                    model: Config.ccLayout
-                                    delegate: Item {
-                                        required property var modelData
-                                        required property int index
-                                        width: tilesCol.width
-                                        implicitHeight: 46
-                                        Rectangle {
-                                            visible: index > 0
-                                            anchors { top: parent.top; left: parent.left; right: parent.right; leftMargin: Theme.s4; rightMargin: Theme.s4 }
-                                            height: 1; color: Theme.hairline
-                                        }
-                                        Row {
-                                            id: mvRow
-                                            anchors { left: parent.left; leftMargin: Theme.s3; verticalCenter: parent.verticalCenter }
-                                            spacing: Theme.s1
-                                            Rectangle {
-                                                width: 26; height: 26; radius: Theme.rSm
-                                                enabled: index > 0
-                                                opacity: enabled ? 1 : 0.35
-                                                color: upMa.containsMouse ? Theme.fillHigh : Theme.fillLow
-                                                Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
-                                                Icon { anchors.centerIn: parent; name: "back"; rotation: 90; size: 12; color: Theme.inkPrimary }
-                                                MouseArea { id: upMa; anchors.fill: parent; enabled: parent.enabled; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Config.ccMove(modelData.key, -1) }
-                                            }
-                                            Rectangle {
-                                                width: 26; height: 26; radius: Theme.rSm
-                                                enabled: index < Config.ccLayout.length - 1
-                                                opacity: enabled ? 1 : 0.35
-                                                color: dnMa.containsMouse ? Theme.fillHigh : Theme.fillLow
-                                                Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
-                                                Icon { anchors.centerIn: parent; name: "back"; rotation: -90; size: 12; color: Theme.inkPrimary }
-                                                MouseArea { id: dnMa; anchors.fill: parent; enabled: parent.enabled; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Config.ccMove(modelData.key, 1) }
-                                            }
-                                        }
-                                        StyledText {
-                                            anchors { left: mvRow.right; leftMargin: Theme.s3; verticalCenter: parent.verticalCenter }
-                                            variant: "label"
-                                            text: modelData.label
-                                            color: modelData.enabled ? Theme.inkPrimary : Theme.inkFaint
-                                        }
-                                        Row {
-                                            anchors { right: parent.right; rightMargin: Theme.s4; verticalCenter: parent.verticalCenter }
-                                            spacing: Theme.s3
-                                            Row {
-                                                anchors.verticalCenter: parent.verticalCenter
-                                                spacing: Theme.s2
-                                                StyledText { anchors.verticalCenter: parent.verticalCenter; variant: "caption"; text: "Large"; color: Theme.inkDim }
-                                                Toggle { anchors.verticalCenter: parent.verticalCenter; checked: modelData.span === 2; onToggled: v => Config.ccSetSpan(modelData.key, v ? 2 : 1) }
-                                            }
-                                            Toggle { anchors.verticalCenter: parent.verticalCenter; checked: modelData.enabled; onToggled: v => Config.ccSetEnabled(modelData.key, v) }
-                                        }
-                                    }
-                                }
-                            }
+                            wrapMode: Text.Wrap
+                            variant: "caption"
+                            color: Theme.inkDim
+                            text: "Drag a control to move it, pull its corner to resize, right-click for every size it supports. With one selected: arrows nudge, [ and ] step through sizes, Delete removes."
                         }
                     }
                 }

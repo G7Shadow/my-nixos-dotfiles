@@ -55,7 +55,7 @@ PanelWindow {
         transformOrigin: Item.Center
 
         ShapePath {
-            fillColor: Theme.base       // black, like a real bezel
+            fillColor: "#000000"        // a bezel is physical: black on every scheme, light ones included
             strokeWidth: 0
             strokeColor: "transparent"
             PathSvg { path: `M 0,0 L ${cn.size},0 A ${cn.size},${cn.size} 0 0 0 0,${cn.size} Z` }

@@ -5,6 +5,7 @@
 
       services.thermald.enable = true;
       powerManagement.powertop.enable = true;
+      services.upower.enable = true;
 
       services.logind.settings.Login = {
         HandleLidSwitch = "suspend"; # battery

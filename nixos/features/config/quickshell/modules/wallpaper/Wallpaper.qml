@@ -36,8 +36,23 @@ PanelWindow {
         const url = toUrl(p);
         if (url === "")
             return;
-        // load it into whichever layer is currently hidden
-        if (showA) imgB.source = url; else imgA.source = url;
+        const vis = showA ? imgA : imgB;
+        const hid = showA ? imgB : imgA;
+        if (vis.source.toString() === url)
+            return;                                   // already on screen
+        if (hid.source.toString() === url) {
+            // The incoming image is already PARKED in the hidden layer, left there by an
+            // earlier switch (go A -> B -> A and B's layer still holds A). Setting the same
+            // source again is a no-op: no statusChanged, so the flip below never fired and
+            // the wallpaper silently stayed on the old one until you switched twice more.
+            // If it's decoded, flip now; if it's mid-load its own statusChanged flips it;
+            // if it failed last time, kick a real reload.
+            if (hid.status === Image.Ready) showA = !showA;
+            else if (hid.status === Image.Error) { hid.source = ""; hid.source = url; }
+            return;
+        }
+        // fresh image: load it into whichever layer is currently hidden, flip on Ready
+        hid.source = url;
     }
 
     onSourceChanged: apply(source)

@@ -55,7 +55,7 @@ Item {
     StyledText {
         anchors.left: parent.left
         anchors.leftMargin: Theme.s4
-        anchors.verticalCenter: parent.verticalCenter
+        capCentreIn: parent
         visible: root.icon === "" && root.glyph !== ""
         font.family: Theme.fontGlyph
         font.pixelSize: Theme.iconSize

@@ -1,4 +1,5 @@
 pragma Singleton
+import QtQuick
 import Quickshell
 import "../config"
 
@@ -21,8 +22,30 @@ Singleton {
 
     function apply() {
         if (enabled)
+            // (re)start the daemon at the current temperature. pkill first is only needed on
+            // ENABLE, to guarantee one clean daemon; live temperature changes use setTemp().
             Quickshell.execDetached(["sh", "-c", "pkill hyprsunset 2>/dev/null; hyprsunset -t " + temperature]);
         else
             Quickshell.execDetached(["pkill", "hyprsunset"]);
     }
+
+    // Live temperature change while Night Light is on, through the daemon's own socket:
+    // `hyprctl hyprsunset temperature K` (hyprsunset 0.4). A second `hyprsunset -t K` does
+    // NOT forward to the running daemon, it dies with "A CTM manager is already running on
+    // the current compositor" and the tint never moves (that was the broken slider), and a
+    // pkill + respawn flashes the gamma. Throttled to ~90ms so a drag updates the tint in
+    // smooth steps instead of spawning a process per pixel.
+    property int _pendingTemp: -1
+    function setTemp(k) {
+        temperature = k;                       // drives the UI live (fill, subtitle)
+        if (!enabled) return;
+        _pendingTemp = k;
+        if (!tempThrottle.running) { flushTemp(); tempThrottle.start(); }
+    }
+    function flushTemp() {
+        if (_pendingTemp < 0) return;
+        Quickshell.execDetached(["hyprctl", "hyprsunset", "temperature", String(_pendingTemp)]);
+        _pendingTemp = -1;
+    }
+    Timer { id: tempThrottle; interval: 90; onTriggered: root.flushTemp() }
 }

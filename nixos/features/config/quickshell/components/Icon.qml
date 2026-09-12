@@ -45,7 +45,15 @@ Item {
         "restart":    { d: "M18.5,9 A7,7 0 1,0 19,12 M18.5,4.5 V9 H14", filled: false },
         "logout":     { d: "M14,8 V6 a1,1 0 0,0 -1,-1 H6 a1,1 0 0,0 -1,1 V18 a1,1 0 0,0 1,1 H13 a1,1 0 0,0 1,-1 V16 M10,12 H20 M17,9 L20,12 L17,15", filled: false },
         "display":    { d: "M4,5 H20 a1,1 0 0,1 1,1 V15 a1,1 0 0,1 -1,1 H4 a1,1 0 0,1 -1,-1 V6 a1,1 0 0,1 1,-1 Z M9,20 H15 M12,16 V20", filled: false },
-        "person":     { d: "M12,4.3 a3.9,3.9 0 1,0 0.01,0 Z M4.8,20 C4.8,14.6 8,12.9 12,12.9 C16,12.9 19.2,14.6 19.2,20 Z", filled: true }
+        "person":     { d: "M12,4.3 a3.9,3.9 0 1,0 0.01,0 Z M4.8,20 C4.8,14.6 8,12.9 12,12.9 C16,12.9 19.2,14.6 19.2,20 Z", filled: true },
+        "chevron":    { d: "M9.5,6 L15.5,12 L9.5,18", filled: false },
+        "check":      { d: "M5,12.5 L9.5,17 L19,7.5", filled: false },
+        "headphones": { d: "M4,14 V12 a8,8 0 0,1 16,0 V14 M4,14 h2.5 a1,1 0 0,1 1,1 V19 a1,1 0 0,1 -1,1 H5 a1,1 0 0,1 -1,-1 Z M20,14 h-2.5 a1,1 0 0,0 -1,1 V19 a1,1 0 0,0 1,1 H19 a1,1 0 0,0 1,-1 Z", filled: false },
+        "phone":      { d: "M8,3 H16 a1.5,1.5 0 0,1 1.5,1.5 V19.5 a1.5,1.5 0 0,1 -1.5,1.5 H8 a1.5,1.5 0 0,1 -1.5,-1.5 V4.5 a1.5,1.5 0 0,1 1.5,-1.5 Z M11,18.5 h2", filled: false },
+        "keyboard":   { d: "M3.5,7 H20.5 a1,1 0 0,1 1,1 V16 a1,1 0 0,1 -1,1 H3.5 a1,1 0 0,1 -1,-1 V8 a1,1 0 0,1 1,-1 Z M7,10.5 h0 M11,10.5 h0 M15,10.5 h0 M19,10.5 h0 M8,14 h8", filled: false },
+        "mouse":      { d: "M12,3 a5.5,5.5 0 0,1 5.5,5.5 V15.5 a5.5,5.5 0 0,1 -11,0 V8.5 a5.5,5.5 0 0,1 5.5,-5.5 Z M12,7 V10", filled: false },
+        "watch":      { d: "M8.5,7.5 H15.5 a1.5,1.5 0 0,1 1.5,1.5 V15 a1.5,1.5 0 0,1 -1.5,1.5 H8.5 a1.5,1.5 0 0,1 -1.5,-1.5 V9 a1.5,1.5 0 0,1 1.5,-1.5 Z M9.5,7.5 L10,4 H14 L14.5,7.5 M9.5,16.5 L10,20 H14 L14.5,16.5", filled: false },
+        "bell":       { d: "M12,3.5 a5.5,5.5 0 0,1 5.5,5.5 V13 L19.3,15.6 H4.7 L6.5,13 V9 a5.5,5.5 0 0,1 5.5,-5.5 Z M9.8,18.5 a2.2,2.2 0 0,0 4.4,0", filled: false }
     })
     readonly property var _def: _icons[name] ?? ({ d: "", filled: false })
 
@@ -58,7 +66,11 @@ Item {
         ShapePath {
             fillColor: root._def.filled ? root.color : "transparent"
             strokeColor: root._def.filled ? "transparent" : root.color
-            strokeWidth: root.strokeWidth
+            // -1 DISABLES stroking outright for filled icons. A transparent stroke with a
+            // positive width isn't the same thing: the curve renderer still builds stroke
+            // geometry for it, and that's enough to lose the fill entirely — which is why the
+            // solid glyphs (play/pause/prev/next) drew nothing while the stroked ones were fine.
+            strokeWidth: root._def.filled ? -1 : root.strokeWidth
             capStyle: ShapePath.RoundCap
             joinStyle: ShapePath.RoundJoin
             PathSvg { path: root._def.d }

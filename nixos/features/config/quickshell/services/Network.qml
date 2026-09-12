@@ -1,4 +1,5 @@
 pragma Singleton
+import QtQuick
 import Quickshell
 import Quickshell.Networking
 
@@ -37,9 +38,16 @@ Singleton {
 
     // --- Wi-Fi network browsing (control center list) ---
     readonly property var wifiDevice: devices.find(d => d.type === DeviceType.Wifi) ?? null
-    readonly property var wifiNetworks: wifiDevice
-        ? asArray(wifiDevice.networks).slice().sort((a, b) => (b.signalStrength || 0) - (a.signalStrength || 0))
-        : []
+    // same insurance as the Bluetooth service: networks that appear mid-scan may not notify a
+    // binding, so the list re-reads on a 1s tick while the scanner is on
+    property int rev: 0
+    Timer { interval: 1000; repeat: true; running: root.wifiDevice ? root.wifiDevice.scannerEnabled : false; onTriggered: root.rev++ }
+    readonly property var wifiNetworks: {
+        rev;
+        return wifiDevice
+            ? asArray(wifiDevice.networks).slice().sort((a, b) => (b.signalStrength || 0) - (a.signalStrength || 0))
+            : [];
+    }
 
     // Toggle background scanning on/off (we turn it on while the network list is open).
     function setScanning(on) { if (wifiDevice) wifiDevice.scannerEnabled = on; }

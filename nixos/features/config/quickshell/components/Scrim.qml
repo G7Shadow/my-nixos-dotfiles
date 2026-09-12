@@ -11,7 +11,7 @@ Rectangle {
     property real dim: Config.scrimOpacity / 100
     signal clicked()
 
-    color: Theme.alpha(Theme.base, dim)   // neutral black dim, not wallpaper-tinted
+    color: Qt.rgba(0, 0, 0, dim)   // neutral black dim on every scheme: a shadow, not a surface
     opacity: 0
     Component.onCompleted: opacity = 1
     Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dBase); easing.type: Theme.easeOut } }

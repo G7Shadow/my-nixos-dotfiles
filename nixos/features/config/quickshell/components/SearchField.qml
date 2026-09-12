@@ -33,7 +33,7 @@ Rectangle {
 
     StyledText {
         anchors.left: input.left
-        anchors.verticalCenter: parent.verticalCenter
+        capCentreIn: parent
         text: root.placeholder
         color: Theme.inkFaint
         visible: input.text.length === 0

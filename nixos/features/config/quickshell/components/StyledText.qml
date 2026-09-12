@@ -24,4 +24,16 @@ Text {
     font.letterSpacing: variant === "header" ? Theme.headerTracking : 0
     renderType: Text.NativeRendering
     verticalAlignment: Text.AlignVCenter
+
+    // Vertical centring by CAP HEIGHT (patterns.md #41). Box-centring a single-line label
+    // beside a control floats its capitals off the control's centre line: the box carries
+    // the descender space and the native baseline rounds to a whole pixel, so a word like
+    // "Wi-Fi" sat up to ~0.7px off the disc and toggle beside it, which is visible from
+    // close up. Set `capCentreIn` to the row (or the control) instead of anchoring
+    // verticalCenter, and the cap centre lands on its centre line exactly, at any font
+    // size. Applied once at creation, so the anchor is never toggled at runtime (#23).
+    property Item capCentreIn: null
+    FontMetrics { id: capFm; font: root.font }
+    anchors.baselineOffset: capFm.capitalHeight / 2
+    Component.onCompleted: if (capCentreIn) anchors.baseline = capCentreIn.verticalCenter
 }

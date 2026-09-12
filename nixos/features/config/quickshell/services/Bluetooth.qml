@@ -1,4 +1,5 @@
 pragma Singleton
+import QtQuick
 import Quickshell
 import Quickshell.Bluetooth
 
@@ -11,7 +12,22 @@ Singleton {
 
     readonly property var adapter: Bluetooth.defaultAdapter
     readonly property bool enabled: adapter ? adapter.enabled : false
-    readonly property var connectedDevices: asArray(Bluetooth.devices).filter(d => d.connected)
+    // Devices BlueZ finds while discovering land in Bluetooth.devices, but no change signal
+    // reaches a QML BINDING for those insertions (fresh reads see them, bindings don't), so
+    // anything derived from the model froze at whatever existed at startup: a new pair of
+    // earbuds in pairing mode never showed up. `rev` is bumped by the model's own signals
+    // AND by a 1s tick while discovery runs, and every derived list reads through it.
+    property int rev: 0
+    Connections {
+        target: Bluetooth.devices
+        function onValuesChanged() { root.rev++; }
+        function onObjectInsertedPost() { root.rev++; }
+        function onObjectRemovedPost() { root.rev++; }
+    }
+    Timer { interval: 1000; repeat: true; running: root.adapter ? root.adapter.discovering : false; onTriggered: root.rev++ }
+    function devicesNow() { rev; return asArray(Bluetooth.devices); }
+
+    readonly property var connectedDevices: devicesNow().filter(d => d.connected)
     readonly property bool hasConnection: connectedDevices.length > 0
 
     readonly property string label: {
@@ -28,7 +44,7 @@ Singleton {
     function setEnabled(on) { if (adapter) adapter.enabled = on; }
 
     // Paired devices for the control center list, connected ones up top.
-    readonly property var pairedDevices: asArray(Bluetooth.devices)
+    readonly property var pairedDevices: devicesNow()
         .filter(d => d.paired)
         .slice()
         .sort((a, b) => (b.connected ? 1 : 0) - (a.connected ? 1 : 0))

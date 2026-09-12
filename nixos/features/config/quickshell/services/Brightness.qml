@@ -10,9 +10,11 @@ import "../config"
 // `ddcutil detect`. One controller per screen: consumers call Brightness.forScreen(screen)
 // and read .percentage or call .setBrightness().
 //
-// ddcutil is dog slow (~1s a call), so internal gets polled while external is read once at
-// startup and written debounced. Skip the debounce and one slider drag queues up dozens of
-// setvcp calls, and yer brightness lags a mile behind yer finger.
+// ddcutil is slow relative to sysfs (a setvcp is ~77ms on the Dell here; it was assumed to
+// be ~1s for a long time, which was wrong), so internal gets polled while external is read
+// once at startup and written coalesced. Skip the coalescing and one slider drag queues up
+// dozens of setvcp calls, and yer brightness lags a mile behind yer finger. Both paths
+// FADE: see the ramp below.
 Singleton {
     id: root
 
@@ -123,6 +125,7 @@ Singleton {
                     return;
                 const v = extPending;
                 extPending = -1;
+                hw = v;
                 ddcSet.command = ["ddcutil", "--bus", String(mon.ddcBus), "setvcp", "10", String(v)];
                 ddcSet.running = true;
             }
@@ -131,31 +134,107 @@ Singleton {
                 const p = Math.max(0, Math.min(100, Math.round(pct)));
                 if (internal) {
                     percentage = p; // optimistic, so the OSD + control center move instantly
-                    intSet.command = ["brightnessctl", "set", `${p}%`];
-                    intSet.running = true;
+                    startRamp(p);   // the hardware FADES there (below)
                 } else if (ddcBus >= 0) {
                     percentage = p;
-                    extPending = p;
-                    flushExt();
+                    startRamp(p);   // externals fade too, throttled to what DDC can take
                 }
                 // external whose bus we haven't sniffed out yet: do NOTHING. Falling back to
                 // brightnessctl here is exactly what dimmed the wrong monitor. The re-detect
                 // on hotplug (below) gives us the bus in a beat and then it works.
             }
 
-            // --- internal (brightnessctl) ---
+            // --- an eased hardware RAMP, for both write paths ---
+            // A brightness change fades instead of stepping (the way macOS does it): the
+            // value written to the hardware eases from wherever it is to the target,
+            // ease-out, so it moves fast at first and lands softly. Retargetable mid-flight:
+            // a held key or a slider drag becomes one continuous glide rather than a
+            // staircase. The ramp only ever PUSHES into the coalesced write queue (one
+            // brightnessctl / setvcp in flight, newest value always lands), so it throttles
+            // itself to whatever the hardware can take and can never queue up behind itself.
+            // Externals get a longer ramp: a DDC write is ~77ms on the Dell here (measured;
+            // the old "about a second" was wrong), so ~380ms buys five real steps and the
+            // panel's own backlight response smooths the rest.
+            readonly property int rampMs: Config.reducedMotion ? 0 : (internal ? 260 : 380)
+            property real rampFrom: -1
+            property int rampTo: -1
+            property double rampStart: 0
+            property double rampEndedAt: 0
+            property int hw: -1            // what we believe the backlight is at right now
+            property int intPending: -1
+
+            function rampValue() {
+                if (rampTo < 0) return hw;
+                if (rampMs <= 0) return rampTo;
+                const t = Math.max(0, Math.min(1, (Date.now() - rampStart) / rampMs));
+                const e = 1 - Math.pow(1 - t, 3);
+                return Math.round(rampFrom + (rampTo - rampFrom) * e);
+            }
+            function flushInt() {
+                if (intPending < 0 || intSet.running) return;
+                const v = intPending;
+                intPending = -1;
+                hw = v;
+                intSet.command = ["brightnessctl", "set", `${v}%`];
+                intSet.running = true;
+            }
+            // hand a value to this display's write queue (whichever kind it is)
+            function push(v) {
+                if (internal) { intPending = v; flushInt(); }
+                else if (ddcBus >= 0) { extPending = v; flushExt(); }
+            }
+            readonly property int pending: internal ? intPending : extPending
+            function startRamp(p) {
+                rampFrom = rampTick.running ? rampValue() : (hw >= 0 ? hw : p);
+                rampTo = p;
+                rampStart = Date.now();
+                if (rampMs <= 0 || rampFrom === rampTo) {
+                    rampTick.stop();
+                    rampTo = -1;
+                    rampEndedAt = Date.now();
+                    push(p);
+                    return;
+                }
+                rampTick.start();
+            }
+            Timer {
+                id: rampTick
+                interval: 16
+                repeat: true
+                onTriggered: {
+                    const v = mon.rampValue();
+                    if (v !== mon.hw && v !== mon.pending) mon.push(v);
+                    if (Date.now() - mon.rampStart >= mon.rampMs) {
+                        rampTick.stop();
+                        if (mon.hw !== mon.rampTo) mon.push(mon.rampTo);   // the exact target lands last
+                        mon.rampTo = -1;
+                        mon.rampEndedAt = Date.now();
+                    }
+                }
+            }
+
             Process {
                 id: intGet
                 command: ["brightnessctl", "-m"]
                 stdout: StdioCollector {
                     onStreamFinished: {
                         const f = text.trim().split(",");
-                        if (f.length >= 4)
-                            mon.percentage = parseInt(f[3]); // "30%" -> 30
+                        if (f.length < 4) return;
+                        const v = parseInt(f[3]); // "30%" -> 30
+                        // Mid-ramp (and for a beat after) the hardware is deliberately behind
+                        // the target; letting the poll write that back would drag the UI down
+                        // the ramp we're climbing. Hardware-key presses still land as before
+                        // once nothing is in flight.
+                        if (rampTick.running || Date.now() - mon.rampEndedAt < 500) return;
+                        mon.hw = v;
+                        mon.percentage = v;
                     }
                 }
             }
-            Process { id: intSet }
+            Process {
+                id: intSet
+                onRunningChanged: if (!running) mon.flushInt()   // the newest value always lands
+            }
 
             // --- external (ddcutil) ---
             Process {
@@ -167,8 +246,10 @@ Singleton {
                         if (p.length >= 5 && p[2] === "C") {
                             const cur = parseInt(p[3]);
                             const max = parseInt(p[4]);
-                            if (max > 0)
+                            if (max > 0) {
                                 mon.percentage = Math.round(cur / max * 100);
+                                mon.hw = mon.percentage;
+                            }
                         }
                     }
                 }

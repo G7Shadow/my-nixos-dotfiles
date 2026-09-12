@@ -15,3 +15,4 @@ VolumeIcon VolumeIcon.qml
 BrightnessIcon BrightnessIcon.qml
 ModeIcon ModeIcon.qml
 Icon Icon.qml
+BatteryGlyph BatteryGlyph.qml
