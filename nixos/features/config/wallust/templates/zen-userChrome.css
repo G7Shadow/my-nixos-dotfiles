@@ -9,7 +9,7 @@
   --muted:            {{ color7 }};
   --subtle:           {{ foreground }};
   --text:             {{ color7 }};
-  --primary:          {{ color2 }};
+  --primary:          {{ color12 }};
   --secondary:        {{ foreground }};
   --tertiary:         {{ color7 }};
   --error:            {{ color1 }};
