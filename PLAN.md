@@ -8,7 +8,7 @@
 
 | System | Hostname | Config | Drivers | Boot | Disko | Impermanence |
 |--------|----------|--------|---------|------|-------|--------------|
-| AMD Desktop | Alpha | `nixos/hosts/Alpha/` | AMD (ROCm, LACT) | systemd-boot | No | No |
+| AMD Desktop | Alpha | `nixos/hosts/Alpha/` | AMD (amdgpu) | systemd-boot | No | No |
 | ThinkPad T14 | Omega | `nixos/hosts/Omega/` | Intel (i915, vaapi) | systemd-boot | Yes (LUKS + btrfs) | Yes (tmpfs root) |
 
 ## Files Created
@@ -17,8 +17,8 @@
 - `hostName = "Alpha"`
 - Imports: `base`, `general`, `desktop`, `quickshell`, `pipewire`, `powersave`, `gaming`, `hostAlpha-hardware`
 - Boot: `linuxPackages_latest`, systemd-boot, 5 config limit, NTFS
-- AMD GPU: ROCm ICD, `amdgpu.overdrive`, LACT daemon with power-profile sync
-- Display: greetd (tuigreet), Hyprland
+- CPU/GPU: `hardware.cpu.amd.updateMicrocode`, `hardware.graphics` (enable + 32-bit), Bluetooth enabled
+- Display: SDDM (Wayland) + Hyprland via uwsm (`defaultSession = "hyprland-uwsm"`)
 - Swap: zram (zstd)
 - No disko, no impermanence
 
@@ -45,7 +45,7 @@
 - `hostName = "Omega"`
 - Imports: `base`, `general`, `desktop`, `pipewire`, `gaming`, `quickshell`, `powersave`, `hostOmega-hardware`, `impermanence`, plus disko modules
 - Intel GPU: `intel-media-driver`, `intel-vaapi-driver`
-- No zram, no Bluetooth, no LACT
+- No zram, no Bluetooth
 
 ### `nixos/base/persistance.nix`
 - Defines `persistance.*` options (enable, nukeRoot, volumeGroup, directories, files, data, cache)
@@ -89,8 +89,11 @@
 ### `nixos/features/theming.nix`
 - Cursors, fonts, icons, GTK/Qt, wallust, matugen, waybar, rofi, hyprlock, etc.
 
-### `nixos/features/dotfiles.nix`
-- Symlink activation script for `~/.config/*` → repo configs
+### `nixos/features/kitty.nix`
+- Kitty terminal config module (imported by `desktop`)
+
+### `nixos/features/hyprglass.nix`
+- Hyprglass package (Hyprland plugin, perSystem)
 
 ### `wrappedPrograms/`
 - `zsh.nix` — Zsh with baked-in `.zshrc`
@@ -98,6 +101,7 @@
 - `git.nix` — Git with hardcoded author identity
 - `nh.nix` — `nh` with `NH_FLAKE` pointing to `~/my-nixos-dotfiles`
 - `quickshell.nix` — QuickShell with zoxide
+- `dotfiles.nix` — Symlink activation script for `~/.config/*` → repo configs
 - `cli-tools.nix` — kitty, htop, btop, wget, zoxide, ripgrep, fzf, bat, eza, fd, lazygit, tmux
 - `desktop-apps.nix` — Zen Browser, Discord, Vesktop, Spotify, Obsidian, OBS, Thunar, Nautilus, etc.
 - `desktop-utils.nix` — brightnessctl, ffmpeg, pulsemixer, playerctl, bluez, ntfs3g, etc.
@@ -135,12 +139,17 @@ sed -i "s|/dev/disk/by-id/nvme-INSERT_YOUR_SSD_ID_HERE|$DISK|" \
 nix run github:nix-community/disko -- --mode destroy,format,mount \
   /mnt/dotfiles/nixos/hosts/Omega/disko.nix
 
-# 8. Generate hardware config (no-filesystems since disko handles them)
+# 8. Generate hardware config (written to /mnt/etc/nixos/). Do NOT overwrite
+#    the repo file — nixos/hosts/Omega/hardware-configuration.nix is a flake
+#    module defining `flake.nixosModules.hostOmega-hardware`, which
+#    configuration.nix imports. Since flake.nix auto-imports every .nix file
+#    as a flake module, dropping the raw generated output there breaks eval.
 nixos-generate-config --no-filesystems --root /mnt
 
-# 9. Copy generated hardware config to dotfiles
-cp /mnt/etc/nixos/hardware-configuration.nix \
-  /mnt/dotfiles/nixos/hosts/Omega/hardware-configuration.nix
+# 9. Merge only the kernel-module lines (boot.initrd.availableKernelModules,
+#    boot.kernelModules) from /mnt/etc/nixos/hardware-configuration.nix into
+#    /mnt/dotfiles/nixos/hosts/Omega/hardware-configuration.nix, keeping its
+#    `flake.nixosModules.hostOmega-hardware` wrapper intact.
 
 # 10. Install
 nixos-install --flake /mnt/dotfiles#Omega
@@ -153,7 +162,7 @@ reboot
 
 ### TPM Auto-Unlock
 ```bash
-sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=0+7 /dev/nvme0n1p3
+sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=0+7 /dev/nvme0n1p4
 ```
 
 ## Verification Checklist
