@@ -1,0 +1,41 @@
+/* Generated per-scheme by wallust -> anime */
+@define-color wall_0 #1a1b26;
+@define-color wall_1 #f7768e;
+@define-color wall_2 #9ece6a;
+@define-color wall_3 #e0af68;
+@define-color wall_4 #7aa2f7;
+@define-color wall_5 #bb9af7;
+@define-color wall_6 #94e2d5;
+@define-color wall_7 #bac2de;
+@define-color wall_8 #414868;
+@define-color wall_9 #f7768e;
+@define-color wall_10 #9ece6a;
+@define-color wall_11 #e0af68;
+@define-color wall_12 #7aa2f7;
+@define-color wall_13 #bb9af7;
+@define-color wall_14 #94e2d5;
+@define-color wall_15 #cdd6f4;
+@define-color accent_bg_color #7aa2f7;
+@define-color accent_color #7aa2f7;
+@define-color accent_fg_color #cdd6f4;
+@define-color theme_selected_bg_color #7aa2f7;
+
+:root {
+  --wall-0: #1a1b26;
+  --wall-1: #f7768e;
+  --wall-2: #9ece6a;
+  --wall-3: #e0af68;
+  --wall-4: #7aa2f7;
+  --wall-5: #bb9af7;
+  --wall-6: #94e2d5;
+  --wall-7: #bac2de;
+  --wall-8: #414868;
+  --wall-9: #f7768e;
+  --wall-10: #9ece6a;
+  --wall-11: #e0af68;
+  --wall-12: #7aa2f7;
+  --wall-13: #bb9af7;
+  --wall-14: #94e2d5;
+  --wall-15: #cdd6f4;
+  --accent: #7aa2f7;
+}

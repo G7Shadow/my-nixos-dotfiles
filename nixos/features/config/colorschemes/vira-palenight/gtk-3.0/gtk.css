@@ -1,0 +1,41 @@
+/* Generated per-scheme by wallust -> vira-palenight */
+@define-color wall_0 #292d3e;
+@define-color wall_1 #f07178;
+@define-color wall_2 #c3e88d;
+@define-color wall_3 #ffcb6b;
+@define-color wall_4 #82aaff;
+@define-color wall_5 #c792ea;
+@define-color wall_6 #89ddff;
+@define-color wall_7 #c7ccd5;
+@define-color wall_8 #33384d;
+@define-color wall_9 #f07178;
+@define-color wall_10 #c3e88d;
+@define-color wall_11 #ffcb6b;
+@define-color wall_12 #82aaff;
+@define-color wall_13 #c792ea;
+@define-color wall_14 #89ddff;
+@define-color wall_15 #d6deeb;
+@define-color accent_bg_color #82aaff;
+@define-color accent_color #82aaff;
+@define-color accent_fg_color #d6deeb;
+@define-color theme_selected_bg_color #82aaff;
+
+:root {
+  --wall-0: #292d3e;
+  --wall-1: #f07178;
+  --wall-2: #c3e88d;
+  --wall-3: #ffcb6b;
+  --wall-4: #82aaff;
+  --wall-5: #c792ea;
+  --wall-6: #89ddff;
+  --wall-7: #c7ccd5;
+  --wall-8: #33384d;
+  --wall-9: #f07178;
+  --wall-10: #c3e88d;
+  --wall-11: #ffcb6b;
+  --wall-12: #82aaff;
+  --wall-13: #c792ea;
+  --wall-14: #89ddff;
+  --wall-15: #d6deeb;
+  --accent: #82aaff;
+}

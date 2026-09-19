@@ -1,0 +1,41 @@
+/* Generated per-scheme by wallust -> nightfox */
+@define-color wall_0 #192330;
+@define-color wall_1 #c94f6d;
+@define-color wall_2 #81b29a;
+@define-color wall_3 #dbc074;
+@define-color wall_4 #719cd6;
+@define-color wall_5 #9d79d6;
+@define-color wall_6 #63cdcf;
+@define-color wall_7 #dfdfe0;
+@define-color wall_8 #393b44;
+@define-color wall_9 #d16983;
+@define-color wall_10 #8ebaa4;
+@define-color wall_11 #e0c989;
+@define-color wall_12 #86abdc;
+@define-color wall_13 #baa1e2;
+@define-color wall_14 #7ad5d6;
+@define-color wall_15 #e4e4e5;
+@define-color accent_bg_color #86abdc;
+@define-color accent_color #86abdc;
+@define-color accent_fg_color #e4e4e5;
+@define-color theme_selected_bg_color #86abdc;
+
+:root {
+  --wall-0: #192330;
+  --wall-1: #c94f6d;
+  --wall-2: #81b29a;
+  --wall-3: #dbc074;
+  --wall-4: #719cd6;
+  --wall-5: #9d79d6;
+  --wall-6: #63cdcf;
+  --wall-7: #dfdfe0;
+  --wall-8: #393b44;
+  --wall-9: #d16983;
+  --wall-10: #8ebaa4;
+  --wall-11: #e0c989;
+  --wall-12: #86abdc;
+  --wall-13: #baa1e2;
+  --wall-14: #7ad5d6;
+  --wall-15: #e4e4e5;
+  --accent: #86abdc;
+}

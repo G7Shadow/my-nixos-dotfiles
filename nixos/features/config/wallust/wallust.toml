@@ -21,44 +21,6 @@ tmux       = { template = 'tmux.conf',  target = '~/.config/tmux/generated.conf'
 zen_chrome_hz3ab4gh   = { template = 'zen-userChrome.css',  target = '~/.zen/hz3ab4gh.Default Profile/chrome/userChrome.css' }
 zen_content_hz3ab4gh  = { template = 'zen-userContent.css',  target = '~/.zen/hz3ab4gh.Default Profile/chrome/userContent.css' }
 zen_chrome_4hnn7g3c   = { template = 'zen-userChrome.css',  target = '~/.zen/4hnn7g3c.Default Profile/chrome/userChrome.css' }
-gtk4_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-4.0/gtk.css" }
-gtk3_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-3.0/gtk.css" }
-gtk4_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-4.0/gtk.css" }
-gtk3_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-3.0/gtk.css" }
-gtk4_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-4.0/gtk.css" }
-gtk3_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-3.0/gtk.css" }
-gtk4_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-4.0/gtk.css" }
-gtk3_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-3.0/gtk.css" }
-gtk4_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-4.0/gtk.css" }
-gtk3_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-3.0/gtk.css" }
-gtk4_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-4.0/gtk.css" }
-gtk3_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-3.0/gtk.css" }
-gtk4_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-4.0/gtk.css" }
-gtk3_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-3.0/gtk.css" }
-gtk4_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-4.0/gtk.css" }
-gtk3_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-3.0/gtk.css" }
-gtk4_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-4.0/gtk.css" }
-gtk3_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-3.0/gtk.css" }
-gtk4_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-4.0/gtk.css" }
-gtk3_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-3.0/gtk.css" }
-gtk4_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-4.0/gtk.css" }
-gtk3_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-3.0/gtk.css" }
-gtk4_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-4.0/gtk.css" }
-gtk3_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-3.0/gtk.css" }
-gtk4_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-4.0/gtk.css" }
-gtk3_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-3.0/gtk.css" }
-gtk4_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-4.0/gtk.css" }
-gtk3_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-3.0/gtk.css" }
-gtk4_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-4.0/gtk.css" }
-gtk3_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-3.0/gtk.css" }
-gtk4_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-4.0/gtk.css" }
-gtk3_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-3.0/gtk.css" }
-gtk4_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-4.0/gtk.css" }
-gtk3_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-3.0/gtk.css" }
-gtk4_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-4.0/gtk.css" }
-gtk3_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-3.0/gtk.css" }
-gtk4_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-4.0/gtk.css" }
-gtk3_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-3.0/gtk.css" }
 
 [hooks]
 # NOTE: wallust runs [hooks] only on `wallust run` (image), NOT on `cs`/`theme`.
@@ -72,3 +34,4 @@ hyprland = "hyprctl reload || true"
 notify = "notify-send 'Theme' 'Palette applied' -t 1500"
 
 # GTK 4: one clean render line per scheme (wallust owns GTK now; accent = slot12 == what Zen renders live)
+gtk4_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-4.0/gtk.css" }

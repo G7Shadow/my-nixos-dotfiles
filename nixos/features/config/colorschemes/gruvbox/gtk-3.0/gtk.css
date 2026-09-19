@@ -1,0 +1,41 @@
+/* Generated per-scheme by wallust -> gruvbox */
+@define-color wall_0 #1d2021;
+@define-color wall_1 #cc231c;
+@define-color wall_2 #989719;
+@define-color wall_3 #d79920;
+@define-color wall_4 #448488;
+@define-color wall_5 #b16185;
+@define-color wall_6 #689d69;
+@define-color wall_7 #a89983;
+@define-color wall_8 #1d2021;
+@define-color wall_9 #fb4833;
+@define-color wall_10 #b8ba25;
+@define-color wall_11 #fabc2e;
+@define-color wall_12 #83a597;
+@define-color wall_13 #d3859a;
+@define-color wall_14 #8ec07b;
+@define-color wall_15 #ebdbb2;
+@define-color accent_bg_color #83a597;
+@define-color accent_color #83a597;
+@define-color accent_fg_color #ebdbb2;
+@define-color theme_selected_bg_color #83a597;
+
+:root {
+  --wall-0: #1d2021;
+  --wall-1: #cc231c;
+  --wall-2: #989719;
+  --wall-3: #d79920;
+  --wall-4: #448488;
+  --wall-5: #b16185;
+  --wall-6: #689d69;
+  --wall-7: #a89983;
+  --wall-8: #1d2021;
+  --wall-9: #fb4833;
+  --wall-10: #b8ba25;
+  --wall-11: #fabc2e;
+  --wall-12: #83a597;
+  --wall-13: #d3859a;
+  --wall-14: #8ec07b;
+  --wall-15: #ebdbb2;
+  --accent: #83a597;
+}

@@ -1,0 +1,41 @@
+/* Generated per-scheme by wallust -> horizon */
+@define-color wall_0 #1c1e26;
+@define-color wall_1 #e95678;
+@define-color wall_2 #29d398;
+@define-color wall_3 #fac29a;
+@define-color wall_4 #26bbd9;
+@define-color wall_5 #ee64ae;
+@define-color wall_6 #59e3e3;
+@define-color wall_7 #9da0a2;
+@define-color wall_8 #2e303e;
+@define-color wall_9 #e95678;
+@define-color wall_10 #29d398;
+@define-color wall_11 #fac29a;
+@define-color wall_12 #26bbd9;
+@define-color wall_13 #ee64ae;
+@define-color wall_14 #59e3e3;
+@define-color wall_15 #d5d8da;
+@define-color accent_bg_color #26bbd9;
+@define-color accent_color #26bbd9;
+@define-color accent_fg_color #d5d8da;
+@define-color theme_selected_bg_color #26bbd9;
+
+:root {
+  --wall-0: #1c1e26;
+  --wall-1: #e95678;
+  --wall-2: #29d398;
+  --wall-3: #fac29a;
+  --wall-4: #26bbd9;
+  --wall-5: #ee64ae;
+  --wall-6: #59e3e3;
+  --wall-7: #9da0a2;
+  --wall-8: #2e303e;
+  --wall-9: #e95678;
+  --wall-10: #29d398;
+  --wall-11: #fac29a;
+  --wall-12: #26bbd9;
+  --wall-13: #ee64ae;
+  --wall-14: #59e3e3;
+  --wall-15: #d5d8da;
+  --accent: #26bbd9;
+}
