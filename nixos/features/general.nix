@@ -61,11 +61,12 @@
 
       persistance.data.directories = [
         ".ssh"
-        ".config/nvim"
+        ".config"
         "my-nixos-dotfiles"
       ];
 
       persistance.cache.directories = [
+        ".zen"
         ".local/share/zoxide"
         ".local/share/direnv"
         ".local/share/nvim"
