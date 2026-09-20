@@ -65,6 +65,9 @@
         ".themes"
         "my-nixos-dotfiles"
       ];
+      persistance.data.files = [
+        ".gitconfig"
+      ];
 
       persistance.cache.directories = [
         ".zen"
