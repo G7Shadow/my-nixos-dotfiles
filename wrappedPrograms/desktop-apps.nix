@@ -12,6 +12,7 @@
       zenSetup = ''
         zenThemeDir="/home/${user}/.cache/wallust/zen-browser"
         mkdir -p "$zenThemeDir"
+        chown -R "${user}:users" "$zenThemeDir"
         for profile in /home/${user}/.zen/*.Default\ Profile; do
             [ -d "$profile" ] || continue
             mkdir -p "$profile/chrome"
@@ -20,12 +21,21 @@
                 import_line="@import \"$zenThemeDir/$f.css\";"
                 if [ -f "$target" ] && grep -qF "$zenThemeDir/$f.css" "$target"; then
                     : # import already present
-                elif [ -f "$target" ] && [ "$(head -n1 "$target")" = "* {" ]; then
-                    # old full wallust-generated file: replace with the import
+                elif [ -f "$target" ] \
+                     && [ "$(wc -l < "$target")" -gt 5 ] \
+                     && grep -q -- '--base:' "$target" \
+                     && grep -q -- '--surface:' "$target" \
+                     && grep -q -- '--primary:' "$target" \
+                     && grep -q -- '--secondary:' "$target" \
+                     && grep -q -- '--error:' "$target"; then
+                    # old full wallust-generated file: replace with the import.
+                    # Detected by the template's palette-variable block anywhere
+                    # in the file, not by "first line == * {", so full renders
+                    # with a leading comment/blank line are still caught.
                     echo "$import_line" > "$target"
                 elif [ -f "$target" ]; then
                     # custom css: prepend the import so custom rules still win
-                    { echo "$import_line"; cat "$target"; } > "${target}.tmp" && mv "${target}.tmp" "$target"
+                    { echo "$import_line"; cat "$target"; } > "''${target}.tmp" && mv "''${target}.tmp" "$target"
                 else
                     echo "$import_line" > "$target"
                 fi

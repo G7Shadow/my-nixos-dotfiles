@@ -69,19 +69,6 @@ hyprctl reload    >/dev/null 2>&1 || true
 pkill -USR1 kitty 2>/dev/null      || true
 # foot: new windows pick up colors. vesktop: hot-reloads CSS. quickshell: live FileView.
 
-# --- zen: no native CSS hot-reload; restart to apply the regenerated
-# userChrome.css/userContent.css (session/tabs are restored automatically) ---
-zen_bin="$(command -v zen-beta 2>/dev/null || command -v zen 2>/dev/null)"
-if pgrep -x zen-beta >/dev/null 2>&1 || pgrep -x zen >/dev/null 2>&1; then
-    pkill -x zen-beta 2>/dev/null || true
-    pkill -x zen    2>/dev/null || true
-    for _ in $(seq 1 30); do
-        pgrep -x zen-beta >/dev/null 2>&1 || pgrep -x zen >/dev/null 2>&1 || break
-        sleep 0.2
-    done
-    [ -n "$zen_bin" ] && nohup "$zen_bin" >/dev/null 2>&1 &
-fi
-
 # --- GTK (option B): switch the matching custom GTK 3/4 theme, if one exists ---
 # Symlink the colorscheme's empty gtk.css over the Nix-managed @import 'colors.css',
 # letting the per-theme CSS in ~/.themes/<Name>/ take full control. Remove stale
