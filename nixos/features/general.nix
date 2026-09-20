@@ -23,7 +23,6 @@
         ];
         shell = self'.packages.environment;
         hashedPasswordFile = "/persist/passwd";
-        initialPassword = "12345";
       };
 
       nix.settings.experimental-features = [
