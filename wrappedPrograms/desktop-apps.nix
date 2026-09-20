@@ -13,6 +13,10 @@
             [ -d "$profile" ] || continue
             mkdir -p "$profile/chrome"
             touch "$profile/chrome/userChrome.css" "$profile/chrome/userContent.css"
+            src="/home/${user}/my-nixos-dotfiles/nixos/features/config/zen/userChrome.js"
+            if [ -f "$src" ]; then
+              cp "$src" "$profile/chrome/userChrome.js"
+            fi
             if [ ! -f "$profile/user.js" ] \
                || ! grep -q "toolkit.legacyUserProfileCustomizations.stylesheets" "$profile/user.js"; then
               printf '%s\n' \
