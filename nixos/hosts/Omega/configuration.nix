@@ -62,11 +62,11 @@
       defaultSession = "hyprland-uwsm";
       sddm = {
         enable = true;
-        wayland.enable = true;
       };
     };
 
     services = {
+      xserver.enable = true;
       flatpak.enable = true;
       fwupd.enable = true;
       fstrim.enable = true;

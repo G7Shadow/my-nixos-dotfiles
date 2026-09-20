@@ -23,7 +23,7 @@
             turbo = "always";
           };
           battery = {
-            governor = "schedutil";
+            governor = "powersave";
             turbo = "never";
           };
         };

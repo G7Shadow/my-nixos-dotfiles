@@ -64,6 +64,7 @@
         ".config"
         ".themes"
         "my-nixos-dotfiles"
+        "Downloads"
       ];
       persistance.data.files = [
         ".gitconfig"
