@@ -18,9 +18,8 @@ foot       = { template = 'foot.ini',    target = '~/.config/foot/colors/custom/
 # file and re-injects live, so theme switches apply to Discord instantly.
 discord    = { template = 'discord.css', target = '~/.config/vesktop/settings/quickCss.css' }
 tmux       = { template = 'tmux.conf',  target = '~/.config/tmux/generated.conf' }
-zen_chrome_hz3ab4gh   = { template = 'zen-userChrome.css',  target = '~/.zen/hz3ab4gh.Default Profile/chrome/userChrome.css' }
-zen_content_hz3ab4gh  = { template = 'zen-userContent.css',  target = '~/.zen/hz3ab4gh.Default Profile/chrome/userContent.css' }
-zen_chrome_4hnn7g3c   = { template = 'zen-userChrome.css',  target = '~/.zen/4hnn7g3c.Default Profile/chrome/userChrome.css' }
+zen_chrome  = { template = 'zen-userChrome.css',  target = '~/.cache/wallust/zen-browser/userChrome.css' }
+zen_content = { template = 'zen-userContent.css',  target = '~/.cache/wallust/zen-browser/userContent.css' }
 
 [hooks]
 # NOTE: wallust runs [hooks] only on `wallust run` (image), NOT on `cs`/`theme`.
