@@ -116,27 +116,53 @@
 # 1. Boot from NixOS minimal ISO
 sudo -i
 
-# 2. Connect to WiFi
-sudo iwctl
-station wlan0 connect "YOUR_WIFI_SSID"
-exit
+# 2. Connect to WiFi (iwctl is NOT on the minimal ISO — use wpa_cli)
+sudo wpa_cli
+#   interactive:
+#   scan
+#   scan_results
+#   add_network
+#   set_network 0 ssid "YOUR_WIFI_SSID"
+#   set_network 0 psk "YOUR_PASSWORD"
+#   set_network 0 key_mgmt WPA-PSK
+#   enable_network 0
+#   save_config
+#   quit
+# (graphical ISO alternative: nmtui)
+
+# 2b. Enable flakes for nix commands
+export NIX_CONFIG="experimental-features = nix-command flakes"
 
 # 3. Identify disk
 lsblk
 
-# 4. Set LUKS passphrase
-echo -n "your-secure-passphrase" > /tmp/secret.key
+# 4. Set LUKS passphrase (use /root — /tmp can be read-only on the live ISO)
+echo -n "your-secure-passphrase" > /root/secret.key
+chmod 600 /root/secret.key
 
 # 5. Clone dotfiles
+nix-env -iA nixos.git 2>/dev/null || true
 git clone https://github.com/G7Shadow/my-nixos-dotfiles /mnt/dotfiles
 
-# 6. Edit disk device ID in disko.nix
+# 6. Edit disk device ID in disko.nix and point the passphrase at /root
 DISK=$(ls /dev/disk/by-id/nvme-* | head -1)
 sed -i "s|/dev/disk/by-id/nvme-INSERT_YOUR_SSD_ID_HERE|$DISK|" \
   /mnt/dotfiles/nixos/hosts/Omega/disko.nix
+sed -i 's|/tmp/secret.key|/root/secret.key|' \
+  /mnt/dotfiles/nixos/hosts/Omega/disko.nix
 
-# 7. Partition, encrypt, format, mount
-nix run github:nix-community/disko -- --mode destroy,format,mount \
+# 7. Partition, encrypt, format, mount (flake ref — disko.nix defines
+#    flake.diskoConfigurations.diskoOmega, not a plain disko config).
+#    NOTE: this remounts /mnt, hiding the clone underneath.
+nix run github:nix-community/disko -- --flake /mnt/dotfiles#diskoOmega \
+  --mode destroy,format,mount
+
+# 7b. Re-clone and re-apply the edits from step 6 (the old clone is hidden)
+git clone https://github.com/G7Shadow/my-nixos-dotfiles /mnt/dotfiles
+DISK=$(ls /dev/disk/by-id/nvme-* | head -1)
+sed -i "s|/dev/disk/by-id/nvme-INSERT_YOUR_SSD_ID_HERE|$DISK|" \
+  /mnt/dotfiles/nixos/hosts/Omega/disko.nix
+sed -i 's|/tmp/secret.key|/root/secret.key|' \
   /mnt/dotfiles/nixos/hosts/Omega/disko.nix
 
 # 8. Generate hardware config (written to /mnt/etc/nixos/). Do NOT overwrite

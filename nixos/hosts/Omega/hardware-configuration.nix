@@ -8,14 +8,14 @@
       ];
 
       boot.initrd.availableKernelModules = [
-        "nvme"
         "xhci_pci"
-        "ahci"
+        "thunderbolt"
+        "nvme"
         "usb_storage"
-        "usbhid"
         "sd_mod"
+        "sdhci_pci"
       ];
-      boot.initrd.kernelModules = [ ];
+      boot.initrd.kernelModules = [ "dm-snapshot" ];
       boot.kernelModules = [
         "kvm-intel"
         "i915"
