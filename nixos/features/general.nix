@@ -62,6 +62,7 @@
       persistance.data.directories = [
         ".ssh"
         ".config"
+        ".themes"
         "my-nixos-dotfiles"
       ];
 
