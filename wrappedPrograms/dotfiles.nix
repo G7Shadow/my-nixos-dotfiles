@@ -29,7 +29,19 @@
     in
     {
       system.activationScripts.dotfileSymlinks = {
-        text = links;
+        text = ''
+          dotDir="/home/${user}/.config"
+          persistDir="/persist/userdata/home/${user}/.config"
+          mkdir -p "$dotDir"
+          # If ~/.config is persisted but its bind mount is not up yet (first
+          # switch after adding the persisted dir), mount it now so these
+          # symlinks land on the persistent side instead of a tmpfs layer
+          # that gets hidden once the systemd mount unit activates.
+          if [ -d "$persistDir" ] && ! mountpoint -q "$dotDir"; then
+            mount --bind "$persistDir" "$dotDir"
+          fi
+          ${links}
+        '';
         deps = [ ];
       };
     };
