@@ -40,6 +40,8 @@
       networkmanager.enable = true;
     };
 
+    hardware.bluetooth.enable = true;
+
     time.timeZone = "America/Jamaica";
     i18n.defaultLocale = "en_US.UTF-8";
 
