@@ -24,6 +24,7 @@
       services.spice-vdagentd.enable = true;
 
       environment.systemPackages = with pkgs; [
+        edk2-ovmf
         spice-gtk
         virglrenderer
         looking-glass-client
