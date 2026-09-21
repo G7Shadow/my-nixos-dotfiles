@@ -22,10 +22,26 @@ require("lazy").setup({
       import = "lazyvim.plugins",
       opts = {
         colorscheme = function()
+          local theme
           local cache_file = vim.fn.expand("~/.cache/nvim-dynamite-theme")
           local f = io.open(cache_file, "r")
-          local theme = f and f:read("*l") or nil
-          if f then f:close() end
+          if f then
+            theme = f:read("*l")
+            f:close()
+          end
+
+          if not theme or theme == "" then
+            -- fall back to the quickshell theme (persisted) before the cache file exists
+            local c = io.open(vim.fn.expand("~/.config/quickshell/config.json"), "r")
+            if c then
+              local ok, d = pcall(vim.json.decode, c:read("*a"))
+              c:close()
+              if ok and type(d) == "table" and type(d.theme) == "string" and d.theme ~= "" then
+                theme = d.theme
+              end
+            end
+          end
+
           if not theme or theme == "" then theme = "solarized-osaka" end
 
           local mapping = { ["tokyo-night"] = "tokyonight" }

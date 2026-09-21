@@ -21,6 +21,7 @@
       users.users."${user}".extraGroups = [ "libvirtd" ];
 
       virtualisation.spiceUSBRedirection.enable = true;
+      services.spice-vdagentd.enable = true;
 
       environment.systemPackages = with pkgs; [
         spice-gtk

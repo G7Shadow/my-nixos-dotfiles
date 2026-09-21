@@ -62,12 +62,16 @@
       persistance.data.directories = [
         ".ssh"
         ".config"
+        ".vscode-oss"
+        ".vscode-oss-shared"
         ".themes"
         "my-nixos-dotfiles"
         "Downloads"
+        ".local/share/opencode"
       ];
       persistance.data.files = [
         ".gitconfig"
+        ".zsh_history"
       ];
 
       persistance.cache.directories = [
@@ -78,6 +82,10 @@
         ".mozilla"
         ".cache/wallust"
         ".cache/matugen"
+      ];
+
+      persistance.cache.files = [
+        ".cache/nvim-dynamite-theme"
       ];
     }
   );
