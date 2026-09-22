@@ -25,7 +25,6 @@
         file-roller
         virt-manager
       ];
-      deps = [ ];
     }
   );
 }
