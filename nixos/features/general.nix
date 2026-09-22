@@ -15,6 +15,10 @@
 
       programs.nix-index-database.comma.enable = true;
 
+      security.sudo.extraConfig = ''
+        Defaults lecture=never
+      '';
+
       users.users."${config.preferences.user.name}" = {
         isNormalUser = true;
         extraGroups = [
