@@ -10,7 +10,6 @@
         self.nixosModules.desktop-packages
         self.nixosModules.dotfiles
         self.nixosModules.neovim
-        self.nixosModules.vscodium
         self.nixosModules.fingerprint
       ];
     }
