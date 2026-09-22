@@ -35,12 +35,27 @@
         exec ${pkgs.vscodium}/bin/codium "$@"
       '';
 
-      codium = pkgs.runCommand "vscodium-wrapped" { } ''
+      codium = pkgs.runCommand "vscodium-wrapped" {
+        buildInputs = [ pkgs.imagemagick ];
+      } ''
         mkdir -p $out/bin $out/share/applications
         cp ${codiumScript}/bin/codium $out/bin/codium
         chmod +x $out/bin/codium
         cp -r ${pkgs.vscodium}/share/applications/*.desktop $out/share/applications/
-        cp -r ${pkgs.vscodium}/share/icons $out/share/
+
+        # The upstream package only ships the icon at 1024x1024, which is not a
+        # registered size in hicolor's index.theme, so Qt's icon lookup (QIcon::
+        # fromTheme — used by the quickshell launcher) never finds it. Bake it
+        # into the sizes hicolor actually declares.
+        source="${pkgs.vscodium}/share/icons/hicolor/1024x1024/apps/vscodium.png"
+        for size in 16 22 24 32 48 64 128 256 512; do
+          mkdir -p $out/share/icons/hicolor/''${size}x''${size}/apps
+          convert "$source" -resize ''${size}x''${size} $out/share/icons/hicolor/''${size}x''${size}/apps/vscodium.png
+          if [ "$size" -le 256 ]; then
+            mkdir -p $out/share/icons/hicolor/''${size}x''${size}@2/apps
+            convert "$source" -resize $((size * 2))x$((size * 2)) $out/share/icons/hicolor/''${size}x''${size}@2/apps/vscodium.png
+          fi
+        done
       '';
     in
     {
