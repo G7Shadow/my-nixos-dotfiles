@@ -16,8 +16,6 @@
         marketplace.asvetliakov.vscode-neovim
         marketplace.theqtcompany.qt-qml
 
-        # Color themes matching the wallust colorschemes (name → the
-        # workbench.colorTheme these install, see theme-apply.sh).
         marketplace.catppuccin.catppuccin-vsc # Catppuccin Mocha
         marketplace.hui890514.vscode-theme-e-ink # E-Ink
         marketplace.sainnhe.everforest # Everforest Night Hard
