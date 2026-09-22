@@ -57,6 +57,7 @@
         brave
         (vesktop.override { withSystemVencord = true; })
         spotify
+        vscodium
         obsidian
         netflix
         localsend
