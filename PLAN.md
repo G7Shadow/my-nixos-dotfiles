@@ -103,7 +103,7 @@
 - `quickshell.nix` — QuickShell with zoxide
 - `dotfiles.nix` — Symlink activation script for `~/.config/*` → repo configs
 - `cli-tools.nix` — kitty, htop, btop, wget, zoxide, ripgrep, fzf, bat, eza, fd, lazygit, tmux
-- `desktop-apps.nix` — Zen Browser, Discord, Vesktop, Spotify, Obsidian, OBS, Thunar, Nautilus, etc.
+- `desktop-apps.nix` — Discord, Vesktop, Spotify, Obsidian, OBS, Thunar, Nautilus, etc.
 - `desktop-utils.nix` — brightnessctl, ffmpeg, pulsemixer, playerctl, bluez, ntfs3g, etc.
 - `dev.nix` — gcc, python3, nodejs, opencode, LSPs (nil, nixd, pyright, ts_ls, clangd, hyprls)
 - `desktop_programs.nix` — Meta-module: dev + cli-tools + desktop-apps + desktop-utils

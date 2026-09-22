@@ -80,7 +80,6 @@
       ];
 
       persistance.cache.directories = [
-        ".zen"
         ".local/share/zoxide"
         ".local/share/direnv"
         ".local/share/nvim"

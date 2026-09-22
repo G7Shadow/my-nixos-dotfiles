@@ -18,10 +18,6 @@ foot       = { template = 'foot.ini',    target = '~/.config/foot/colors/custom/
 # file and re-injects live, so theme switches apply to Discord instantly.
 discord    = { template = 'discord.css', target = '~/.config/vesktop/settings/quickCss.css' }
 tmux       = { template = 'tmux.conf',  target = '~/.config/tmux/generated.conf' }
-zen_chrome_hz3ab4gh   = { template = 'zen-userChrome.css',  target = '~/.zen/hz3ab4gh.Default Profile/chrome/userChrome.css' }
-zen_content_hz3ab4gh  = { template = 'zen-userContent.css',  target = '~/.zen/hz3ab4gh.Default Profile/chrome/userContent.css' }
-zen_chrome_4hnn7g3c   = { template = 'zen-userChrome.css',  target = '~/.zen/4hnn7g3c.Default Profile/chrome/userChrome.css' }
-zen_content_4hnn7g3c  = { template = 'zen-userContent.css',  target = '~/.zen/4hnn7g3c.Default Profile/chrome/userContent.css' }
 # GTK is NOT templated by wallust (option B): the custom GTK 3/4 themes are kept
 # and switched by theme-apply.sh (symlink the per-theme gtk-4.0 + gsettings name).
 
@@ -37,7 +33,7 @@ hyprland = "hyprctl reload || true"
 notify = "notify-send 'Theme' 'Palette applied' -t 1500"
 
 # --- GTK colors (wallust owns GTK now: each custom scheme => per-scheme theme dir).
-# Slot-12 accent == exactly what Zen renders; slot-7 fg. Replaces the old hand-written GTK + option B.
+# Slot-12 accent; slot-7 fg. Replaces the old hand-written GTK + option B.
 "gtk4_anime
 ariadne
 catppuccin
@@ -114,7 +110,7 @@ tokyo-night
 vira-palenight/gtk-3.0/colors.css' }
 
 # --- GTK 3/4: the custom themes, now owned by wallust. One render per scheme,
-#     slot12 accent (same slot Zen renders). Target = ~/.themes/<scheme>/ so the
+#     slot12 accent. Target = ~/.themes/<scheme>/ so the
 #     theme-apply/switch contract (which reads ~/.config/colorschemes/<name>/gtk-*)
 #     is itself wallust-generated. Replaces option B: no hand-written GTK.
 #     NOTE: template is gtk-colors.css - the repo's single true GTK surface.

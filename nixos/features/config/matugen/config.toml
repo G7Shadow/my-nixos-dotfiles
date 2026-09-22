@@ -44,11 +44,6 @@ output_path = '~/.local/state/quickshell/generated/colors.json'
 #output_path = '~/.config/kitty/matugen.conf'
 #post_hook = 'kill -SIGUSR1 $(pgrep kitty)'
 
-[templates.pywalfox]
-input_path = '~/.config/matugen/templates/pywalfox-colors.json'
-output_path = '~/.cache/wal/colors.json'
-post_hook = 'pywalfox update --profile-path ~/.zen || true'
-
 #[templates.vesktop]
 #input_path = '~/.config/matugen/templates/midnight-discord.css'
 #output_path = '~/.config/vesktop/themes/midnight-discord.css'

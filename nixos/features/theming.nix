@@ -41,7 +41,6 @@
           adw-gtk3
           libsForQt5.qt5ct
           kdePackages.qt6ct
-          pywalfox-native
           cava
           waybar
           hyprpaper
