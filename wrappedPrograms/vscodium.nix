@@ -16,13 +16,29 @@
         marketplace.asvetliakov.vscode-neovim
         marketplace.theqtcompany.qt-qml
       ];
+
+      extensionsEnv = pkgs.buildEnv {
+        name = "codium-extensions";
+        paths = extensions;
+      };
+
+      codium = pkgs.writeShellScriptBin "codium" ''
+        store="${extensionsEnv}/share/vscode/extensions"
+        export PATH="${pkgs.lib.makeBinPath [ pkgs.trash-cli ]}:$PATH"
+        export ELECTRON_TRASH=trash-cli
+        dir="$HOME/.vscode-oss/extensions"
+        mkdir -p "$dir"
+        for ext in "$store"/*; do
+          [ -e "$ext" ] || continue
+          ln -sfn "$ext" "$dir/$(basename "$ext")"
+        done
+        exec ${pkgs.vscodium}/bin/codium "$@"
+      '';
     in
     {
       hjem.users."${user}".packages = [
-        (pkgs.vscode-with-extensions.override {
-          vscode = pkgs.vscodium;
-          vscodeExtensions = extensions;
-        })
+        codium
+        pkgs.trash-cli
       ];
     }
   );
