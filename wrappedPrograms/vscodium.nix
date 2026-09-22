@@ -22,7 +22,7 @@
         paths = extensions;
       };
 
-      codium = pkgs.writeShellScriptBin "codium" ''
+      codiumScript = pkgs.writeShellScriptBin "codium" ''
         store="${extensionsEnv}/share/vscode/extensions"
         export PATH="${pkgs.lib.makeBinPath [ pkgs.trash-cli ]}:$PATH"
         export ELECTRON_TRASH=trash-cli
@@ -30,9 +30,17 @@
         mkdir -p "$dir"
         for ext in "$store"/*; do
           [ -e "$ext" ] || continue
-          ln -sfn "$ext" "$dir/$(basename "$ext")"
+          ln -sfn "$ext" "$dir/$(basename "$ext")" 2>/dev/null || true
         done
         exec ${pkgs.vscodium}/bin/codium "$@"
+      '';
+
+      codium = pkgs.runCommand "vscodium-wrapped" { } ''
+        mkdir -p $out/bin $out/share/applications
+        cp ${codiumScript}/bin/codium $out/bin/codium
+        chmod +x $out/bin/codium
+        cp -r ${pkgs.vscodium}/share/applications/*.desktop $out/share/applications/
+        cp -r ${pkgs.vscodium}/share/icons $out/share/
       '';
     in
     {
