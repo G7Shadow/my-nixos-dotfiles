@@ -68,6 +68,7 @@
         "my-nixos-dotfiles"
         "Downloads"
         ".local/share/opencode"
+      ".local/state/opencode"
       ];
       persistance.data.files = [
         ".gitconfig"
