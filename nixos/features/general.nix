@@ -77,9 +77,11 @@
         ".vscode-oss-shared"
         ".themes"
         "my-nixos-dotfiles"
+        "Documents"
         "Downloads"
+        "Projects"
         ".local/share/opencode"
-      ".local/state/opencode"
+        ".local/state/opencode"
       ];
       persistance.data.files = [
         ".gitconfig"
