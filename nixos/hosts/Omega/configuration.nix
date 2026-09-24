@@ -40,6 +40,12 @@
       networkmanager.enable = true;
     };
 
+    # Prefer IPv4 over IPv6 when resolving (no usable IPv6 on this network makes
+    # Qt/Prism downloads like Minecraft assets stall and time out)
+    environment.etc."gai.conf".text = ''
+      precedence ::ffff:0:0/96  100
+    '';
+
     hardware.bluetooth.enable = true;
 
     time.timeZone = "America/Jamaica";
