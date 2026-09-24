@@ -38,7 +38,7 @@
       # requires >= 1.17.0, so bundle the prebuilt release binary instead
       nixpkgs.overlays = [
         (final: _prev: {
-          opencode = final.callPackage ./_opencode.nix { };
+          opencode = final.callPackage ./opencode.nix { };
         })
       ];
       environment.systemPackages = with pkgs; [

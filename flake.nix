@@ -45,7 +45,12 @@
       inherit (inputs.nixpkgs) lib;
       inherit (lib.fileset) toList fileFilter;
 
-      isNixModule = file: file.hasExt "nix" && file.name != "flake.nix" && !lib.hasPrefix "_" file.name;
+      isNixModule =
+        file:
+        file.hasExt "nix"
+        && file.name != "flake.nix"
+        && file.name != "opencode.nix" # package, loaded via callPackage, not a module
+        && !lib.hasPrefix "_" file.name;
 
       importTree = path: toList (fileFilter isNixModule path);
 
