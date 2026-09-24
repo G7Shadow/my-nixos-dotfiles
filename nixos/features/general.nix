@@ -34,6 +34,9 @@
         "flakes"
       ];
       nixpkgs.config.allowUnfree = true;
+      nixpkgs.overlays = [
+        inputs.opencode.overlays.default
+      ];
       environment.systemPackages = with pkgs; [
         self'.packages.environment
         self'.packages.git
