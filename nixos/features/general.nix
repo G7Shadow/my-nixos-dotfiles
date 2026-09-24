@@ -34,8 +34,12 @@
         "flakes"
       ];
       nixpkgs.config.allowUnfree = true;
+      # nixpkgs's opencode is stuck on 1.16.2; the free-tier Console provider
+      # requires >= 1.17.0, so bundle the prebuilt release binary instead
       nixpkgs.overlays = [
-        inputs.opencode.overlays.default
+        (final: _prev: {
+          opencode = final.callPackage ./_opencode.nix { };
+        })
       ];
       environment.systemPackages = with pkgs; [
         self'.packages.environment

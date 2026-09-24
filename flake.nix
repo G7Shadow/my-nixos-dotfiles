@@ -37,10 +37,6 @@
 
     # Apps
     awww.url = "git+https://codeberg.org/LGFae/awww";
-
-    # OpenCode from upstream (nixpkgs is stuck on 1.16.2; the free-tier Console
-    # provider requires >= 1.17.0)
-    opencode.url = "github:anomalyco/opencode";
   };
 
   outputs =
