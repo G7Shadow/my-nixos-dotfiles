@@ -10,6 +10,10 @@
         };
       };
 
+      persistance.data.directories = [
+        ".local/share/PrismLauncher"
+      ];
+
       persistance.cache.directories = [
         ".local/share/Steam"
       ];
