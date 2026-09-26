@@ -15,6 +15,8 @@
         imagemagick
         feh
         gvfs
+        libnotify
+        dunst
         ntfs3g
         playerctl
         protonup-ng
