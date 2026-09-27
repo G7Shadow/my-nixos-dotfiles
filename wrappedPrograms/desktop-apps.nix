@@ -18,6 +18,11 @@
       services.dbus.packages = [
         thunarWithPlugins
         pkgs.tumbler
+        pkgs.accountsservice
+        pkgs.at-spi2-core
+        pkgs.geoclue2
+        pkgs.kdePackages.kwallet
+        pkgs.kdePackages.xdg-desktop-portal-kde
       ];
 
       hjem.users."${user}" = {
