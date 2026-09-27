@@ -1,11 +1,20 @@
 #!/usr/bin/env bash
+# Bounce org.gnome.desktop.interface color-scheme away and back so running GTK4 /
+# libadwaita apps (nautilus) re-read gtk.css, which GTK4 does not watch.
+# NOT a theme switch: the final value always equals the initial one.
+#
+# dconf, not gsettings: the `gsettings` first on PATH is hjem's unwrapped glib and
+# fails with "No schemas installed", silently no-opping this hook. dconf comes from
+# the system profile (programs.dconf.enable) and needs no schemas.
+set -uo pipefail
 
-current=$(gsettings get org.gnome.desktop.interface color-scheme)
+key=/org/gnome/desktop/interface/color-scheme
+current="$(dconf read "$key" 2>/dev/null || true)"
 
 if [[ "$current" == "'prefer-dark'" ]]; then
-    gsettings set org.gnome.desktop.interface color-scheme prefer-light
-    gsettings set org.gnome.desktop.interface color-scheme prefer-dark
+    dconf write "$key" "'prefer-light'" || true
+    dconf write "$key" "'prefer-dark'" || true
 else
-    gsettings set org.gnome.desktop.interface color-scheme prefer-dark
-    gsettings set org.gnome.desktop.interface color-scheme prefer-light
+    dconf write "$key" "'prefer-dark'" || true
+    dconf write "$key" "'prefer-light'" || true
 fi
