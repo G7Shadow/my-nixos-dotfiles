@@ -60,6 +60,8 @@
       variant = "";
     };
 
+    services.desktopManager.plasma6.enable = true;
+
     services.displayManager = {
       defaultSession = "hyprland-uwsm";
       sddm = {
