@@ -3,7 +3,7 @@
     disko.devices = {
       disk.main = {
         type = "disk";
-        device = "/dev/disk/by-id/nvme-INSERT_YOUR_SSD_ID_HERE";
+        device = "/dev/disk/by-id/nvme-SKHynix_HFS512GDE9X081N_FYA8N01281180871W";
         content = {
           type = "gpt";
           partitions = {

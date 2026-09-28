@@ -27,6 +27,7 @@
 
 ### `nixos/hosts/Omega/disko.nix`
 - Full-disk partitioning using disko
+- Device ID pre-filled for the T14's SSD: `nvme-SKHynix_HFS512GDE9X081N_FYA8N01281180871W`
 - **LUKS encryption**
 - **btrfs** filesystem with LVM
 - **16G swap partition** with resume support
@@ -135,6 +136,7 @@ export NIX_CONFIG="experimental-features = nix-command flakes"
 
 # 3. Identify disk
 lsblk
+ls -l /dev/disk/by-id/nvme-*   # confirm the by-id matches disko.nix
 
 # 4. Set LUKS passphrase (use /root — /tmp can be read-only on the live ISO)
 echo -n "your-secure-passphrase" > /root/secret.key
@@ -144,10 +146,12 @@ chmod 600 /root/secret.key
 nix-env -iA nixos.git 2>/dev/null || true
 git clone https://github.com/G7Shadow/my-nixos-dotfiles /mnt/dotfiles
 
-# 6. Edit disk device ID in disko.nix and point the passphrase at /root
-DISK=$(ls /dev/disk/by-id/nvme-* | head -1)
-sed -i "s|/dev/disk/by-id/nvme-INSERT_YOUR_SSD_ID_HERE|$DISK|" \
-  /mnt/dotfiles/nixos/hosts/Omega/disko.nix
+# 6. Point disko.nix's LUKS key at /root (created in step 4)
+#    The disk device ID is already filled in for the T14's SSD, so there is
+#    no device edit to make. Installing to a different SSD? Redirect it first:
+#      DISK=$(ls /dev/disk/by-id/nvme-* | head -1)
+#      sed -i "s|/dev/disk/by-id/nvme-SKHynix_HFS512GDE9X081N_FYA8N01281180871W|$DISK|" \
+#        /mnt/dotfiles/nixos/hosts/Omega/disko.nix
 sed -i 's|/tmp/secret.key|/root/secret.key|' \
   /mnt/dotfiles/nixos/hosts/Omega/disko.nix
 
@@ -157,11 +161,8 @@ sed -i 's|/tmp/secret.key|/root/secret.key|' \
 nix run github:nix-community/disko -- --flake /mnt/dotfiles#diskoOmega \
   --mode destroy,format,mount
 
-# 7b. Re-clone and re-apply the edits from step 6 (the old clone is hidden)
+# 7b. Re-clone and re-apply step 6 (the old clone is hidden under the remount)
 git clone https://github.com/G7Shadow/my-nixos-dotfiles /mnt/dotfiles
-DISK=$(ls /dev/disk/by-id/nvme-* | head -1)
-sed -i "s|/dev/disk/by-id/nvme-INSERT_YOUR_SSD_ID_HERE|$DISK|" \
-  /mnt/dotfiles/nixos/hosts/Omega/disko.nix
 sed -i 's|/tmp/secret.key|/root/secret.key|' \
   /mnt/dotfiles/nixos/hosts/Omega/disko.nix
 
