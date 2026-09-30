@@ -37,6 +37,8 @@
         pyright
         tree-sitter
         kdePackages.qtdeclarative
+        sass
+        dart-sass
       ];
     }
   );

@@ -7,7 +7,8 @@
 #
 # GTK is OPTION B: the hand-made custom GTK 3/4 themes are preserved and switched
 # from ~/.config/colorschemes/<name>/ (symlink the per-theme gtk-4.0 + set the GTK
-# theme name), GTK is NOT recolored by wallust templates.
+# theme name), GTK is NOT recolored by wallust templates. A scheme with no
+# gtk-theme file of its own uses adw-gtk3-dark.
 #
 # Usage: theme-apply.sh <name|/path/to/scheme.json>
 #   names resolve to ~/.config/wallust/colorschemes/<name>.json
@@ -69,13 +70,15 @@ hyprctl reload    >/dev/null 2>&1 || true
 pkill -USR1 kitty 2>/dev/null      || true
 # foot: new windows pick up colors. vesktop: hot-reloads CSS. quickshell: live FileView.
 
-# --- GTK (option B): switch the matching custom GTK 3/4 theme, if one exists ---
+# --- GTK (option B): switch the matching custom GTK 3/4 theme, else adw-gtk3-dark ---
 # Symlink the colorscheme's empty gtk.css over the Nix-managed @import 'colors.css',
 # letting the per-theme CSS in ~/.themes/<Name>/ take full control. Remove stale
 # per-theme overrides (gtk-dark.css, assets) so the theme's own directory provides
 # them. Toggle color-scheme to force running GTK apps to live-reload their CSS.
 csdir="$HOME/.config/colorschemes/$name"
-theme_name=""
+# A scheme with no gtk-theme file of its own falls back to adw-gtk3-dark, so it
+# still gets a defined GTK look instead of inheriting whatever dconf was left on.
+theme_name="adw-gtk3-dark"
 [ -f "$csdir/gtk-theme" ] && theme_name="$(cat "$csdir/gtk-theme")"
 
 for ver in gtk-3.0 gtk-4.0; do
