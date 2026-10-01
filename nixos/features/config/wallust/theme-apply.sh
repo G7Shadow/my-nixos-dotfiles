@@ -94,14 +94,19 @@ if [ -n "$theme_name" ]; then
     dconf write /org/gnome/desktop/interface/gtk-theme "'$theme_name'" 2>/dev/null || true
 fi
 
-current_scheme="$(dconf read /org/gnome/desktop/interface/color-scheme 2>/dev/null)"
-if [[ "$current_scheme" == "'prefer-dark'" ]]; then
-    dconf write /org/gnome/desktop/interface/color-scheme "'prefer-light'" 2>/dev/null || true
-    dconf write /org/gnome/desktop/interface/color-scheme "'prefer-dark'"  2>/dev/null || true
-else
-    dconf write /org/gnome/desktop/interface/color-scheme "'prefer-dark'"  2>/dev/null || true
-    dconf write /org/gnome/desktop/interface/color-scheme "'prefer-light'" 2>/dev/null || true
+# Color-scheme hint: a scheme may carry an optional 'gtk-color-scheme' file
+# (e.g. e-ink is light). Defaults to prefer-dark for the curated dark themes.
+# Toggle away and back when we're already on the desired value so running GTK
+# apps live-reload their CSS; otherwise just write the desired value once.
+gtk_desired="prefer-dark"
+[ -f "$csdir/gtk-color-scheme" ] && gtk_desired="$(cat "$csdir/gtk-color-scheme")"
+gtk_current="$(dconf read /org/gnome/desktop/interface/color-scheme 2>/dev/null)"
+if [[ "$gtk_current" == "'$gtk_desired'" ]]; then
+    gtk_other="prefer-light"
+    [[ "$gtk_desired" == 'prefer-light' ]] && gtk_other="prefer-dark"
+    dconf write /org/gnome/desktop/interface/color-scheme "'$gtk_other'" 2>/dev/null || true
 fi
+dconf write /org/gnome/desktop/interface/color-scheme "'$gtk_desired'" 2>/dev/null || true
 
 # --- spicetify (option B: curated Sleek color schemes; best-effort name match) ---
 if command -v spicetify >/dev/null 2>&1; then

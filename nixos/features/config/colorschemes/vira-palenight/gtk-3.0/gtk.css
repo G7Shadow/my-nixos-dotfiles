@@ -17,7 +17,8 @@
 @define-color wall_15 #d6deeb;
 @define-color accent_bg_color #82aaff;
 @define-color accent_color #82aaff;
-@define-color accent_fg_color #d6deeb;
+@define-color accent_fg_color rgba(0, 0, 0, 0.87);
+@define-color theme_selected_fg_color rgba(0, 0, 0, 0.87);
 @define-color theme_selected_bg_color #82aaff;
 
 :root {

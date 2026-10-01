@@ -20,6 +20,7 @@
         ))
         opencode
         gnumake
+        yo
         nodejs
         unzip
         wrappedGit
