@@ -22,6 +22,7 @@
         gnumake
         yo
         nodejs
+        vsce
         unzip
         wrappedGit
         curl
