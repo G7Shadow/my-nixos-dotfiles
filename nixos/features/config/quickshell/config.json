@@ -73,10 +73,10 @@
     "spacingUnit": 4,
     "statusPill": true,
     "surfaceTint": 2,
-    "theme": "catppuccin",
+    "theme": "vira-palenight",
     "themeSwitcherWidth": 860,
     "volumeStep": 5,
-    "wallpaper": "/home/jeremyl/.config/colorschemes/catppuccin/wallpapers/prism.jpg",
+    "wallpaper": "/home/jeremyl/.config/colorschemes/vira-palenight/wallpapers/boat.jpg",
     "wallpaperFade": 450,
     "wallpaperPickerWidth": 1080,
     "weekStartsOn": 0

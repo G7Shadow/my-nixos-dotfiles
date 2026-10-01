@@ -2,24 +2,24 @@
 -- Consumed by the Lua Hyprland config via require("colors.custom.wallust").
 -- bg1 is darker than bg0; bg2..bg4 are derived lighter shades for borders/surfaces.
 colors = {
-    bg0    = "rgb(1E1E2E)",
-    bg1    = "rgb(151520)",
-    bg2    = "rgb(30303F)",
-    bg3    = "rgb(3E3E4B)",
-    bg4    = "rgb(4B4B58)",
+    bg0    = "rgb(292D3E)",
+    bg1    = "rgb(1D202B)",
+    bg2    = "rgb(3A3E4D)",
+    bg3    = "rgb(474A59)",
+    bg4    = "rgb(545765)",
 
-    fg     = "rgb(CDD6F4)",
+    fg     = "rgb(D6DEEB)",
 
-    red    = "rgb(F38BA8)",
-    orange = "rgb(F9E2AF)",
-    yellow = "rgb(F9E2AF)",
-    green  = "rgb(A6E3A1)",
-    aqua   = "rgb(94E2D5)",
-    blue   = "rgb(89B4FA)",
-    purple = "rgb(F5C2E7)",
-    pink   = "rgb(F5C2E7)",
+    red    = "rgb(F07178)",
+    orange = "rgb(FFCB6B)",
+    yellow = "rgb(FFCB6B)",
+    green  = "rgb(C3E88D)",
+    aqua   = "rgb(89DDFF)",
+    blue   = "rgb(82AAFF)",
+    purple = "rgb(C792EA)",
+    pink   = "rgb(C792EA)",
 
-    grey0  = "rgb(585B70)",
-    grey1  = "rgb(585B70)",
-    grey2  = "rgb(BAC2DE)",
+    grey0  = "rgb(33384D)",
+    grey1  = "rgb(33384D)",
+    grey2  = "rgb(C7CCD5)",
 }
