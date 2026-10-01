@@ -73,10 +73,10 @@
     "spacingUnit": 4,
     "statusPill": true,
     "surfaceTint": 2,
-    "theme": "rxyhn",
+    "theme": "material-you",
     "themeSwitcherWidth": 860,
     "volumeStep": 5,
-    "wallpaper": "/home/jeremyl/.config/colorschemes/rxyhn/wallpapers/beach-rocks.jpg",
+    "wallpaper": "/home/jeremyl/.config/colorschemes/material-you/wallpapers/alley.jpg",
     "wallpaperFade": 450,
     "wallpaperPickerWidth": 1080,
     "weekStartsOn": 0
