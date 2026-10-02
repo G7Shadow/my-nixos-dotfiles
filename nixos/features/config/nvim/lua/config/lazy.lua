@@ -22,6 +22,8 @@ require("lazy").setup({
       import = "lazyvim.plugins",
       opts = {
         colorscheme = function()
+          if vim.g.vscode then return end
+
           local theme
           local cache_file = vim.fn.expand("~/.cache/nvim-dynamite-theme")
           local f = io.open(cache_file, "r")

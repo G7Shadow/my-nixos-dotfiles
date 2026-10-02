@@ -21,6 +21,9 @@
         playerctl
         protonup-ng
         bluez
+        bluez-utils
+        cliphist
+        wl-clipboard
       ];
     };
 }

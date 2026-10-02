@@ -22,16 +22,21 @@ vim.api.nvim_create_autocmd("BufReadPost", {
   end,
 })
 
--- open help in vertical split
-vim.api.nvim_create_autocmd("FileType", {
-  pattern = "help",
-  command = "wincmd L",
-})
+-- window-layout autocmds: native Neovim only. Under vscode-neovim the editor
+-- owns the layout, and moving/resizing nvim windows races the buffer manager
+-- (nvim_open_win/nvim_win_get_cursor: invalid window/buffer id).
+if not vim.g.vscode then
+  -- open help in vertical split
+  vim.api.nvim_create_autocmd("FileType", {
+    pattern = "help",
+    command = "wincmd L",
+  })
 
--- auto resize splits when the terminal's window is resized
-vim.api.nvim_create_autocmd("VimResized", {
-  command = "wincmd =",
-})
+  -- auto resize splits when the terminal's window is resized
+  vim.api.nvim_create_autocmd("VimResized", {
+    command = "wincmd =",
+  })
+end
 
 -- no auto continue comments on new line
 vim.api.nvim_create_autocmd("FileType", {
@@ -103,64 +108,67 @@ end
 -- live theme switching: theme-apply.sh writes ~/.cache/nvim-dynamite-theme and
 -- nvim follows it. The watcher runs even when the cache file doesn't exist yet
 -- (fresh boot before the first theme apply), falling back to the quickshell
--- config.json theme, which is persisted.
-local cache_file = vim.fn.expand("~/.cache/nvim-dynamite-theme")
-local config_file = vim.fn.expand("~/.config/quickshell/config.json")
-local theme_mapping = { ["tokyo-night"] = "tokyonight" }
+-- config.json theme, which is persisted. Native Neovim only — under
+-- vscode-neovim the editor owns the colors, so skip the watcher/timer entirely.
+if not vim.g.vscode then
+  local cache_file = vim.fn.expand("~/.cache/nvim-dynamite-theme")
+  local config_file = vim.fn.expand("~/.config/quickshell/config.json")
+  local theme_mapping = { ["tokyo-night"] = "tokyonight" }
 
-local function current_theme()
-  local f = io.open(cache_file, "r")
-  if f then
-    local t = f:read("*l")
-    f:close()
-    if t and t ~= "" then return theme_mapping[t] or t end
+  local function current_theme()
+    local f = io.open(cache_file, "r")
+    if f then
+      local t = f:read("*l")
+      f:close()
+      if t and t ~= "" then return theme_mapping[t] or t end
+    end
+
+    local c = io.open(config_file, "r")
+    if c then
+      local ok, d = pcall(vim.json.decode, c:read("*a"))
+      c:close()
+      if ok and type(d) == "table" and type(d.theme) == "string" and d.theme ~= "" then
+        return theme_mapping[d.theme] or d.theme
+      end
+    end
+
+    return nil
   end
 
-  local c = io.open(config_file, "r")
-  if c then
-    local ok, d = pcall(vim.json.decode, c:read("*a"))
-    c:close()
-    if ok and type(d) == "table" and type(d.theme) == "string" and d.theme ~= "" then
-      return theme_mapping[d.theme] or d.theme
+  local function apply_theme()
+    local theme = current_theme()
+    if not theme then return end
+
+    pcall(require, theme)
+    pcall(require, "snacks")
+    local ok = pcall(vim.cmd.colorscheme, theme)
+    if ok then
+      vim.notify("Theme: " .. theme, vim.log.levels.INFO, { title = "Theme" })
     end
   end
 
-  return nil
-end
-
-local function apply_theme()
-  local theme = current_theme()
-  if not theme then return end
-
-  pcall(require, theme)
-  pcall(require, "snacks")
-  local ok = pcall(vim.cmd.colorscheme, theme)
-  if ok then
-    vim.notify("Theme: " .. theme, vim.log.levels.INFO, { title = "Theme" })
+  local function maybe_apply()
+    local stat = vim.uv.fs_stat(cache_file)
+    if stat and stat.mtime.sec > (vim.g._dynamite_mtime or 0) then
+      vim.g._dynamite_mtime = stat.mtime.sec
+      apply_theme()
+    end
   end
-end
 
-local function maybe_apply()
-  local stat = vim.uv.fs_stat(cache_file)
-  if stat and stat.mtime.sec > (vim.g._dynamite_mtime or 0) then
-    vim.g._dynamite_mtime = stat.mtime.sec
-    apply_theme()
+  if vim.uv.fs_stat(cache_file) then
+    vim.g._dynamite_mtime = vim.uv.fs_stat(cache_file).mtime.sec
+
+    local debounce
+    local watcher = vim.uv.new_fs_event()
+    watcher:start(cache_file, {}, vim.schedule_wrap(function()
+      if debounce then pcall(debounce.close, debounce) end
+      debounce = vim.defer_fn(apply_theme, 100)
+    end))
   end
+
+  vim.api.nvim_create_autocmd("FocusGained", { callback = maybe_apply })
+  vim.api.nvim_create_user_command("DTheme", apply_theme, {})
+
+  -- poll: catches the cache file appearing after it was missing at startup
+  vim.fn.timer_start(3000, maybe_apply, { ["repeat"] = -1 })
 end
-
-if vim.uv.fs_stat(cache_file) then
-  vim.g._dynamite_mtime = vim.uv.fs_stat(cache_file).mtime.sec
-
-  local debounce
-  local watcher = vim.uv.new_fs_event()
-  watcher:start(cache_file, {}, vim.schedule_wrap(function()
-    if debounce then pcall(debounce.close, debounce) end
-    debounce = vim.defer_fn(apply_theme, 100)
-  end))
-end
-
-vim.api.nvim_create_autocmd("FocusGained", { callback = maybe_apply })
-vim.api.nvim_create_user_command("DTheme", apply_theme, {})
-
--- poll: catches the cache file appearing after it was missing at startup
-vim.fn.timer_start(3000, maybe_apply, { ["repeat"] = -1 })
