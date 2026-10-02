@@ -100,11 +100,12 @@ else
 fi
 
 if [ -n "$theme_name" ]; then
-    dconf write /org/gnome/desktop/interface/gtk-theme "'$theme_name'" 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface gtk-theme "$theme_name" 2>/dev/null || true
 fi
 
-# GTK3 takes its theme name from XSettings (xsettingsd), NOT dconf, and nwg-look
-# otherwise overwrites this behind our back. Keep xsettingsd in sync and HUP it.
+# GTK3 also reads its theme name from XSettings (xsettingsd) on X11/XWayland,
+# and nwg-look otherwise overwrites this behind our back. Keep xsettingsd in
+# sync and HUP it so X11 apps track the same theme as native-Wayland GTK3.
 xsconf="$HOME/.config/xsettingsd/xsettingsd.conf"
 if [ -f "$xsconf" ]; then
     tmp="$(mktemp)"
@@ -119,13 +120,13 @@ fi
 # apps live-reload their CSS; otherwise just write the desired value once.
 gtk_desired="prefer-dark"
 [ -f "$csdir/gtk-color-scheme" ] && gtk_desired="$(cat "$csdir/gtk-color-scheme")"
-gtk_current="$(dconf read /org/gnome/desktop/interface/color-scheme 2>/dev/null)"
+gtk_current="$(gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null)"
 if [[ "$gtk_current" == "'$gtk_desired'" ]]; then
     gtk_other="prefer-light"
     [[ "$gtk_desired" == 'prefer-light' ]] && gtk_other="prefer-dark"
-    dconf write /org/gnome/desktop/interface/color-scheme "'$gtk_other'" 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface color-scheme "$gtk_other" 2>/dev/null || true
 fi
-dconf write /org/gnome/desktop/interface/color-scheme "'$gtk_desired'" 2>/dev/null || true
+gsettings set org.gnome.desktop.interface color-scheme "$gtk_desired" 2>/dev/null || true
 
 # --- spicetify (option B: curated Sleek color schemes; best-effort name match) ---
 if command -v spicetify >/dev/null 2>&1; then

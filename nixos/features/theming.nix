@@ -9,6 +9,11 @@
     {
       programs.dconf.enable = true;
 
+      # Puts org.gnome.desktop.interface (gtk-theme, color-scheme, fonts, cursors)
+      # on the GSettings search path so GTK3 apps can read the theme name from
+      # dconf/GSettings (xsettingsd only reaches X11/XWayland apps).
+      environment.systemPackages = [ pkgs.gsettings-desktop-schemas ];
+
       environment.variables = {
         XCURSOR_THEME = "macOS";
         XCURSOR_SIZE = "24";
