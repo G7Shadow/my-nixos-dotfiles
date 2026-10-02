@@ -71,10 +71,10 @@ pkill -USR1 kitty 2>/dev/null      || true
 # foot: new windows pick up colors. vesktop: hot-reloads CSS. quickshell: live FileView.
 
 # --- GTK (option B): switch the matching custom GTK 3/4 theme, else adw-gtk3-dark ---
-# Symlink the colorscheme's empty gtk.css over the Nix-managed @import 'colors.css',
-# letting the per-theme CSS in ~/.themes/<Name>/ take full control. Remove stale
-# per-theme overrides (gtk-dark.css, assets) so the theme's own directory provides
-# them. Toggle color-scheme to force running GTK apps to live-reload their CSS.
+# The Nix-managed gtk.css imports 'colors.css' + 'scheme.css'; link the per-scheme
+# overlay to the sidecar so a rebuild (which recreates gtk.css) can't clobber it.
+# Remove stale per-theme overrides (gtk-dark.css, assets) so the theme's own
+# directory provides them. Toggle color-scheme to force running GTK apps to reload.
 csdir="$HOME/.config/colorschemes/$name"
 # A scheme with no gtk-theme file of its own falls back to adw-gtk3-dark, so it
 # still gets a defined GTK look instead of inheriting whatever dconf was left on.
@@ -83,8 +83,7 @@ theme_name="adw-gtk3-dark"
 
 for ver in gtk-3.0 gtk-4.0; do
     if [ -f "$csdir/$ver/gtk.css" ]; then
-        rm -f "$HOME/.config/$ver/gtk.css"
-        ln -sf "$csdir/$ver/gtk.css" "$HOME/.config/$ver/gtk.css" 2>/dev/null || true
+        ln -sf "$csdir/$ver/gtk.css" "$HOME/.config/$ver/scheme.css" 2>/dev/null || true
     fi
     rm -f "$HOME/.config/$ver/gtk-dark.css"
     rm -f "$HOME/.config/$ver/assets"
@@ -92,6 +91,16 @@ done
 
 if [ -n "$theme_name" ]; then
     dconf write /org/gnome/desktop/interface/gtk-theme "'$theme_name'" 2>/dev/null || true
+fi
+
+# GTK3 takes its theme name from XSettings (xsettingsd), NOT dconf, and nwg-look
+# otherwise overwrites this behind our back. Keep xsettingsd in sync and HUP it.
+xsconf="$HOME/.config/xsettingsd/xsettingsd.conf"
+if [ -f "$xsconf" ]; then
+    tmp="$(mktemp)"
+    { grep -v '^Net/ThemeName' "$xsconf" 2>/dev/null || true; printf 'Net/ThemeName "%s"\n' "$theme_name"; } > "$tmp"
+    mv "$tmp" "$xsconf"
+    pkill -HUP xsettingsd 2>/dev/null || true
 fi
 
 # Color-scheme hint: a scheme may carry an optional 'gtk-color-scheme' file

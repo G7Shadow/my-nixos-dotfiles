@@ -60,7 +60,6 @@
         xdg.config.files = {
           "gtk-3.0/settings.ini".text = ''
             [Settings]
-            gtk-theme-name=adw-gtk3
             gtk-icon-theme-name=Papirus-Dark
             gtk-cursor-theme-name=macOS
             gtk-cursor-theme-size=24
@@ -68,14 +67,13 @@
           '';
           "gtk-4.0/settings.ini".text = ''
             [Settings]
-            gtk-theme-name=adw-gtk3
             gtk-icon-theme-name=Papirus-Dark
             gtk-cursor-theme-name=macOS
             gtk-cursor-theme-size=24
             gtk-application-prefer-dark-theme=1
           '';
-          "gtk-3.0/gtk.css".text = "@import 'colors.css'";
-          "gtk-4.0/gtk.css".text = "@import 'colors.css'";
+          "gtk-3.0/gtk.css".text = "@import 'colors.css';\n@import 'scheme.css';";
+          "gtk-4.0/gtk.css".text = "@import 'colors.css';\n@import 'scheme.css';";
 
           "qt5ct/qt5ct.conf".text = ''
             color_scheme_path=~/.local/share/color-schemes/Matugen.colors
