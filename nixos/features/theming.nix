@@ -73,7 +73,6 @@
             gtk-application-prefer-dark-theme=1
           '';
           "gtk-3.0/gtk.css".text = "@import 'colors.css';\n@import 'scheme.css';";
-          "gtk-4.0/gtk.css".text = "@import 'colors.css';\n@import 'scheme.css';";
 
           "qt5ct/qt5ct.conf".text = ''
             color_scheme_path=~/.local/share/color-schemes/Matugen.colors

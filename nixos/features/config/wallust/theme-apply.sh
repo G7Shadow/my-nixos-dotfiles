@@ -71,23 +71,33 @@ pkill -USR1 kitty 2>/dev/null      || true
 # foot: new windows pick up colors. vesktop: hot-reloads CSS. quickshell: live FileView.
 
 # --- GTK (option B): switch the matching custom GTK 3/4 theme, else adw-gtk3-dark ---
-# The Nix-managed gtk.css imports 'colors.css' + 'scheme.css'; link the per-scheme
-# overlay to the sidecar so a rebuild (which recreates gtk.css) can't clobber it.
-# Remove stale per-theme overrides (gtk-dark.css, assets) so the theme's own
-# directory provides them. Toggle color-scheme to force running GTK apps to reload.
+# GTK3 loads the theme by name (via XSettings), with a per-scheme accent overlay
+# imported by the Nix-managed gtk-3.0/gtk.css. GTK4/libadwaita ignores the theme
+# name, so mirror Colloid's --libadwaita install: symlink the theme's gtk-4.0
+# (css + assets) into ~/.config/gtk-4.0 so GTK4 apps match the same theme as GTK3.
 csdir="$HOME/.config/colorschemes/$name"
 # A scheme with no gtk-theme file of its own falls back to adw-gtk3-dark, so it
 # still gets a defined GTK look instead of inheriting whatever dconf was left on.
 theme_name="adw-gtk3-dark"
 [ -f "$csdir/gtk-theme" ] && theme_name="$(cat "$csdir/gtk-theme")"
 
-for ver in gtk-3.0 gtk-4.0; do
-    if [ -f "$csdir/$ver/gtk.css" ]; then
-        ln -sf "$csdir/$ver/gtk.css" "$HOME/.config/$ver/scheme.css" 2>/dev/null || true
-    fi
-    rm -f "$HOME/.config/$ver/gtk-dark.css"
-    rm -f "$HOME/.config/$ver/assets"
-done
+# GTK3: accent overlay on top of the named theme; drop stale extras.
+rm -f "$HOME/.config/gtk-3.0/gtk-dark.css"
+rm -rf "$HOME/.config/gtk-3.0/assets"
+if [ -f "$csdir/gtk-3.0/gtk.css" ]; then
+    ln -sf "$csdir/gtk-3.0/gtk.css" "$HOME/.config/gtk-3.0/scheme.css" 2>/dev/null || true
+fi
+
+# GTK4: full theme as user CSS (libadwaita only honours ~/.config/gtk-4.0/gtk.css).
+if [ -d "$HOME/.themes/$theme_name/gtk-4.0" ]; then
+    rm -rf "$HOME/.config/gtk-4.0"/{assets,windows-assets,gtk.css,gtk-dark.css,gtk-Light.css,gtk-Dark.css,scheme.css}
+    mkdir -p "$HOME/.config/gtk-4.0"
+    ln -sf "$HOME/.themes/$theme_name/gtk-4.0/assets"       "$HOME/.config/gtk-4.0/assets"
+    ln -sf "$HOME/.themes/$theme_name/gtk-4.0/gtk.css"      "$HOME/.config/gtk-4.0/gtk.css"
+    ln -sf "$HOME/.themes/$theme_name/gtk-4.0/gtk-dark.css" "$HOME/.config/gtk-4.0/gtk-dark.css"
+else
+    rm -rf "$HOME/.config/gtk-4.0"/{assets,windows-assets,gtk.css,gtk-dark.css,gtk-Light.css,gtk-Dark.css,scheme.css}
+fi
 
 if [ -n "$theme_name" ]; then
     dconf write /org/gnome/desktop/interface/gtk-theme "'$theme_name'" 2>/dev/null || true
