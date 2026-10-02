@@ -27,7 +27,6 @@
 
       hjem.users."${user}" = {
         packages = with pkgs; [
-          inputs'.zen-browser.packages.default
           brave
           (vesktop.override { withSystemVencord = true; })
           spotify
