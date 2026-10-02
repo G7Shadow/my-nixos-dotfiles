@@ -78,6 +78,10 @@
             gtk-application-prefer-dark-theme=1
           '';
           "gtk-3.0/gtk.css".text = "@import 'colors.css';\n@import 'scheme.css';";
+          # GTK4/libadwaita only applies this user stylesheet, so import the base
+          # Colloid theme + the same per-scheme accent overlay GTK3 uses.
+          "gtk-4.0/gtk.css".text = "@import 'theme.css';\n@import 'scheme.css';";
+          "gtk-4.0/gtk-dark.css".text = "@import 'theme-dark.css';\n@import 'scheme.css';";
 
           "qt5ct/qt5ct.conf".text = ''
             color_scheme_path=~/.local/share/color-schemes/Matugen.colors

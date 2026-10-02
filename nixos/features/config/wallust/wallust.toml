@@ -30,5 +30,6 @@ hyprland = "hyprctl reload || true"
 [templated_hooks]
 notify = "notify-send 'Theme' 'Palette applied' -t 1500"
 
-# GTK 4: one clean render line per scheme (wallust owns GTK now; accent = slot12)
-gtk4_ = { template = "gtk-colors.css", target = "~/.config/colorschemes//gtk-4.0/gtk.css" }
+# GTK3/GTK4 accents come from the committed per-scheme overlays
+# (colorschemes/<name>/gtk-{3,4}.0/gtk.css) that theme-apply.sh symlinks in; wallust
+# does not render GTK templates (the old gtk4_ target here was broken/unrendered).

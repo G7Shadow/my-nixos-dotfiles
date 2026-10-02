@@ -14,6 +14,21 @@
 #   names resolve to ~/.config/wallust/colorschemes/<name>.json
 
 set -uo pipefail
+
+# GTK3 apps on native Wayland read org.gnome.desktop.interface.gtk-theme from
+# GSettings/dconf (XSettings only reaches X11/XWayland). gsettings needs that
+# schema on its search path; until gsettings-desktop-schemas lands in the system
+# profile, locate it in the store so theme switches still reach Wayland GTK3 apps.
+if ! gsettings list-schemas 2>/dev/null | grep -qx org.gnome.desktop.interface; then
+    for d in /nix/store/*gsettings-desktop-schemas*/share/gsettings-schemas/*/glib-2.0/schemas \
+             /nix/store/*gsettings-desktop-schemas*/share/glib-2.0/schemas; do
+        if [ -f "$d/gschemas.compiled" ]; then
+            export GSETTINGS_SCHEMA_DIR="$d${GSETTINGS_SCHEMA_DIR:+:$GSETTINGS_SCHEMA_DIR}"
+            break
+        fi
+    done
+fi
+
 arg="${1:?usage: theme-apply.sh <name|scheme.json>}"
 
 scheme="$arg"
@@ -71,10 +86,12 @@ pkill -USR1 kitty 2>/dev/null      || true
 # foot: new windows pick up colors. vesktop: hot-reloads CSS. quickshell: live FileView.
 
 # --- GTK (option B): switch the matching custom GTK 3/4 theme, else adw-gtk3-dark ---
-# GTK3 loads the theme by name (via XSettings), with a per-scheme accent overlay
-# imported by the Nix-managed gtk-3.0/gtk.css. GTK4/libadwaita ignores the theme
-# name, so mirror Colloid's --libadwaita install: symlink the theme's gtk-4.0
-# (css + assets) into ~/.config/gtk-4.0 so GTK4 apps match the same theme as GTK3.
+# Both toolkits load the same base Colloid theme plus the same per-scheme accent
+# overlay (wallust slot12), so GTK3 and GTK4 apps render identically:
+#   GTK3: named theme (via XSettings/dconf) + ~/.config/gtk-3.0/gtk.css, the
+#         Nix-managed stub @import 'colors.css'; @import 'scheme.css';
+#   GTK4/libadwaita ignores the theme name, so ~/.config/gtk-4.0/gtk.css (also a
+#         Nix-managed stub) imports the theme + overlay symlinked below.
 csdir="$HOME/.config/colorschemes/$name"
 # A scheme with no gtk-theme file of its own falls back to adw-gtk3-dark, so it
 # still gets a defined GTK look instead of inheriting whatever dconf was left on.
@@ -88,16 +105,26 @@ if [ -f "$csdir/gtk-3.0/gtk.css" ]; then
     ln -sf "$csdir/gtk-3.0/gtk.css" "$HOME/.config/gtk-3.0/scheme.css" 2>/dev/null || true
 fi
 
-# GTK4: full theme as user CSS (libadwaita only honours ~/.config/gtk-4.0/gtk.css).
+# GTK4: base theme + the identical per-scheme accent overlay, both imported by the
+# Nix-managed gtk-4.0/gtk.css stub. Keep the theme's assets alongside for url()s.
+mkdir -p "$HOME/.config/gtk-4.0"
+rm -f "$HOME/.config/gtk-4.0"/{theme.css,theme-dark.css,scheme.css}
+rm -rf "$HOME/.config/gtk-4.0"/{assets,windows-assets,gtk-Light.css,gtk-Dark.css}
 if [ -d "$HOME/.themes/$theme_name/gtk-4.0" ]; then
-    rm -rf "$HOME/.config/gtk-4.0"/{assets,windows-assets,gtk.css,gtk-dark.css,gtk-Light.css,gtk-Dark.css,scheme.css}
-    mkdir -p "$HOME/.config/gtk-4.0"
-    ln -sf "$HOME/.themes/$theme_name/gtk-4.0/assets"       "$HOME/.config/gtk-4.0/assets"
-    ln -sf "$HOME/.themes/$theme_name/gtk-4.0/gtk.css"      "$HOME/.config/gtk-4.0/gtk.css"
-    ln -sf "$HOME/.themes/$theme_name/gtk-4.0/gtk-dark.css" "$HOME/.config/gtk-4.0/gtk-dark.css"
-else
-    rm -rf "$HOME/.config/gtk-4.0"/{assets,windows-assets,gtk.css,gtk-dark.css,gtk-Light.css,gtk-Dark.css,scheme.css}
+    ln -sfn "$HOME/.themes/$theme_name/gtk-4.0/assets"       "$HOME/.config/gtk-4.0/assets"
+    ln -sfn "$HOME/.themes/$theme_name/gtk-4.0/gtk.css"      "$HOME/.config/gtk-4.0/theme.css"
+    ln -sfn "$HOME/.themes/$theme_name/gtk-4.0/gtk-dark.css" "$HOME/.config/gtk-4.0/theme-dark.css"
 fi
+[ -f "$csdir/gtk-4.0/gtk.css" ] && ln -sfn "$csdir/gtk-4.0/gtk.css" "$HOME/.config/gtk-4.0/scheme.css"
+# Import stubs are declared in theming.nix; (re)create them here too so the new
+# layout applies immediately, replacing the old gtk.css -> ~/.themes/... symlink.
+for stub in gtk.css gtk-dark.css; do
+    target="$HOME/.config/gtk-4.0/$stub"
+    case "$(readlink "$target" 2>/dev/null)" in
+        "$HOME/.themes/"*) rm -f "$target" ;;
+    esac
+    [ -e "$target" ] || printf "@import 'theme%s';\n@import 'scheme.css';\n" "${stub#gtk}" > "$target"
+done
 
 if [ -n "$theme_name" ]; then
     gsettings set org.gnome.desktop.interface gtk-theme "$theme_name" 2>/dev/null || true
