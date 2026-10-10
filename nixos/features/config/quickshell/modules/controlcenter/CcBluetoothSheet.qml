@@ -93,7 +93,7 @@ Column {
             onClicked: m => { if (m.button === Qt.RightButton) btSheet.menuFor(r.d, r, m.x, m.y); else r.act(); }
         }
 
-        CcSheetBits.Disc {
+        CcSheetBits.Disc { tint: Theme.hue("toggles");
             id: dDisc
             anchors.left: parent.left
             anchors.leftMargin: Theme.s2
@@ -123,7 +123,7 @@ Column {
                     text: r.d.pairing ? "Pairing…"
                         : r.d.connected ? "Connected"
                         : r.d.bonded ? "Saved" : "Not paired"
-                    color: r.d.pairing ? Theme.accent : Theme.inkDim
+                    color: r.d.pairing ? Theme.hue("toggles") : Theme.inkDim
                 }
                 BatteryGlyph {
                     anchors.verticalCenter: parent.verticalCenter
@@ -141,7 +141,7 @@ Column {
                 }
             }
         }
-        CcSheetBits.Chip {
+        CcSheetBits.Chip { tint: Theme.hue("toggles");
             id: chip
             anchors.right: parent.right
             anchors.rightMargin: Theme.s2
@@ -160,7 +160,7 @@ Column {
         opacity: visible ? 1 : 0; Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier } }
         radius: Theme.rLg
         color: Theme.fillLow
-        CcSheetBits.Disc { id: offDisc; anchors.left: parent.left; anchors.leftMargin: Theme.s3; anchors.verticalCenter: parent.verticalCenter; size: 44; icon: "bluetooth" }
+        CcSheetBits.Disc { tint: Theme.hue("toggles"); id: offDisc; anchors.left: parent.left; anchors.leftMargin: Theme.s3; anchors.verticalCenter: parent.verticalCenter; size: 44; icon: "bluetooth" }
         Column {
             anchors.left: offDisc.right; anchors.leftMargin: Theme.s3; anchors.right: parent.right; anchors.rightMargin: Theme.s3
             anchors.verticalCenter: parent.verticalCenter

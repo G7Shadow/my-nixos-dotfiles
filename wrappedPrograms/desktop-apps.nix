@@ -33,6 +33,7 @@
           vscodium
           obsidian
           netflix
+          onlyoffice-desktopeditors
           localsend
           prismlauncher
           zed-editor

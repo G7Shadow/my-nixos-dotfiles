@@ -55,7 +55,7 @@ Column {
         Component.onCompleted: entered = 1
         Behavior on entered { NumberAnimation { duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier } }
         MouseArea { id: rMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: r.pick() }
-        CcSheetBits.Disc {
+        CcSheetBits.Disc { tint: Theme.hue("sliders");
             id: rDisc
             anchors.left: parent.left; anchors.leftMargin: Theme.s2
             anchors.verticalCenter: parent.verticalCenter
@@ -72,7 +72,7 @@ Column {
             text: Audio.nodeLabel(r.node)
             color: Theme.inkPrimary
         }
-        Icon { id: tick; anchors.right: parent.right; anchors.rightMargin: Theme.s3; anchors.verticalCenter: parent.verticalCenter; name: "check"; size: 16; color: Theme.accent; opacity: r.selected ? 1 : 0; Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dFast) } } }
+        Icon { id: tick; anchors.right: parent.right; anchors.rightMargin: Theme.s3; anchors.verticalCenter: parent.verticalCenter; name: "check"; size: 16; color: Theme.hue("sliders"); opacity: r.selected ? 1 : 0; Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dFast) } } }
     }
 
     // ── output ──
@@ -86,7 +86,7 @@ Column {
             delegate: DeviceRow { required property var modelData; node: modelData; selected: modelData === Audio.sink; onPick: Audio.setSink(modelData) }
         }
     }
-    CcSheetBits.Track {
+    CcSheetBits.Track { tint: Theme.hue("sliders");
         icon: Audio.muted ? "volumeMuted" : "volume"
         value: Audio.volume
         muted: Audio.muted
@@ -106,7 +106,7 @@ Column {
         }
         StyledText { visible: sourceModel.values.length === 0; variant: "label"; text: "No input devices"; color: Theme.inkDim; opacity: visible ? 1 : 0; Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier } } }
     }
-    CcSheetBits.Track {
+    CcSheetBits.Track { tint: Theme.hue("sliders");
         visible: sourceModel.values.length > 0
         icon: "mic"
         value: Audio.sourceVolume
@@ -146,7 +146,7 @@ Column {
                         StyledText { anchors.left: parent.left; anchors.right: sub.left; anchors.rightMargin: Theme.s2; capCentreIn: parent; elide: Text.ElideRight; variant: "label"; font.weight: Theme.wMedium; text: soundSheet.appName(app.node); color: Theme.inkPrimary }
                         StyledText { id: sub; anchors.right: parent.right; capCentreIn: parent; width: Math.min(implicitWidth, app.width * 0.5); elide: Text.ElideRight; variant: "caption"; text: soundSheet.mediaName(app.node) === soundSheet.appName(app.node) ? "" : soundSheet.mediaName(app.node); color: Theme.inkDim }
                     }
-                    CcSheetBits.Track {
+                    CcSheetBits.Track { tint: Theme.hue("sliders");
                         icon: app.node.audio && app.node.audio.muted ? "volumeMuted" : "volume"
                         value: app.node.audio ? app.node.audio.volume : 0
                         muted: app.node.audio ? app.node.audio.muted : false

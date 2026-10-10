@@ -82,7 +82,7 @@ Item {
                 anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
                 width: 30; height: 30; radius: 15
-                color: prevMa.pressed ? Theme.accent : prevMa.containsMouse ? Theme.fillHigh : Theme.fillLow
+                color: prevMa.pressed ? Theme.hue("calendar") : prevMa.containsMouse ? Theme.fillHigh : Theme.fillLow
                 Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
                 Icon { anchors.centerIn: parent; name: "back"; size: 14; color: prevMa.pressed ? Theme.onAccent : Theme.inkPrimary }
                 MouseArea {
@@ -119,7 +119,7 @@ Item {
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
                 width: 30; height: 30; radius: 15
-                color: nextMa.pressed ? Theme.accent : nextMa.containsMouse ? Theme.fillHigh : Theme.fillLow
+                color: nextMa.pressed ? Theme.hue("calendar") : nextMa.containsMouse ? Theme.fillHigh : Theme.fillLow
                 Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
                 Icon { anchors.centerIn: parent; name: "back"; rotation: 180; size: 14; color: nextMa.pressed ? Theme.onAccent : Theme.inkPrimary }
                 MouseArea {
@@ -165,7 +165,7 @@ Item {
                     Rectangle {
                         anchors.centerIn: parent
                         width: 28; height: 28; radius: 14
-                        color: modelData.today ? Theme.accent : "transparent"
+                        color: modelData.today ? Theme.hue("calendar") : "transparent"
                         StyledText {
                             anchors.centerIn: parent
                             variant: "caption"

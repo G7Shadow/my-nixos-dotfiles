@@ -19,6 +19,7 @@ Item {
     id: tile
 
     property var ctl: null
+    readonly property color tone: Theme.hue("toggles")
     readonly property string key: ctl ? ctl.key : ""
     readonly property int w: ctl ? ctl.w : 1
     readonly property int h: ctl ? ctl.h : 1
@@ -73,7 +74,7 @@ Item {
         id: bg
         anchors.fill: parent
         radius: tile.circleOnly ? width / 2 : (tile.card ? Theme.rXl : height / 2)
-        color: tile.circleOnly && tile.on ? Theme.accent : Theme.surfaceOverlay
+        color: tile.circleOnly && tile.on ? tile.tone : Theme.surfaceOverlay
         Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
     }
     Rectangle {   // hover veil, under the state circle so it never tints the state colour
@@ -130,7 +131,7 @@ Item {
         width: tile.disc; height: tile.disc; radius: tile.disc / 2
         x: tile.card ? tile.pad : tile.inset
         y: tile.card ? tile.pad : (parent.height - height) / 2
-        color: tile.on ? Theme.accent : Theme.fillHigh
+        color: tile.on ? tile.tone : Theme.fillHigh
         Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
         Icon {
             anchors.centerIn: parent

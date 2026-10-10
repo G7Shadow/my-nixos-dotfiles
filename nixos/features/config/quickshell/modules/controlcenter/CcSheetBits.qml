@@ -27,7 +27,7 @@ Item {
                 id: pulse
                 anchors.verticalCenter: parent.verticalCenter
                 width: 6; height: 6; radius: 3
-                color: Theme.accent
+                color: Theme.hue("toggles")
                 SequentialAnimation on opacity {
                     running: pulse.visible && Theme.dur(Theme.dSpring) > 0
                     loops: Animation.Infinite
@@ -44,6 +44,7 @@ Item {
         property string text: ""
         property bool accent: false
         property bool enabledLook: true
+        property color tint: Theme.accent
         signal clicked()
         implicitWidth: chipText.implicitWidth + Theme.s3 * 2
         implicitHeight: 28
@@ -51,7 +52,7 @@ Item {
         color: chipMa.containsMouse ? Theme.fillHigh : Theme.fillLow
         opacity: enabledLook ? 1 : 0.45
         Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
-        StyledText { id: chipText; anchors.horizontalCenter: parent.horizontalCenter; capCentreIn: parent; variant: "caption"; font.weight: Theme.wMedium; text: parent.text; color: parent.accent ? Theme.accent : Theme.inkPrimary }
+        StyledText { id: chipText; anchors.horizontalCenter: parent.horizontalCenter; capCentreIn: parent; variant: "caption"; font.weight: Theme.wMedium; text: parent.text; color: parent.accent ? parent.tint : Theme.inkPrimary }
         MouseArea { id: chipMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; enabled: parent.enabledLook; onClicked: parent.clicked() }
     }
 
@@ -64,6 +65,7 @@ Item {
         id: tk
         implicitHeight: 28              // so a wrapper can size to it (height alone is not implicit)
         property real value: 0          // 0..1 from the backend
+        property color tint: Theme.accent
         property bool muted: false
         property string icon: ""
         property bool showPercent: true
@@ -93,7 +95,7 @@ Item {
                 anchors.left: parent.left; anchors.top: parent.top; anchors.bottom: parent.bottom
                 width: Math.max(height, parent.width * tk.shown)
                 radius: Theme.rPill
-                color: tk.muted ? Theme.alpha(Theme.accent, 0.35) : Theme.accent
+                color: tk.muted ? Theme.alpha(tk.tint, 0.35) : tk.tint
                 opacity: tk.shown > 0 ? 1 : 0
                 Behavior on width   { enabled: !tkMa.dragging; NumberAnimation { duration: Theme.dur(Theme.dBase); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier } }
                 Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dFast) } }
@@ -140,8 +142,9 @@ Item {
         property bool live: false
         property string icon: ""
         property int size: 32
+        property color tint: Theme.accent
         width: size; height: size; radius: size / 2
-        color: live ? Theme.accent : Theme.fillHigh
+        color: live ? tint : Theme.fillHigh
         Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
         Icon { anchors.centerIn: parent; visible: parent.icon !== ""; name: parent.icon; size: parent.size >= 40 ? Theme.iconSize : Theme.iconSize - 4; color: parent.live ? Theme.onAccent : Theme.inkPrimary }
     }

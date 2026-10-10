@@ -56,7 +56,27 @@ Singleton {
     readonly property color background: pal.background
     readonly property color foreground: pal.foreground
     readonly property color fg: foreground
-    readonly property color accent: pal.color6
+    // the accent: the scheme's by default, or the user's override from Settings
+    readonly property color schemeAccent: pal.color6
+    readonly property bool accentOverridden: /^#[0-9a-fA-F]{6}$/.test(Config.accentOverride)
+    readonly property color accent: accentOverridden ? Config.accentOverride : schemeAccent
+    // Color burst: each GROUP of surfaces takes its own colour of the scheme's palette
+    // instead of everything wearing the one accent. A group is one coloured thing: the
+    // workspace row, the status cluster, the control center's toggles, its sliders, its
+    // media card, the launcher, the calendar, the polkit prompt. A sheet inherits its
+    // tile's group. `hue(group)` is the accent unless burst is on; an unknown group hashes
+    // to a stable slot so a new surface still gets one colour of its own.
+    readonly property bool burst: Config.colorBurst
+    readonly property var hues: [pal.color1, pal.color2, pal.color3, pal.color4, pal.color5, pal.color6]
+    readonly property var hueSlots: ({ workspaces: 5, status: 3, toggles: 4, sliders: 1, media: 0,
+                                      launcher: 2, calendar: 0, polkit: 0, notifications: 2 })
+    function hue(group) {
+        if (!burst) return accent;
+        let s = hueSlots[group];
+        if (s === undefined) { s = 0; for (let k = 0; k < group.length; k++) s = (s * 31 + group.charCodeAt(k)) % 6; }
+        return hues[s];
+    }
+    function inkOn(c) { return lum(c) > 0.55 ? "#0b0b0b" : "#f6f6f6"; }
 
     readonly property color red: pal.color1
     readonly property color green: pal.color2
@@ -245,13 +265,14 @@ Singleton {
     readonly property int dEnter: Math.round(dSpring * 1.5)
     readonly property int stagger: Math.round(dSpring * 0.225)
     readonly property bool reducedMotion: Config.reducedMotion
-    // Game Mode strips the shell's effects the same way it strips Hyprland's: every duration
-    // collapses to 0 and the drop shadows (an FBO + a big blur per surface, every frame while
-    // anything moves) switch off. Set from shell.qml so theme/ needn't import services/.
+    // Game Mode strips the drop shadows (an FBO + a big blur per surface, every frame while
+    // anything moves), which is where the GPU cost measurably was. It no longer touches the
+    // durations: the shell kept animating and games did not notice, while the shell at zero
+    // duration felt broken. Set from shell.qml so theme/ needn't import services/.
     property bool gameMode: false
     readonly property bool shadows: !gameMode
     // collapse durations when reduced motion is on
-    function dur(d) { return (reducedMotion || gameMode) ? 0 : d; }
+    function dur(d) { return reducedMotion ? 0 : d; }
 
     // Legacy tokens (pre-Obsidian), still read by un-migrated components.
     // Migrate each surface to the tokens above, then prune these.

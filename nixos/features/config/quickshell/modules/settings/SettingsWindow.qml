@@ -29,7 +29,8 @@ FloatingWindow {
     // shapes the name text into its icon), `desc` the header blurb.
     readonly property var cats: [
         { key: "bar",        label: "Bar & Island",   glyph: "web_asset",        c: "#3b82f6", desc: "Shape and size of the island, the notch, and the Game Mode bar." },
-        { key: "clock",      label: "Clock & Date",   glyph: "schedule",         c: "#f2a33c", desc: "Time format and the date dial under the clock." },
+        { key: "media",      label: "Media",          glyph: "music_note",       c: "#e0457b", desc: "The now-playing card inside the expanded island." },
+        { key: "clock",      label: "Clock & Date",   glyph: "schedule",         c: "#f2a33c", desc: "Time format, what sits beside the clock, and the calendar." },
         { key: "appearance", label: "Appearance",     glyph: "palette",          c: "#7c6cf0", desc: "Theme, wallpaper, fonts, corners, and surface depth." },
         { key: "motion",     label: "Motion",         glyph: "animation",        c: "#22b8cf", desc: "How fast the shell animates, or whether it animates at all." },
         { key: "launcher",   label: "Launcher",       glyph: "search",           c: "#2fb463", desc: "Size of the app launcher and its result rows." },
@@ -488,9 +489,7 @@ FloatingWindow {
                                 SliderRow { label: "Inner padding"; unit: "px"; from: 0; to: 16; value: Config.islandPadding; onMoved: Config.islandPadding = Math.round(v) }
                                 SliderRow { label: "Corner radius"; unit: "px"; from: 0; to: 40; value: Config.islandRadius; onMoved: Config.islandRadius = Math.round(v) }
                                 SliderRow { label: "Corner radius (expanded)"; unit: "px"; from: 0; to: 48; value: Config.islandRadiusOpen; onMoved: Config.islandRadiusOpen = Math.round(v) }
-                                ToggleRow { label: "Status circle (battery and Wi-Fi)"; checked: Config.statusPill; onToggled: v => Config.statusPill = v }
-                                ToggleRow { label: "Album art circle while a player is open"; checked: Config.artPill; onToggled: v => Config.artPill = v }
-                                SliderRow { label: "Stage lift on hover"; unit: "px"; from: 0; to: 20; value: Config.islandStage; onMoved: Config.islandStage = Math.round(v) }
+                                SliderRow { label: "Minimum expanded width"; unit: "px"; from: 360; to: 1200; value: Config.islandMinWidth; onMoved: Config.islandMinWidth = Math.round(v) }
                             }
                         }
                         SectionLabel { text: "Game mode" }
@@ -513,7 +512,6 @@ FloatingWindow {
                                 width: parent.width
                                 SliderRow { first: true; label: "Launcher"; unit: "px"; from: 380; to: 1000; value: Config.launcherWidth; onMoved: Config.launcherWidth = Math.round(v) }
                                 SliderRow { label: "Calendar"; unit: "px"; from: 260; to: 560; value: Config.calendarWidth; onMoved: Config.calendarWidth = Math.round(v) }
-                                SliderRow { label: "Media player"; unit: "px"; from: 340; to: 640; value: Config.mediaPlayerWidth; onMoved: Config.mediaPlayerWidth = Math.round(v) }
                                 SliderRow { label: "Wallpaper picker"; unit: "px"; from: 600; to: 1600; value: Config.wallpaperPickerWidth; onMoved: Config.wallpaperPickerWidth = Math.round(v) }
                                 SliderRow { label: "Theme switcher"; unit: "px"; from: 480; to: 1400; value: Config.themeSwitcherWidth; onMoved: Config.themeSwitcherWidth = Math.round(v) }
                                 SliderRow { label: "Notification"; unit: "px"; from: 320; to: 800; value: Config.notificationWidth; onMoved: Config.notificationWidth = Math.round(v) }
@@ -532,6 +530,37 @@ FloatingWindow {
                         }
                     }
 
+                    // ── MEDIA ──
+                    Column {
+                        visible: win.cat.key === "media"
+                        width: parent.width
+                        spacing: Theme.s3
+                        Rectangle {
+                            width: parent.width; radius: Theme.rMd; color: Theme.surfacePanel
+                            implicitHeight: mediaCol.implicitHeight
+                            Column {
+                                id: mediaCol
+                                width: parent.width
+                                SliderRow { first: true; label: "Song name width"; unit: "px"; from: 60; to: 300; value: Config.mediaTitleWidth; onMoved: Config.mediaTitleWidth = Math.round(v) }
+                                SliderRow { label: "Album art size"; unit: "px"; from: 40; to: 140; value: Config.mediaArtSize; onMoved: Config.mediaArtSize = Math.round(v) }
+                            }
+                        }
+                        SectionLabel { text: "What to show" }
+                        Rectangle {
+                            width: parent.width; radius: Theme.rMd; color: Theme.surfacePanel
+                            implicitHeight: mediaShowCol.implicitHeight
+                            Column {
+                                id: mediaShowCol
+                                width: parent.width
+                                ToggleRow { first: true; label: "Album line"; checked: Config.mediaShowAlbum; onToggled: v => Config.mediaShowAlbum = v }
+                                ToggleRow { label: "Artist line"; checked: Config.mediaShowArtist; onToggled: v => Config.mediaShowArtist = v }
+                                ToggleRow { label: "Transport buttons"; checked: Config.mediaShowTransport; onToggled: v => Config.mediaShowTransport = v }
+                                ToggleRow { label: "Lyrics"; checked: Config.mediaLyrics; onToggled: v => Config.mediaLyrics = v }
+                                ToggleRow { label: "Scroll to change track"; checked: Config.mediaScrollSwitch; onToggled: v => Config.mediaScrollSwitch = v }
+                            }
+                        }
+                    }
+
                     // ── CLOCK & DATE ──
                     Column {
                         visible: win.cat.key === "clock"
@@ -545,20 +574,20 @@ FloatingWindow {
                                 width: parent.width
                                 ToggleRow { first: true; label: "24-hour time"; checked: Config.clock24h; onToggled: v => Config.clock24h = v }
                                 ToggleRow { label: "Show seconds"; checked: Config.clockSeconds; onToggled: v => Config.clockSeconds = v }
-                                ToggleRow { label: "Music bars beside the clock"; checked: Config.clockViz; onToggled: v => Config.clockViz = v }
+                                ToggleRow { label: "Workspace dots beside the clock"; checked: Config.clockDots; onToggled: v => Config.clockDots = v }
+                                ToggleRow { label: "Battery and Wi-Fi beside the clock"; checked: Config.clockStatus; onToggled: v => Config.clockStatus = v }
                             }
                         }
-                        SectionLabel { text: "Date dial" }
+                        SectionLabel { text: "Expanded island" }
                         Rectangle {
                             width: parent.width; radius: Theme.rMd; color: Theme.surfacePanel
-                            implicitHeight: knobCol.implicitHeight
+                            implicitHeight: openCol.implicitHeight
                             Column {
-                                id: knobCol
+                                id: openCol
                                 width: parent.width
-                                ToggleRow { first: true; label: "Show the date dial"; checked: Config.dateKnobShow; onToggled: v => Config.dateKnobShow = v }
-                                SliderRow { visible: Config.dateKnobShow; label: "Days on the dial"; from: 3; to: 15; value: Config.dateKnobDays; onMoved: Config.dateKnobDays = Math.max(3, Math.round(v) | 1) }
-                                SliderRow { visible: Config.dateKnobShow; label: "Angle between days"; unit: "°"; from: 8; to: 40; value: Config.dateKnobAngle; onMoved: Config.dateKnobAngle = Math.round(v) }
-                                SliderRow { visible: Config.dateKnobShow; label: "Dial radius"; unit: "px"; from: 40; to: 200; value: Config.dateKnobRadius; onMoved: Config.dateKnobRadius = Math.round(v) }
+                                ToggleRow { first: true; label: "Workspaces on the left"; checked: Config.islandWorkspaces; onToggled: v => Config.islandWorkspaces = v }
+                                ToggleRow { label: "Status on the right"; checked: Config.islandStatus; onToggled: v => Config.islandStatus = v }
+                                ToggleRow { label: "Media card under the clock"; checked: Config.islandMedia; onToggled: v => Config.islandMedia = v }
                             }
                         }
                         SectionLabel { text: "Calendar" }
@@ -588,6 +617,41 @@ FloatingWindow {
                                 width: parent.width
                                 LinkRow { first: true; label: "Theme"; value: Config.theme; onActivated: { GlobalState.settingsOpen = false; GlobalState.themeSwitcherOpen = true; } }
                                 LinkRow { label: "Wallpaper"; value: "Choose…"; onActivated: { GlobalState.settingsOpen = false; GlobalState.wallpaperPickerOpen = true; } }
+                            }
+                        }
+                        SectionLabel { text: "Accent" }
+                        Rectangle {
+                            width: parent.width; radius: Theme.rMd; color: Theme.surfacePanel
+                            implicitHeight: accentCol.implicitHeight
+                            Column {
+                                id: accentCol
+                                width: parent.width
+                                // swatches: the scheme's own accent first, then its palette; the
+                                // current pick wears a ring
+                                Item {
+                                    width: parent.width; implicitHeight: 48
+                                    StyledText { anchors { left: parent.left; leftMargin: Theme.s4 } capCentreIn: parent; variant: "label"; text: "Accent colour"; color: Theme.inkPrimary }
+                                    Row {
+                                        anchors { right: parent.right; rightMargin: Theme.s4; verticalCenter: parent.verticalCenter }
+                                        spacing: Theme.s2
+                                        Repeater {
+                                            model: [ { c: "", label: "scheme" }, { c: Theme.hues[0] }, { c: Theme.hues[1] }, { c: Theme.hues[2] }, { c: Theme.hues[3] }, { c: Theme.hues[4] }, { c: Theme.hues[5] } ]
+                                            delegate: Rectangle {
+                                                required property var modelData
+                                                readonly property string hex: modelData.c === "" ? "" : String(modelData.c)
+                                                readonly property bool picked: (Config.accentOverride.toLowerCase() === hex.toLowerCase())
+                                                width: 22; height: 22; radius: 11
+                                                color: hex === "" ? Theme.schemeAccent : modelData.c
+                                                border.width: picked ? 2 : 0
+                                                border.color: Theme.inkPrimary
+                                                Rectangle { anchors.centerIn: parent; width: 8; height: 8; radius: 4; color: Theme.base; visible: parent.hex === "" }
+                                                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: Config.accentOverride = parent.hex }
+                                            }
+                                        }
+                                    }
+                                }
+                                TextRow { label: "Custom (#rrggbb)"; value: Config.accentOverride; onCommitted: t => { const v = t.trim(); if (v === "" || /^#[0-9a-fA-F]{6}$/.test(v)) Config.accentOverride = v; } }
+                                ToggleRow { label: "Color burst (a different palette colour per surface)"; checked: Config.colorBurst; onToggled: v => Config.colorBurst = v }
                             }
                         }
                         SectionLabel { text: "Type" }

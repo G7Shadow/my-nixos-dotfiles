@@ -252,6 +252,14 @@ ShellRoot {
         function close() { GlobalState.themeSwitcherOpen = false; }
     }
 
+    // qs ipc call island toggle|open|close: hold the island expanded, no pointer needed
+    IpcHandler {
+        target: "island"
+        function toggle() { GlobalState.toggleIsland(); }
+        function open() { GlobalState.islandHold = true; }
+        function close() { GlobalState.islandHold = false; }
+    }
+
     // qs ipc call settings toggle|open|close
     IpcHandler {
         target: "settings"
@@ -266,14 +274,6 @@ ShellRoot {
         function toggle() { GlobalState.toggleCalendar(); }
         function open() { GlobalState.calendarOpen = true; }
         function close() { GlobalState.calendarOpen = false; }
-    }
-
-    // qs ipc call media toggle|open|close
-    IpcHandler {
-        target: "media"
-        function toggle() { GlobalState.toggleMediaPlayer(); }
-        function open() { GlobalState.mediaPlayerOpen = true; }
-        function close() { GlobalState.mediaPlayerOpen = false; }
     }
 
     // qs ipc call nightlight toggle  /  qs ipc call gamemode toggle

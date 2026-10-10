@@ -20,6 +20,7 @@ Item {
     id: tile
 
     property var ctl: null
+    readonly property color tone: Theme.hue("sliders")
     readonly property string key: ctl ? ctl.key : ""
     readonly property int w: ctl ? ctl.w : 1
     readonly property int h: ctl ? ctl.h : 1
@@ -66,7 +67,7 @@ Item {
 
     readonly property bool vertical: h >= 2 && w <= 2
     readonly property bool tall: h >= 2 && w >= 3
-    readonly property color fillColor: dim ? Theme.alpha(Theme.accent, 0.35) : Theme.accent
+    readonly property color fillColor: dim ? Theme.alpha(tile.tone, 0.35) : tile.tone
 
     // ── metrics ──
     // All of these used to be fixed, so at 5 columns the title and the track sat 36px apart
@@ -151,7 +152,7 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             name: "chevron"
             size: tile.chevG
-            color: headMa.containsMouse ? Theme.accent : Theme.inkDim
+            color: headMa.containsMouse ? tile.tone : Theme.inkDim
             Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
             // instant, like the disc: the sheet's copy is on the same pixels at the same
             // opacity at the moment of hand-off, in both directions

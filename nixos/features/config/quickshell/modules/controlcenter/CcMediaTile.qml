@@ -18,6 +18,7 @@ Item {
     id: tile
 
     property var ctl: null
+    readonly property color tone: Theme.hue("media")
     readonly property string key: ctl ? ctl.key : ""
     readonly property int w: ctl ? ctl.w : 1
     readonly property int h: ctl ? ctl.h : 1
@@ -52,7 +53,7 @@ Item {
         id: bg
         anchors.fill: parent
         radius: tile.circleOnly ? width / 2 : (tile.cardForm ? Theme.rXl : height / 2)
-        color: tile.circleOnly && tile.playing ? Theme.accent : Theme.surfaceOverlay
+        color: tile.circleOnly && tile.playing ? tile.tone : Theme.surfaceOverlay
         Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
     }
 
@@ -66,7 +67,7 @@ Item {
     // the veil is TINTED with the scheme's accent, not a neutral wash: the art reads as
     // belonging to the theme rather than a photo pasted onto it. Base underneath keeps the
     // ink readable whichever way the scheme runs.
-    Rectangle { anchors.fill: parent; radius: bg.radius; visible: tile.hasArt; color: Theme.alpha(Theme.mix(Theme.base, Theme.accent, 0.32), 0.68) }
+    Rectangle { anchors.fill: parent; radius: bg.radius; visible: tile.hasArt; color: Theme.alpha(Theme.mix(Theme.base, tile.tone, 0.32), 0.68) }
 
 
     // Hairline rim (Tahoe's glass edge, without the glass): a 1px stroke in the ink colour at
@@ -112,7 +113,7 @@ Item {
         x: tile.inset
         anchors.verticalCenter: parent.verticalCenter
         width: tile.disc; height: tile.disc; radius: tile.disc / 2
-        color: tile.playing ? Theme.accent : Theme.fillHigh
+        color: tile.playing ? tile.tone : Theme.fillHigh
         Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
         Icon { anchors.centerIn: parent; name: tile.playing ? "pause" : "play"; size: tile.glyph; color: tile.playing ? Theme.onAccent : Theme.inkPrimary }
     }
@@ -158,7 +159,7 @@ Item {
             width: parent.width
             height: 3; radius: 1.5
             color: Theme.fillHigh
-            Rectangle { anchors { left: parent.left; top: parent.top; bottom: parent.bottom } width: parent.width * tile.ratio; radius: 1.5; color: Theme.accent }
+            Rectangle { anchors { left: parent.left; top: parent.top; bottom: parent.bottom } width: parent.width * tile.ratio; radius: 1.5; color: tile.tone }
         }
     }
     Row {
@@ -178,7 +179,7 @@ Item {
         Rectangle {
             anchors.verticalCenter: parent.verticalCenter
             width: Math.round(Math.max(28, Math.min(48, 36 * (tile.ctl ? tile.ctl.k : 1)))); height: width; radius: width / 2
-            color: tile.playing ? Theme.accent : Theme.fillHigh
+            color: tile.playing ? tile.tone : Theme.fillHigh
             Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
             Icon { anchors.centerIn: parent; name: tile.playing ? "pause" : "play"; size: Theme.iconSize - 2; color: tile.playing ? Theme.onAccent : Theme.inkPrimary }
             MouseArea { anchors.fill: parent; enabled: tile.interactive; cursorShape: Qt.PointingHandCursor; onClicked: tile.togglePlay() }
@@ -226,7 +227,7 @@ Item {
         }
         Rectangle {
             width: 40; height: 40; radius: 20
-            color: Theme.accent
+            color: tile.tone
             Icon { anchors.centerIn: parent; name: tile.playing ? "pause" : "play"; color: Theme.onAccent }
             MouseArea { anchors.fill: parent; enabled: tile.interactive; cursorShape: Qt.PointingHandCursor; onClicked: tile.togglePlay() }
         }
@@ -243,6 +244,6 @@ Item {
         anchors { left: parent.left; right: parent.right; bottom: parent.bottom; leftMargin: Theme.s4; rightMargin: Theme.s4; bottomMargin: Theme.s3 }
         height: 3; radius: 1.5
         color: Theme.fillHigh
-        Rectangle { anchors { left: parent.left; top: parent.top; bottom: parent.bottom } width: parent.width * tile.ratio; radius: 1.5; color: Theme.accent }
+        Rectangle { anchors { left: parent.left; top: parent.top; bottom: parent.bottom } width: parent.width * tile.ratio; radius: 1.5; color: tile.tone }
     }
 }

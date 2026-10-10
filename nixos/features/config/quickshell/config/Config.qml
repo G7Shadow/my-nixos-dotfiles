@@ -15,6 +15,7 @@ Singleton {
     property alias notchFlare: adapter.notchFlare             // px the notch's top corners flare out (concave teardrop); 0 = square
     property alias islandCollapsedWidth: adapter.islandCollapsedWidth // px, the resting pill
     property alias islandExpandedHeight: adapter.islandExpandedHeight // px, hover/pinned height
+    property alias islandMinWidth: adapter.islandMinWidth     // px floor; it grows past this to fit the media + date
     property alias islandGap: adapter.islandGap               // px above the floating island (and below, via exclusiveZone)
     property alias islandPadding: adapter.islandPadding       // px of extra inset inside the expanded island
     property alias islandRadius: adapter.islandRadius         // px corner radius, collapsed
@@ -22,28 +23,32 @@ Singleton {
     property alias hyprGapsOut: adapter.hyprGapsOut           // must match Hyprland general:gaps_out (top)
     property alias gameBarHeight: adapter.gameBarHeight       // px, Game Mode's full-width bar
     property alias gameClusterGap: adapter.gameClusterGap     // px between each card and the clock in bar form
-    property alias statusPill: adapter.statusPill             // the battery ring + Wi-Fi circle beside the island
-    property alias artPill: adapter.artPill                   // album-art circle on the island's left while a music player is open
-    property alias islandStage: adapter.islandStage           // px the island (and the circles) step forward on hover; 0 = no stage effect
 
-
-    // ── date knob (the dial under the expanded clock) ──
-    property alias dateKnobShow: adapter.dateKnobShow         // show it at all
-    property alias dateKnobDays: adapter.dateKnobDays         // how many days on the drum (odd → today centred)
-    property alias dateKnobAngle: adapter.dateKnobAngle       // degrees between days around the drum
-    property alias dateKnobRadius: adapter.dateKnobRadius     // px drum radius; sets the centre spacing
+    // ── media (the island's now-playing card) ──
+    property alias mediaTitleWidth: adapter.mediaTitleWidth   // px of song name shown before it elides
+    property alias mediaArtSize: adapter.mediaArtSize         // px, album art square
+    property alias mediaShowAlbum: adapter.mediaShowAlbum     // show the album line
+    property alias mediaShowArtist: adapter.mediaShowArtist   // show the artist line
+    property alias mediaShowTransport: adapter.mediaShowTransport // show prev / play / next
+    property alias mediaLyrics: adapter.mediaLyrics           // synced lyrics under the player
+    property alias mediaScrollSwitch: adapter.mediaScrollSwitch   // scroll over the art to change track
 
     // ── clock ──
     property alias clockSeconds: adapter.clockSeconds         // show seconds in the collapsed clock
     property alias clock24h: adapter.clock24h                 // 24-hour vs 12-hour time
-    property alias clockViz: adapter.clockViz                 // mini EQ bars beside the collapsed clock while playing
+    property alias clockDots: adapter.clockDots               // workspace dots beside the collapsed clock
+    property alias clockStatus: adapter.clockStatus           // battery + Wi-Fi capsules beside the collapsed clock
+
+    // ── expanded island (the pill's companions, a size up, either side of the clock) ──
+    property alias islandWorkspaces: adapter.islandWorkspaces // the workspace capsules on the left
+    property alias islandStatus: adapter.islandStatus         // battery + signal on the right
+    property alias islandMedia: adapter.islandMedia           // the media card under the clock
 
     // ── panel sizes ──
     property alias launcherWidth: adapter.launcherWidth
     property alias launcherRowHeight: adapter.launcherRowHeight
     property alias launcherMaxRows: adapter.launcherMaxRows   // rows visible before it scrolls
     property alias calendarWidth: adapter.calendarWidth
-    property alias mediaPlayerWidth: adapter.mediaPlayerWidth   // px, the media player card
     property alias wallpaperPickerWidth: adapter.wallpaperPickerWidth
     property alias themeSwitcherWidth: adapter.themeSwitcherWidth
     property alias notificationWidth: adapter.notificationWidth
@@ -90,6 +95,8 @@ Singleton {
     property alias radiusLarge: adapter.radiusLarge           // panels
     property alias screenCorners: adapter.screenCorners       // paint rounded corners over the display corners
     property alias screenCornerRadius: adapter.screenCornerRadius // px radius of those corners
+    property alias accentOverride: adapter.accentOverride     // "" = the scheme's accent, else a #rrggbb
+    property alias colorBurst: adapter.colorBurst             // every surface its own palette colour
     property alias surfaceTint: adapter.surfaceTint           // how far the near-black surfaces lift off pure black (%)
     property alias spacingUnit: adapter.spacingUnit           // px base unit; the whole s1..s6 scale derives from it
     property alias iconSize: adapter.iconSize                 // px, global icon size
@@ -258,6 +265,7 @@ Singleton {
             property int notchFlare: 14
             property int islandCollapsedWidth: 150
             property int islandExpandedHeight: 120
+            property int islandMinWidth: 500
             property int islandGap: 8
             property int islandPadding: 2
             property int islandRadius: 20
@@ -265,25 +273,28 @@ Singleton {
             property int hyprGapsOut: 15
             property int gameBarHeight: 50
             property int gameClusterGap: 180
-            property bool statusPill: true
-            property bool artPill: true
-            property int islandStage: 7
             // media
-            // date knob
-            property bool dateKnobShow: true
-            property int dateKnobDays: 7
-            property int dateKnobAngle: 22
-            property int dateKnobRadius: 92
+            property int mediaTitleWidth: 104
+            property int mediaArtSize: 90
+            property bool mediaShowAlbum: true
+            property bool mediaShowArtist: true
+            property bool mediaShowTransport: true
+            property bool mediaLyrics: true
+            property bool mediaScrollSwitch: true
             // clock
             property bool clockSeconds: false
             property bool clock24h: true
-            property bool clockViz: true
+            property bool clockDots: true
+            property bool clockStatus: true
+            // expanded island
+            property bool islandWorkspaces: true
+            property bool islandStatus: true
+            property bool islandMedia: true
             // panels
             property int launcherWidth: 560
             property int launcherRowHeight: 48
             property int launcherMaxRows: 7
             property int calendarWidth: 360
-            property int mediaPlayerWidth: 440
             property int wallpaperPickerWidth: 1040
             property int themeSwitcherWidth: 860
             property int notificationWidth: 480
@@ -324,6 +335,8 @@ Singleton {
             property int radiusLarge: 18
             property bool screenCorners: true
             property int screenCornerRadius: 14
+            property string accentOverride: ""
+            property bool colorBurst: false
             property int surfaceTint: 4          // % ; surfaceBase step off black
             property int spacingUnit: 4
             property int iconSize: 18

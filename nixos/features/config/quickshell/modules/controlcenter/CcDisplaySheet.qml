@@ -49,7 +49,7 @@ Column {
                 Item {
                     width: parent.width
                     height: 36
-                    CcSheetBits.Disc { id: dDisc; anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; size: 32; icon: "display"; live: card.mon.focused }
+                    CcSheetBits.Disc { tint: Theme.hue("sliders"); id: dDisc; anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; size: 32; icon: "display"; live: card.mon.focused }
                     Column {
                         anchors.left: dDisc.right; anchors.leftMargin: Theme.s3
                         anchors.right: focusTag.left; anchors.rightMargin: Theme.s2
@@ -58,11 +58,11 @@ Column {
                         StyledText { width: parent.width; elide: Text.ElideRight; variant: "label"; font.weight: Theme.wMedium; text: card.mon.name; color: Theme.inkPrimary }
                         StyledText { width: parent.width; elide: Text.ElideRight; variant: "caption"; text: card.mon.width + "×" + card.mon.height + (card.mon.hz ? "  ·  " + Math.round(card.mon.hz) + " Hz" : "") + "  ·  " + Display.fmtScale(card.mon.scale) + "×"; color: Theme.inkDim }
                     }
-                    StyledText { id: focusTag; anchors.right: parent.right; capCentreIn: parent; visible: card.mon.focused; variant: "caption"; text: "focused"; color: Theme.accent }
+                    StyledText { id: focusTag; anchors.right: parent.right; capCentreIn: parent; visible: card.mon.focused; variant: "caption"; text: "focused"; color: Theme.hue("sliders") }
                 }
 
                 // brightness, per display
-                CcSheetBits.Track {
+                CcSheetBits.Track { tint: Theme.hue("sliders");
                     visible: !!card.ctl && card.ctl.ready
                     icon: "brightness"
                     value: card.ctl ? card.ctl.percentage / 100 : 0
@@ -82,7 +82,7 @@ Column {
                             width: chipText.implicitWidth + Theme.s3 * 2
                             height: 30
                             radius: 15
-                            color: current ? Theme.accent : (chipMa.containsMouse ? Theme.fillHigh : Theme.fillLow)
+                            color: current ? Theme.hue("sliders") : (chipMa.containsMouse ? Theme.fillHigh : Theme.fillLow)
                             opacity: Display.busy ? 0.5 : 1
                             Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
                             StyledText { id: chipText; anchors.horizontalCenter: parent.horizontalCenter; capCentreIn: parent; variant: "caption"; font.weight: Theme.wMedium; text: Display.fmtScale(chip.modelData) + "×"; color: chip.current ? Theme.onAccent : Theme.inkPrimary }
@@ -150,9 +150,9 @@ Column {
                             radius: Theme.rSm
                             color: mrowMa.containsMouse ? Theme.fillHigh : "transparent"
                             Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
-                            StyledText { anchors.left: parent.left; anchors.leftMargin: Theme.s2; capCentreIn: parent; variant: "label"; text: mrow.modelData.label || ""; color: mrow.current ? Theme.accent : Theme.inkPrimary }
+                            StyledText { anchors.left: parent.left; anchors.leftMargin: Theme.s2; capCentreIn: parent; variant: "label"; text: mrow.modelData.label || ""; color: mrow.current ? Theme.hue("sliders") : Theme.inkPrimary }
                             StyledText { anchors.right: mtick.visible ? mtick.left : parent.right; anchors.rightMargin: Theme.s2; capCentreIn: parent; variant: "caption"; text: mrow.modelData.sublabel || ""; color: Theme.inkDim }
-                            Icon { id: mtick; visible: mrow.current; anchors.right: parent.right; anchors.rightMargin: Theme.s2; anchors.verticalCenter: parent.verticalCenter; name: "check"; size: 14; color: Theme.accent }
+                            Icon { id: mtick; visible: mrow.current; anchors.right: parent.right; anchors.rightMargin: Theme.s2; anchors.verticalCenter: parent.verticalCenter; name: "check"; size: 14; color: Theme.hue("sliders") }
                             MouseArea { id: mrowMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; enabled: !Display.busy && !mrow.current; onClicked: { Display.setMode(card.mon.name, mrow.modelData.mode); displaySheet.modesOpenFor = ""; } }
                     }
                 }
@@ -176,7 +176,7 @@ Column {
             Item {
                 width: parent.width
                 height: 36
-                CcSheetBits.Disc { id: nlDisc; anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; size: 32; icon: "night"; live: NightLight.enabled }
+                CcSheetBits.Disc { tint: Theme.hue("sliders"); id: nlDisc; anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; size: 32; icon: "night"; live: NightLight.enabled }
                 Column {
                     anchors.left: nlDisc.right; anchors.leftMargin: Theme.s3
                     anchors.right: nlToggle.left; anchors.rightMargin: Theme.s3
@@ -200,7 +200,7 @@ Column {
                 clip: true
                 opacity: NightLight.enabled ? 1 : 0
                 Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier } }
-                CcSheetBits.Track {
+                CcSheetBits.Track { tint: Theme.hue("sliders");
                     id: warmth
                     width: parent.width
                     icon: "night"

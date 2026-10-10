@@ -150,7 +150,7 @@ Item {
                 verticalAlignment: TextInput.AlignVCenter
                 clip: true
                 color: Theme.inkPrimary
-                selectionColor: Theme.alpha(Theme.accent, 0.4)
+                selectionColor: Theme.alpha(Theme.hue("launcher"), 0.4)
                 font.family: Theme.fontBody
                 font.pixelSize: Theme.fsBody
 
@@ -184,7 +184,7 @@ Item {
                     anchors.centerIn: parent
                     variant: "caption"
                     text: root.modeLabel
-                    color: Theme.accent
+                    color: Theme.hue("launcher")
                     font.weight: Theme.wMedium
                 }
             }
@@ -273,7 +273,7 @@ Item {
                             anchors.centerIn: parent
                             visible: !ic.visible
                             name: root.mode === "calc" ? "calculator" : root.mode === "clip" ? "clipboard" : "apps"
-                            color: Theme.accent
+                            color: Theme.hue("launcher")
                         }
                     }
 
@@ -304,10 +304,11 @@ Item {
                 }
             }
 
-            // empty state
+            // empty state. Only while active: items empties the instant the launcher is
+            // dismissed, and this was flashing "No results" over the fade-out.
             StyledText {
                 width: parent.width
-                visible: root.items.length === 0
+                visible: root.active && root.items.length === 0
                 horizontalAlignment: Text.AlignHCenter
                 topPadding: Theme.s2
                 bottomPadding: Theme.s2

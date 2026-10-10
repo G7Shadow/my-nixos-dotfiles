@@ -76,7 +76,7 @@ Column {
             onClicked: m => { if (wifiSheet.live) wifiSheet.menuFor(wifiSheet.live, hero, m.x, m.y); }
         }
 
-        CcSheetBits.Disc {
+        CcSheetBits.Disc { tint: Theme.hue("toggles");
             id: heroDisc
             anchors.left: parent.left
             anchors.leftMargin: Theme.s3
@@ -118,7 +118,7 @@ Column {
                 color: Theme.inkDim
             }
         }
-        CcSheetBits.Chip {
+        CcSheetBits.Chip { tint: Theme.hue("toggles");
             id: heroChip
             anchors.right: parent.right
             anchors.rightMargin: Theme.s3
@@ -197,7 +197,7 @@ Column {
                 onClicked: m => { if (m.button === Qt.RightButton) wifiSheet.menuFor(row.net, row, m.x, m.y); else wifiSheet.press(row.net); }
             }
 
-            CcSheetBits.Disc {
+            CcSheetBits.Disc { tint: Theme.hue("toggles");
                 id: rowDisc
                 x: Theme.s2; y: (44 - height) / 2
                 size: 32
@@ -226,7 +226,7 @@ Column {
                     width: parent.width; elide: Text.ElideRight
                     variant: "caption"
                     text: row.net.stateChanging ? "Connecting…" : (wifiSheet.secLabel(row.net) + (row.net.known ? "  ·  Saved" : ""))
-                    color: row.net.stateChanging ? Theme.accent : Theme.inkDim
+                    color: row.net.stateChanging ? Theme.hue("toggles") : Theme.inkDim
                 }
             }
             // the lock is pinned to the row's edge so every row's lock lines up; the hover
@@ -246,7 +246,7 @@ Column {
                     capCentreIn: parent
                     variant: "caption"; font.weight: Theme.wMedium
                     text: row.net.known ? "Connect" : "Join"
-                    color: Theme.accent
+                    color: Theme.hue("toggles")
                     opacity: rowMa.containsMouse ? 1 : 0
                     Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dFast) } }
                 }
@@ -283,7 +283,7 @@ Column {
                         Keys.onEnterPressed: go.clicked()
                         StyledText { anchors.verticalCenter: parent.verticalCenter; visible: psk.text === ""; variant: "label"; text: "Password"; color: Theme.inkFaint }
                     }
-                    CcSheetBits.Chip {
+                    CcSheetBits.Chip { tint: Theme.hue("toggles");
                         id: go
                         anchors.right: parent.right
                         anchors.rightMargin: 4
@@ -309,7 +309,7 @@ Column {
         width: parent.width
         height: 32
         opacity: visible ? 1 : 0; Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier } }
-        CcSheetBits.Chip {
+        CcSheetBits.Chip { tint: Theme.hue("toggles");
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.verticalCenter: parent.verticalCenter
             text: wifiSheet.showAll ? "Show fewer" : ("See all  ·  " + wifiSheet.hidden + " more")

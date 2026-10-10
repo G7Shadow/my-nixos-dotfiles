@@ -49,11 +49,8 @@ Item {
     function step(dir) {
         if (root.count === 0) return;
         const next = strip.currentIndex + dir;
-        if (next < 0 || next >= root.count) {
-            endBounce.dir = dir;
-            endBounce.restart();
-            return;
-        }
+        root.touched = true;
+        if (next < 0 || next >= root.count) { strip.kick(dir); return; }
         strip.currentIndex = next;
     }
 
@@ -76,17 +73,20 @@ Item {
         for (let i = 0; i < m.count; i++) {
             if (m.get(i, "filePath") === Config.wallpaper) {
                 strip.currentIndex = i;
-                strip.positionViewAtIndex(i, ListView.Center);
+                strip.jump(i);
                 return;
             }
         }
     }
 
-    onActiveChanged: if (active) Qt.callLater(() => { keyCatcher.forceActiveFocus(); root.syncToCurrent(); })
+    // once the user has stepped, the folder model landing late must not yank the selection
+    // back to the applied wallpaper under their keys
+    property bool touched: false
+    onActiveChanged: if (active) { touched = false; Qt.callLater(() => { keyCatcher.forceActiveFocus(); root.syncToCurrent(); }); }
 
     Connections {
         target: Wallpapers.model
-        function onCountChanged() { if (root.active) Qt.callLater(root.syncToCurrent); }
+        function onCountChanged() { if (root.active && !root.touched) Qt.callLater(root.syncToCurrent); }
     }
 
     Item {
@@ -94,6 +94,7 @@ Item {
         anchors.fill: parent
         focus: root.active
         Keys.onEscapePressed: root.close()
+        Keys.onReleased: event => { if (!event.isAutoRepeat && (event.key === Qt.Key_Left || event.key === Qt.Key_Right)) strip.release(); }
         Keys.onLeftPressed: root.step(-1)
         Keys.onRightPressed: root.step(1)
         Keys.onReturnPressed: root.apply()
@@ -134,50 +135,62 @@ Item {
 
             ListView {
                 id: strip
-                anchors.fill: parent
+                // settled width, centred, from frame one (see the theme switcher's strip)
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                width: root.panelW
                 orientation: ListView.Horizontal
                 model: Wallpapers.model
                 clip: true
 
-                // pin the current item dead centre and snap to it, so the strip always
-                // rests on a thumbnail instead of halfway between two
-                preferredHighlightBegin: (width - root.cellW) / 2
-                preferredHighlightEnd: (width - root.cellW) / 2
-                highlightRangeMode: ListView.StrictlyEnforceRange
+                // ── the strip owns its scrolling ──
+                // No highlight range, no snap mode: the view's range enforcement re-places
+                // itself INSTANTLY whenever the current index moves against a fast highlight
+                // animation (a left pressed mid-sweep jumped the strip 58px in one frame,
+                // measured), and no amount of tuning changes that. Instead the content position
+                // is animated explicitly: `go` stops whatever is in flight and starts a fresh
+                // spring from wherever the strip IS to the centre of the index, so a reversal,
+                // a burst or a hitch is always one continuous motion. `jump` places it
+                // instantly (the open, a filter reset). A drag stops the animation and hands
+                // the strip back to the nearest card on release.
+                highlightRangeMode: ListView.NoHighlightRange
+                highlightFollowsCurrentItem: false
+                snapMode: ListView.NoSnap
+                readonly property real pitch: root.cellW + spacing
+                readonly property real centreOff: (width - root.cellW) / 2
+                function xFor(i) { return i * pitch - centreOff; }
+                function nearest() { return Math.max(0, Math.min(count - 1, Math.round((contentX + centreOff) / pitch))); }
+                function go(i) { scroll.stop(); if (count === 0) return; scroll.from = contentX; scroll.to = xFor(i); scroll.start(); }
+                function jump(i) { scroll.stop(); if (count === 0) return; contentX = xFor(i); }
+                // a full card of travel per step: the island's longer entrance timing, not the
+                // base spring, or the strip reads as snapping between cards
+                NumberAnimation { id: scroll; target: strip; property: "contentX"; duration: Theme.dur(Theme.dEnter); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier }
+                onDragStarted: scroll.stop()
+                onMovementEnded: { const n = nearest(); if (n === currentIndex) go(n); else currentIndex = n; }
                 // Room at both ends so the FIRST and LAST items can actually reach the centre.
-                // Without it, centring anything near the start needs a negative contentX, which
-                // is outside the Flickable's bounds — it snapped back, and StrictlyEnforceRange
-                // then re-picked whichever item was nearest the middle. That's what shunted the
-                // selection one across the moment the panel opened, and what broke landing on
-                // the first result after a search (result 0 needs exactly that scroll).
                 leftMargin: Math.max(0, (width - root.cellW) / 2)
                 rightMargin: Math.max(0, (width - root.cellW) / 2)
-                snapMode: ListView.SnapOneItem
-                highlightMoveDuration: Theme.dur(Theme.dSpring)
+                onCurrentIndexChanged: if (currentIndex >= 0) go(currentIndex)
                 // dragging past either end rubber-bands rather than hitting a wall
                 boundsBehavior: Flickable.DragOverBounds
                 boundsMovement: Flickable.FollowBoundsBehavior
 
-                // run-into-the-end rubber band: shove the strip against the direction you
-                // asked for, then let the shell's own spring drop it back (so it carries
-                // whatever bounce motionBounce is set to)
-                transform: Translate { id: bump }
-                SequentialAnimation {
-                    id: endBounce
-                    property int dir: 1
-                    NumberAnimation {
-                        target: bump; property: "x"
-                        to: -endBounce.dir * 22
-                        duration: Theme.dur(Theme.dFast)
-                        easing.type: Easing.OutCubic
-                    }
-                    NumberAnimation {
-                        target: bump; property: "x"
-                        to: 0
-                        duration: Theme.dur(Theme.dSpring)
-                        easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier
-                    }
-                }
+                // run-into-the-end rubber band: a pull, held while the KEY is held. A press
+                // sets ONE target (the shove) and the spring carries the strip there; repeats
+                // keep the same target, so nothing restarts (a new target per repeat restarted
+                // the spring from a standstill 30 times a second and the strip spazzed). The
+                // let-go follows the key's RELEASE, not a timer: the compositor's repeat delay
+                // (~280ms here) is longer than any sensible timer, so a timed let-go dropped
+                // the strip and the first repeat pulled it out again, every hold. The timer
+                // stays only as a long fallback for a release that never arrives.
+                property real bumpX: 0
+                Behavior on bumpX { NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } }
+                Timer { id: bumpBack; interval: 900; onTriggered: strip.bumpX = 0 }
+                function kick(dir) { bumpX = -dir * 24; bumpBack.interval = 900; bumpBack.restart(); }
+                // a tap releases within a few ms of pressing; give the pull a beat to show
+                function release() { bumpBack.interval = Theme.dur(Theme.dFast); bumpBack.restart(); }
+                transform: Translate { x: strip.bumpX }
 
                 delegate: Item {
                     id: cell

@@ -96,8 +96,8 @@ fragment_main(float4 color, KittyTextures t, KittyCustomShaderData d) {
 
     // Theme colors (linear RGB): bright core, dimmer glow, both from the accent.
     float3 theme = d.cursor_trail_color.rgb;
-    float3 bolt_color = lerp(theme, float3(1.0, 1.0, 1.0), 0.35);
-    float3 glow_color = theme * 0.45;
+    float3 bolt_color = lerp(theme, float3(1.0, 1.0, 1.0), 0.65);
+    float3 glow_color = theme * 0.65;
 
     float2 pixelDims = float2(d.viewport_size_pixels) * t.viewport.zw;
 

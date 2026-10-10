@@ -152,7 +152,7 @@ Item {
                 radius: Theme.rPill
                 color: Theme.sunken
                 border.width: 1
-                border.color: root.errorText !== "" ? Theme.bad : pwField.activeFocus ? Theme.alpha(Theme.accent, 0.55) : Theme.rim
+                border.color: root.errorText !== "" ? Theme.bad : pwField.activeFocus ? Theme.alpha(Theme.hue("polkit"), 0.55) : Theme.rim
                 Behavior on border.color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
                 opacity: root.waiting ? 1 : 0.55
                 Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dFast) } }
@@ -223,7 +223,7 @@ Item {
                     width: authLabel.implicitWidth + Theme.s4 * 2
                     height: 34
                     radius: 17
-                    color: Theme.accent
+                    color: Theme.hue("polkit")
                     opacity: root.waiting ? (authMa.containsMouse ? 0.9 : 1) : 0.45
                     Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dFast) } }
                     StyledText { id: authLabel; anchors.horizontalCenter: parent.horizontalCenter; capCentreIn: parent; variant: "label"; font.weight: Theme.wMedium; text: "Authenticate"; color: Theme.onAccent }

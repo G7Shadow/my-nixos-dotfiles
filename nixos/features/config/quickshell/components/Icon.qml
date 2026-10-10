@@ -14,7 +14,10 @@ Item {
     property string name: ""
     property real size: Theme.iconSize
     property color color: Theme.inkPrimary
-    property real strokeWidth: Theme.iconStroke   // in 24-space; the Scale transform shrinks it at render size
+    // in 24-space; the Scale transform shrinks it at render size. Floored so the rendered
+    // stroke never drops under ~1.2px: at 14px the theme stroke came out at 0.99px and the
+    // curve renderer drew nothing at all (filled glyphs beside it were fine).
+    property real strokeWidth: Math.max(Theme.iconStroke, 1.2 * 24 / Math.max(1, size))
 
     implicitWidth: size
     implicitHeight: size
@@ -27,6 +30,7 @@ Item {
         "mic":        { d: "M12,4 a3,3 0 0,1 3,3 V11 a3,3 0 0,1 -6,0 V7 a3,3 0 0,1 3,-3 Z M7.5,11 a4.5,4.5 0 0,0 9,0 M12,15.5 V19 M9,19 H15", filled: false },
         "brightness": { d: "M8.5,12 a3.5,3.5 0 1,0 7,0 a3.5,3.5 0 1,0 -7,0 M12,2 V4.5 M12,19.5 V22 M2,12 H4.5 M19.5,12 H22 M5,5 L6.8,6.8 M17.2,17.2 L19,19 M19,5 L17.2,6.8 M6.8,17.2 L5,19", filled: false },
         "night":      { d: "M20,13.5 A8.5,8.5 0 1,1 10.5,4 A6.5,6.5 0 0,0 20,13.5 Z", filled: true },
+        "bolt":       { d: "M13,2 L5,13.5 H11 L10,22 L19,10 H12.5 Z", filled: true },
         "dnd":        { d: "M4,12 a8,8 0 1,0 16,0 a8,8 0 1,0 -16,0 M8.5,12 H15.5", filled: false },
         "play":       { d: "M8,5 L19,12 L8,19 Z", filled: true },
         "pause":      { d: "M7,5 H10.5 V19 H7 Z M13.5,5 H17 V19 H13.5 Z", filled: true },
@@ -57,10 +61,13 @@ Item {
     })
     readonly property var _def: _icons[name] ?? ({ d: "", filled: false })
 
+    // the curve renderer by default; a caller can ask for the geometry one
+    property int renderer: Shape.CurveRenderer
+
     Shape {
         anchors.fill: parent
         antialiasing: true
-        preferredRendererType: Shape.CurveRenderer
+        preferredRendererType: root.renderer
         transform: Scale { xScale: root.size / 24; yScale: root.size / 24 }
 
         ShapePath {
