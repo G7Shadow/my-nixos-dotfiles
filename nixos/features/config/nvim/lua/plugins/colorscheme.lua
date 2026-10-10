@@ -13,4 +13,5 @@ return {
   { "shaunsingh/nord.nvim",           lazy = true, opts = { transparent = true } },
   { "sainnhe/gruvbox-material",       lazy = true, opts = { transparent = true } },
   { "rose-pine/neovim",               lazy = true, name = "rose-pine",           opts = { transparent = true } },
+  { "Everblush/nvim",                 lazy = true, name = "everblush",           opts = { transparent = true } },
 }

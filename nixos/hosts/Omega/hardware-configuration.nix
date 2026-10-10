@@ -17,6 +17,7 @@
       ];
       boot.initrd.kernelModules = [ "dm-snapshot" ];
       boot.kernelModules = [
+        "i2c-dev"
         "kvm-intel"
         "i915"
         "iwlwifi"

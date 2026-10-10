@@ -8,6 +8,8 @@
     {
       hjem.users."${user}".packages = with pkgs; [
         brightnessctl
+        ddcutil
+        grim
         lm_sensors
         ffmpeg
         pulsemixer

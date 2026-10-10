@@ -24,6 +24,7 @@
         extraGroups = [
           "wheel"
           "networkmanager"
+          "i2c"
         ];
         shell = self'.packages.environment;
         hashedPasswordFile = "/persist/passwd";
