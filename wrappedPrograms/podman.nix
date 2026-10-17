@@ -28,6 +28,17 @@
         compose_warning_logs = false;
       };
 
+      virtualisation.containers.registries.settings = {
+        unqualified-search-registries = [
+          "docker.io"
+          "quay.io"
+        ];
+        registry = [
+          { location = "docker.io"; }
+          { location = "quay.io"; }
+        ];
+      };
+
       hjem.users."${user}".packages = [ self'.packages.podman ];
 
       persistance.data.directories = [ ".local/share/containers" ];
