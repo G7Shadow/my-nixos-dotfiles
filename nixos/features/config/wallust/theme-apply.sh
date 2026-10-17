@@ -173,15 +173,11 @@ nvim_theme="$name"
 [ -f "$csdir/nvim-theme" ] && nvim_theme="$(cat "$csdir/nvim-theme")"
 printf "%s" "$nvim_theme" > "$HOME/.cache/nvim-dynamite-theme"
 
-# --- vscodium (option B): set workbench.colorTheme to the named extension theme ---
-vscfg="$HOME/.config/VSCodium/User/settings.json"
-if [ -f "$csdir/vscodium-theme" ] && [ -f "$vscfg" ] && command -v jq >/dev/null 2>&1; then
-    vsname="$(cat "$csdir/vscodium-theme")"
-    tmp="$(mktemp)"
-    if jq --arg t "$vsname" '.["workbench.colorTheme"]=$t' "$vscfg" >"$tmp" 2>/dev/null; then
-        mv "$tmp" "$vscfg"
-    else
-        rm -f "$tmp"
-    fi
-fi
+# --- vscodium: set the colour theme ---
+# Not jq: settings.json is JSONC (trailing comma), which jq refuses to parse, so
+# the old jq call failed silently on every switch. vscodium-apply.sh edits the
+# theme value in place (same inode, so a running VSCodium window's settings
+# watcher fires and repaints live) and leaves the rest of the file untouched.
+[ -x "$HOME/.config/colorschemes/vscodium-apply.sh" ] && \
+    "$HOME/.config/colorschemes/vscodium-apply.sh" "$name" >/dev/null 2>&1 || true
 

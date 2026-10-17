@@ -1,17 +1,17 @@
 hl.config({
-  general = {
-    layout = "master",
-  },
+	general = {
+		layout = "master",
+	},
 
-  dwindle = {
-    preserve_split = true,
-  },
+	dwindle = {
+		preserve_split = true,
+	},
 
-  master = {
-    new_status = "slave",
-  },
+	master = {
+		new_status = "slave",
+	},
 
-  scrolling = {
-    fullscreen_on_one_column = true,
-  }
+	scrolling = {
+		fullscreen_on_one_column = true,
+	},
 })

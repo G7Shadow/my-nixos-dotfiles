@@ -20,6 +20,7 @@
       self.nixosModules.gaming
       self.nixosModules.quickshell
       self.nixosModules.powersave
+      self.nixosModules.podman
       self.nixosModules.hostOmega-hardware
       self.nixosModules.impermanence
 

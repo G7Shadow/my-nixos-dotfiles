@@ -49,7 +49,6 @@
         file:
         file.hasExt "nix"
         && file.name != "flake.nix"
-        && file.name != "opencode.nix" # package, loaded via callPackage, not a module
         && !lib.hasPrefix "_" file.name;
 
       importTree = path: toList (fileFilter isNixModule path);
