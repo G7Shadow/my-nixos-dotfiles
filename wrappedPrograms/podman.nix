@@ -12,17 +12,25 @@
 
   flake.nixosModules.podman = moduleWithSystem (
     { self', ... }:
-    { config, ... }:
+    { pkgs, config, ... }:
     let
       user = config.preferences.user.name;
     in
     {
       virtualisation.podman = {
         enable = true;
+        dockerCompat = true;
         defaultNetwork.settings.dns_enabled = true;
       };
 
+      virtualisation.containers.containersConf.settings.engine = {
+        compose_providers = [ "${pkgs.podman-compose}/bin/podman-compose" ];
+        compose_warning_logs = false;
+      };
+
       hjem.users."${user}".packages = [ self'.packages.podman ];
+
+      persistance.data.directories = [ ".local/share/containers" ];
     }
   );
 }

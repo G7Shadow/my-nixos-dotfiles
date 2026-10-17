@@ -27,7 +27,6 @@
         wrappedGit
         curl
         jq
-        docker
 
         vscode-langservers-extracted
         lua-language-server
