@@ -29,6 +29,7 @@
       };
 
       virtualisation.containers.registries.settings = {
+        "short-name-mode" = "disabled";
         unqualified-search-registries = [
           "docker.io"
           "quay.io"
