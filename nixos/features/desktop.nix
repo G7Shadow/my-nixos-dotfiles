@@ -11,6 +11,7 @@
         self.nixosModules.dotfiles
         self.nixosModules.neovim
         self.nixosModules.fingerprint
+        self.nixosModules.gtk4LiveCss
       ];
     }
   );
