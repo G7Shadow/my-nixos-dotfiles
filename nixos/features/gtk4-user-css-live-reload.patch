@@ -98,13 +98,6 @@
 +                  GFile             *file,
 +                  GFile             *other_file,
 +                  GFileMonitorEvent  event,
-+                  gpointer           data);
-+
-+static void
-+user_css_changed (GFileMonitor      *monitor,
-+                  GFile             *file,
-+                  GFile             *other_file,
-+                  GFileMonitorEvent  event,
 +                  gpointer           data)
 +{
 +  switch (event)
