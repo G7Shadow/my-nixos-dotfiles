@@ -2,7 +2,7 @@
 {
   flake.nixosModules.gtk4LiveCss = { ... }: {
     nixpkgs.overlays = [
-      (import ../../overlays/gtk4-live-css.nix)
+      (import ../../overlays/_gtk4-live-css.nix)
     ];
   };
 }
