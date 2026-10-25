@@ -30,16 +30,17 @@
 
       # The ISP's DPI throttles Modrinth; retry on the fetchurl until a clean
       # route (VPN/hotspot) lets the download through.
-      minecraftMods = pkgs.linkFarm "minecraft-mods-26.3" (map
-        (j: {
+      minecraftMods = pkgs.linkFarm "minecraft-mods-26.3" (
+        map (j: {
           inherit (j) name;
           path = pkgs.fetchurl {
             inherit (j) url sha512;
             curlOpts = "--retry 20 --retry-all-errors --retry-delay 3 --connect-timeout 15 --max-time 120";
           };
-        })
-        minecraftModJars);
-    in {
+        }) minecraftModJars
+      );
+    in
+    {
       programs = {
         gamemode.enable = true;
         steam = {
@@ -49,23 +50,24 @@
           extraCompatPackages = [ pkgs.proton-ge-bin ];
 
           package = pkgs.steam.override {
-            extraPkgs = pkgs: with pkgs; [
-              libusb1
-              udev
-              SDL2
+            extraPkgs =
+              pkgs: with pkgs; [
+                libusb1
+                udev
+                SDL2
 
-              xorg.libXcursor
-              xorg.libXi
-              xorg.libXinerama
-              xorg.libXScrnSaver
-              xorg.libXcomposite
-              xorg.libXdamage
-              xorg.libXrender
-              xorg.libXext
+                xorg.libXcursor
+                xorg.libXi
+                xorg.libXinerama
+                xorg.libXScrnSaver
+                xorg.libXcomposite
+                xorg.libXdamage
+                xorg.libXrender
+                xorg.libXext
 
-              libkrb5
-              keyutils
-            ];
+                libkrb5
+                keyutils
+              ];
           };
         };
       };
