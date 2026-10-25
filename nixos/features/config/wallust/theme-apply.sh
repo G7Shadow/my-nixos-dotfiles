@@ -125,6 +125,7 @@ for stub in gtk.css gtk-dark.css; do
     esac
     [ -e "$target" ] || printf "@import 'theme%s';\n@import 'scheme.css';\n" "${stub#gtk}" > "$target"
 done
+touch "$HOME/.config/gtk-4.0/gtk.css" "$HOME/.config/gtk-4.0/gtk-dark.css" 2>/dev/null || true
 
 if [ -n "$theme_name" ]; then
     gsettings set org.gnome.desktop.interface gtk-theme "$theme_name" 2>/dev/null || true
