@@ -44,9 +44,35 @@
         gamemode.enable = true;
         steam = {
           enable = true;
+          remotePlay.openFirewall = true;
+          dedicatedServer.openFirewall = false;
           extraCompatPackages = [ pkgs.proton-ge-bin ];
+
+          package = pkgs.steam.override {
+            extraPkgs = pkgs: with pkgs; [
+              libusb1
+              udev
+              SDL2
+
+              xorg.libXcursor
+              xorg.libXi
+              xorg.libXinerama
+              xorg.libXScrnSaver
+              xorg.libXcomposite
+              xorg.libXdamage
+              xorg.libXrender
+              xorg.libXext
+
+              libkrb5
+              keyutils
+            ];
+          };
         };
       };
+
+      environment.systemPackages = with pkgs; [
+        mangohud
+      ];
 
       persistance.data.directories = [
         ".local/share/PrismLauncher"
