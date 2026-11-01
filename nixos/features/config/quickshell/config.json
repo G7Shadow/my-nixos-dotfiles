@@ -82,7 +82,7 @@
     "theme": "rose-pine",
     "themeSwitcherWidth": 860,
     "volumeStep": 5,
-    "wallpaper": "",
+    "wallpaper": "/home/jeremyl/.config/colorschemes/rose-pine/wallpapers/flowers.jpg",
     "wallpaperFade": 450,
     "wallpaperPickerWidth": 1080,
     "weekStartsOn": 0
