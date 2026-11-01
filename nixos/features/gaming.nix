@@ -56,14 +56,14 @@
                 udev
                 SDL2
 
-                xorg.libXcursor
-                xorg.libXi
-                xorg.libXinerama
-                xorg.libXScrnSaver
-                xorg.libXcomposite
-                xorg.libXdamage
-                xorg.libXrender
-                xorg.libXext
+                libxcursor
+                libxi
+                libxinerama
+                libxscrnsaver
+                libxcomposite
+                libxdamage
+                libxrender
+                libxext
 
                 libkrb5
                 keyutils
