@@ -38,6 +38,7 @@
           prismlauncher
           zed-editor
           obs-studio
+          easyeffects
           thunarWithPlugins
           pkgs.thunar-volman
           pkgs.tumbler
