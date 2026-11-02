@@ -52,13 +52,15 @@
         variant = "";
       };
 
+      services.xserver.displayManager.lightdm.enable = false;
+
+      services.desktopManager.plasma6.enable = true;
+
       services.displayManager = {
         defaultSession = "hyprland-uwsm";
-        sddm = {
-          enable = true;
-          wayland.enable = true;
-        };
       };
+
+      systemd.defaultUnit = "graphical.target";
 
       hardware.cpu.amd.updateMicrocode = true;
       hardware.graphics = {
