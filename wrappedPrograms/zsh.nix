@@ -30,16 +30,9 @@
         fi
       '';
 
-      zprofile = pkgs.writeText "zprofile" ''
-        if uwsm check may-start; then
-            exec uwsm start hyprland.desktop
-        fi
-      '';
-
       zdotdir = pkgs.runCommand "zdotdir" { } ''
         mkdir -p $out
         cp ${zshrc} $out/.zshrc
-        cp ${zprofile} $out/.zprofile
       '';
     in
     {
