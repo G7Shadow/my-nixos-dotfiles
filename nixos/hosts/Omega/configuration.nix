@@ -61,12 +61,14 @@
       variant = "";
     };
 
-    services.xserver.displayManager.lightdm.enable = false;
-    services.xserver.displayManager.startx.enable = true;
-
     services.desktopManager.plasma6.enable = true;
 
-    systemd.defaultUnit = "graphical.target";
+    services.displayManager = {
+      defaultSession = "hyprland-uwsm";
+      sddm = {
+        enable = true;
+      };
+    };
 
     services = {
       xserver.enable = true;
