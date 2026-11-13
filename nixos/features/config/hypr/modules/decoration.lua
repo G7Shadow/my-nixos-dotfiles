@@ -13,19 +13,17 @@ hl.config({
   },
 
   decoration = {
-    rounding         = 25,
-    rounding_power   = 10,
-    active_opacity   = 1.0,
-    inactive_opacity = 0.8,
+    rounding       = 25,
+    rounding_power = 10,
 
-    shadow           = {
+    shadow         = {
       enabled      = true,
       range        = 28,
       render_power = 3,
-      color        = 0x890a0a0a,
+      color        = "0x920a0a0a",
     },
 
-    blur             = {
+    blur           = {
       enabled  = true,
 
       size     = 10,
