@@ -17,4 +17,23 @@ Singleton {
     readonly property bool charging: device ? device.state === UPowerDeviceState.Charging : false
     readonly property bool discharging: device ? device.state === UPowerDeviceState.Discharging : false
     readonly property bool low: available && discharging && percentage <= Config.batteryLowThreshold
+
+    // What there is to say beside the number: how long it will last, how long until it
+    // is full, or simply that it is plugged in. UPower's estimates are 0 while it has
+    // none (the first moments after plugging or unplugging), and then the plain state
+    // is said instead of "0 min".
+    readonly property bool full: device ? device.state === UPowerDeviceState.FullyCharged : false
+    readonly property real secondsLeft: device ? device.timeToEmpty : 0
+    readonly property real secondsToFull: device ? device.timeToFull : 0
+    // "45 min", "3 h", "2 h 40 min"
+    function span(s) {
+        const m = Math.max(1, Math.round(s / 60));
+        if (m < 60) return m + " min";
+        const h = Math.floor(m / 60), r = m % 60;
+        return r === 0 ? h + " h" : h + " h " + r + " min";
+    }
+    readonly property string detail: !available ? ""
+        : charging ? (secondsToFull > 0 ? span(secondsToFull) + " to full" : "Charging")
+        : discharging ? (secondsLeft > 0 ? span(secondsLeft) + " left" : "On battery")
+        : full ? "Full" : "Plugged in"
 }

@@ -24,7 +24,7 @@ Item {
     Keys.onEscapePressed: close()
 
     // click-away, over everything under the menu
-    MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons; onClicked: menu.close() }
+    MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons; hoverEnabled: true; onWheel: wheel => { wheel.accepted = true; } onClicked: menu.close() }
 
     Rectangle {
         id: card
@@ -44,7 +44,7 @@ Item {
         scale: menu.open ? 1 : 0.96
         Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dFast) } }
         Behavior on scale { NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } }
-        MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons }   // clicks inside never reach the click-away
+        MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons; hoverEnabled: true; onWheel: wheel => { wheel.accepted = true; } }   // clicks inside never reach the click-away
 
         Column {
             id: col
@@ -81,7 +81,7 @@ Item {
                         Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
                         StyledText {
                             anchors.left: parent.left; anchors.leftMargin: Theme.s2
-                            capCentreIn: parent
+                            capCenterIn: parent
                             variant: "label"
                             text: it.modelData.label || ""
                             color: it.modelData.disabled ? Theme.inkFaint : (it.modelData.danger ? Theme.bad : Theme.inkPrimary)

@@ -17,13 +17,28 @@ WlSessionLock {
 
     surface: WlSessionLockSurface {
         id: surf
-        color: "black"   // behind LockContent's snapshot, so no flash of bare color
+        color: "transparent"   // with misc:session_lock_xray the screen shows through until LockContent's wallpaper has faded up over it
 
         LockContent {
             id: content
             anchors.fill: parent
-            // which monitor this surface is on, so it can grab its own freeze-frame
-            outputName: surf.screen ? surf.screen.name : ""
+            screenName: surf.screen?.name ?? ""
+        }
+
+        // The eyelids, again: the desktop's sheet is under the lock once it is up, so the
+        // lock screen carries its own. Sleep locks under the black and wake fades it off.
+        Rectangle {
+            anchors.fill: parent
+            color: "#000000"
+            opacity: Sleep.closed
+            visible: opacity > 0
+        }
+        MouseArea {
+            anchors.fill: parent
+            visible: Sleep.closed > 0
+            hoverEnabled: true
+            acceptedButtons: Qt.NoButton
+            cursorShape: Qt.BlankCursor
         }
 
         Component.onCompleted: content.grabFocus()

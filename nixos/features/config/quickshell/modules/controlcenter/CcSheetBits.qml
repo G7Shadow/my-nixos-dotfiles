@@ -12,15 +12,29 @@ Item {
     // "NETWORKS  ........  • Scanning": the pulse is a real animation while `busy` is on, and
     // is held still under reduced motion (a 0ms loop would spin the CPU).
     component SectionLabel: Item {
+        id: sl
         property string text: ""
         property bool busy: false
         property string busyText: "Scanning"
+        // an optional verb at the right ("Scan"): shown while idle, pressing it (or the
+        // pulse while busy) fires acted(). Scans are only ever started from here.
+        property string action: ""
+        signal acted()
+        // extra air ABOVE the label, so a heading reads as the start of the group below it
+        // rather than a caption on the one above (a sheet's column spacing alone is the same
+        // gap as between rows, which is what made "Input" look attached to the output slider)
+        property int gap: 0
         width: parent ? parent.width : 0
-        height: 18
-        StyledText { anchors.left: parent.left; capCentreIn: parent; variant: "caption"; text: parent.text; color: Theme.inkFaint }
+        height: 18 + gap
+        Item {
+            id: slBody
+            anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+            height: 18
+        }
+        StyledText { anchors.left: parent.left; capCenterIn: slBody; variant: "caption"; text: sl.text; color: Theme.inkFaint }
         Row {
             anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
+            anchors.verticalCenter: slBody.verticalCenter
             spacing: Theme.s2
             visible: parent.busy
             Rectangle {
@@ -37,6 +51,25 @@ Item {
             }
             StyledText { anchors.verticalCenter: parent.verticalCenter; variant: "caption"; text: parent.parent.busyText; color: Theme.inkDim }
         }
+        StyledText {
+            id: slAct
+            anchors.right: parent.right
+            capCenterIn: slBody
+            visible: sl.action !== "" && !sl.busy
+            variant: "caption"
+            text: sl.action
+            color: slActMa.containsMouse ? Theme.inkPrimary : Theme.inkDim
+        }
+        MouseArea {
+            id: slActMa
+            visible: sl.action !== ""
+            anchors.right: parent.right
+            anchors.verticalCenter: slBody.verticalCenter
+            width: 72; height: 26
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: sl.acted()
+        }
     }
 
     // a quiet pill with a verb in it: "Connect", "Disconnect", "Pair", "Forget"
@@ -52,7 +85,7 @@ Item {
         color: chipMa.containsMouse ? Theme.fillHigh : Theme.fillLow
         opacity: enabledLook ? 1 : 0.45
         Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
-        StyledText { id: chipText; anchors.horizontalCenter: parent.horizontalCenter; capCentreIn: parent; variant: "caption"; font.weight: Theme.wMedium; text: parent.text; color: parent.accent ? parent.tint : Theme.inkPrimary }
+        StyledText { id: chipText; anchors.horizontalCenter: parent.horizontalCenter; capCenterIn: parent; variant: "caption"; font.weight: Theme.wMedium; text: parent.text; color: parent.accent ? parent.tint : Theme.inkPrimary }
         MouseArea { id: chipMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; enabled: parent.enabledLook; onClicked: parent.clicked() }
     }
 
@@ -63,7 +96,7 @@ Item {
     // drags stay glued.
     component Track: Item {
         id: tk
-        implicitHeight: 28              // so a wrapper can size to it (height alone is not implicit)
+        implicitHeight: 23              // so a wrapper can size to it (height alone is not implicit)
         property real value: 0          // 0..1 from the backend
         property color tint: Theme.accent
         property bool muted: false
@@ -73,7 +106,7 @@ Item {
         signal released(real v)       // once, on drop/click: for consumers that commit on release
         signal iconClicked()
         width: parent ? parent.width : 0
-        height: 28
+        height: 23
 
         property real localRatio: -1
         readonly property real shown: localRatio >= 0 ? localRatio : Math.max(0, Math.min(1, value))
@@ -87,7 +120,7 @@ Item {
             anchors.right: pct.visible ? pct.left : parent.right
             anchors.rightMargin: pct.visible ? Theme.s2 : 0
             anchors.verticalCenter: parent.verticalCenter
-            height: 28
+            height: 23                  // the visible track thickness (the Item above is the row)
             radius: Theme.rPill
             color: Theme.sunken
             Rectangle {
@@ -128,7 +161,7 @@ Item {
             id: pct
             visible: tk.showPercent
             anchors.right: parent.right
-            capCentreIn: parent
+            capCenterIn: parent
             width: 34
             horizontalAlignment: Text.AlignRight
             variant: "caption"
@@ -151,7 +184,7 @@ Item {
 
     // ── things making room ──
     // Rows around one that turns up or leaves spring to their new places on the shell's own
-    // curve. The ENTRANCE is never a positioner transition: `add` is cancelled by the next
+    // curve. The ENTRANCE is never a positioner transition: `add` is canceled by the next
     // relayout (a list folding, a label flipping visible) and strands the item at opacity 0,
     // which is how the Wi-Fi fold chip vanished while its 32px stayed. Rows own their fade
     // (`entered`, set in Component.onCompleted, behind a Behavior); labels, chips and

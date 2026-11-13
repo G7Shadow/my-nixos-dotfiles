@@ -4,19 +4,19 @@ import Quickshell
 import Quickshell.Hyprland
 import "../../theme"
 
-// Workspaces as capsules: small pills, the active one the same pill scaled up (never
-// wider: a width change reflows the row; a scale does not). State is brightness in ONE
-// colour, not hue. Occupied ones carry ink, empty ones only a trace. A workspace that
+// Workspaces as dots: circles, the active one a pill `activeExtra` wider (the dots after
+// it slide over by the same amount, so the row's total width never changes). State is
+// brightness in ONE color, not hue. Occupied ones carry ink, empty ones only a trace. A workspace that
 // appears fades in; one that goes fades out. Scroll over them to move between them,
 // click one to go there.
 //
 // ONE set of capsules with TWO homes. At rest they sit in the pill, left of the time; in
-// the open island they sit in the left column, a size up. Each capsule owns a clock `t`
-// between the two and glides from one home to the other on its own spring, one capsule
-// after another, so the row visibly travels from the centre to the left and back instead
-// of one set vanishing and another popping up. The parent gives both homes in ITS
-// coordinate space (this item fills the parent); the overshoot of the spring is the
-// settle.
+// the open island they sit under the clock, a size up. Each capsule owns a clock `t`
+// between the two, on its own spring, one capsule after another. With the rest home on
+// they glide from one home to the other. With it off there is nothing to glide from, so
+// they POP: each one rises `popRise` px into its open place while it grows and fades in,
+// and sinks back the same way. The parent gives both homes in ITS coordinate space (this
+// item fills the parent); the overshoot of the spring is the settle.
 Item {
     id: root
 
@@ -24,7 +24,7 @@ Item {
     property bool open: false        // which home is current
     property bool restOn: true       // the rest home is wanted at all (pill capsules enabled)
     property bool openOn: true       // the open home is wanted at all
-    // the rest home: left edge x, centre line y, capsule size, gap
+    // the rest home: left edge x, center line y, capsule size, gap
     property real restX: 0
     property real restY: 0
     property real restCapW: 7
@@ -36,7 +36,9 @@ Item {
     property real openCapW: 9
     property real openCapH: 17
     property real openGap: 7
-    property real activeScale: 1.3   // the active one is the same pill, scaled up about its centre
+    property real activeExtra: 10     // px the active one is wider than the rest
+    property real activeScale: 1.3   // and it is scaled up about its center
+    property real popRise: 12        // px below its place a capsule starts its pop from
     // one capsule after another, fast; the whole row leaves within ~220ms however many
     // there are (ten at the five-capsule gap left the last ones waiting under the time)
     property int stagger: Math.round(Math.min(Theme.stagger * 0.45, 220 / Math.max(1, count)))
@@ -54,8 +56,9 @@ Item {
     readonly property int count: list.length
     readonly property int activeId: (monitor && monitor.activeWorkspace) ? monitor.activeWorkspace.id : -1
     // the row's settled width in each home, for whoever lays the homes out
-    readonly property real restW: count > 0 ? count * restCapW + (count - 1) * restGap : 0
-    readonly property real openW: count > 0 ? count * openCapW + (count - 1) * openGap : 0
+    readonly property real restW: count > 0 ? count * restCapW + (count - 1) * restGap + activeExtra : 0
+    readonly property real openW: count > 0 ? count * openCapW + (count - 1) * openGap + activeExtra : 0
+    readonly property int activeIndex: list.findIndex(w => w.id === activeId)
 
     // Occupancy comes from the LIVE toplevel model, not the workspace's cached ipc object.
     // That object only refreshes when Quickshell re-reads the workspace list, so a window
@@ -98,7 +101,31 @@ Item {
         cool.restart();
     }
 
+    // the hover plate: the same quiet fill the status glyphs (and the clock) show, behind
+    // the whole capsule row while any capsule is hovered, so the two pill companions read
+    // as one kind of pressable thing. Sized from the capsules' live boxes so it follows
+    // them between the two homes. Hover is read from the capsules' own mouse areas (this
+    // sits behind them and takes no input).
+    Rectangle {
+        id: plate
+        readonly property real padX: 6
+        readonly property real padY: 4
+        readonly property var last: dots.count > 0 ? dots.itemAt(dots.count - 1) : null
+        readonly property real capH: dots.count > 0 ? dots.itemAt(0).height : 0
+        property bool hot: false
+        x: (dots.count > 0 ? dots.itemAt(0).x : 0) - padX
+        y: (dots.count > 0 ? dots.itemAt(0).y : 0) - padY
+        width: (last ? last.x + last.width - dots.itemAt(0).x : 0) + 2 * padX
+        height: capH + 2 * padY
+        radius: height / 2
+        color: hot ? Theme.fillLow : "transparent"
+        Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
+        opacity: dots.count > 0 ? dots.itemAt(0).opacity : 0
+        visible: opacity > 0.01
+    }
+
     Repeater {
+        id: dots
         model: root.list
         delegate: Rectangle {
             id: dot
@@ -125,10 +152,20 @@ Item {
             }
             function mix(a, b) { return a + (b - a) * t; }
 
-            width: mix(root.restCapW, root.openCapW)
+            // the active one's extra width, and the push it gives every capsule after it;
+            // both ride one short spring so the pill hands over smoothly
+            property real grow: active ? 1 : 0
+            property real pushed: (root.activeIndex >= 0 && index > root.activeIndex) ? 1 : 0
+            Behavior on grow { NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } }
+            Behavior on pushed { NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } }
+            readonly property real openPos: root.openX + index * (root.openCapW + root.openGap)
+            readonly property real restPos: root.restX + index * (root.restCapW + root.restGap)
+
+            width: mix(root.restCapW, root.openCapW) + root.activeExtra * grow
             height: mix(root.restCapH, root.openCapH)
-            x: mix(root.restX + index * (root.restCapW + root.restGap), root.openX + index * (root.openCapW + root.openGap))
-            y: mix(root.restY, root.openY) - height / 2
+            // no rest home: stay over the open place and rise into it from below
+            x: (root.restOn ? mix(restPos, openPos) : openPos) + root.activeExtra * pushed
+            y: (root.restOn ? mix(root.restY, root.openY) : root.openY + (1 - t) * root.popRise) - height / 2
             radius: height / 2      // a true pill at every width
             color: active ? dot.tone : occupied ? Theme.alpha(dot.tone, 0.42) : Theme.alpha(dot.tone, 0.16)
             antialiasing: true
@@ -139,10 +176,27 @@ Item {
             property real entered: 0
             Behavior on entered { NumberAnimation { duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier } }
             readonly property real tc: Math.max(0, Math.min(1, t))
-            opacity: entered * ((root.restOn ? 1 - tc : 0) + (root.openOn ? tc : 0))
+            // the rest home coming and going (the pill hides the capsules until it is
+            // toggled on in Settings): each capsule pops in on the spring as its room opens, a beat
+            // after the one on its left; they LEAVE at once on a short fade, ahead of the
+            // island's edge closing over where they were. Opacity and a size pop ride one
+            // clock.
+            property real restT: root.restOn ? 1 : 0
+            Behavior on restT {
+                SequentialAnimation {
+                    PauseAnimation { duration: root.restOn ? Theme.dur(root.stagger) * dot.index : 0 }
+                    NumberAnimation {
+                        duration: root.restOn ? Theme.dur(Theme.dSpring) : Theme.dur(Theme.dFast)
+                        easing.type: Easing.Bezier
+                        easing.bezierCurve: root.restOn ? Theme.springBezier : Theme.effectsBezier
+                    }
+                }
+            }
+            opacity: entered * (Math.min(1, restT) * (1 - tc) + (root.openOn ? tc : 0))
             visible: opacity > 0.01
             transformOrigin: Item.Center
             scale: active ? root.activeScale : (ma.containsMouse ? 1.1 : 1)
+            transform: Scale { origin.x: dot.width / 2; origin.y: dot.height / 2; xScale: (0.55 + 0.45 * dot.restT) * (1 - dot.tc) + dot.tc; yScale: xScale }
             Behavior on scale { NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } }
 
             // the glow: a blurred accent copy behind the active capsule
@@ -165,6 +219,7 @@ Item {
                 cursorShape: Qt.PointingHandCursor
                 onClicked: root.go(dot.modelData.id)
                 onWheel: ev => root.wheel(ev)
+                onContainsMouseChanged: plate.hot = containsMouse
             }
         }
     }

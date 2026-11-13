@@ -80,12 +80,12 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 size: 32
                 live: true
-                Icon { anchors.centerIn: parent; name: "lock"; size: 16; color: Theme.onAccent }
+                Icon { anchors.centerIn: parent; name: "lock"; size: Theme.icon(16); color: Theme.onAccent }
             }
             StyledText {
                 anchors.left: headDisc.right
                 anchors.leftMargin: Theme.s3
-                capCentreIn: parent
+                capCenterIn: parent
                 variant: "header"
                 text: "Authentication required"
                 color: Theme.inkPrimary
@@ -164,10 +164,11 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     size: 32
                     live: pwField.text !== ""
-                    Icon { anchors.centerIn: parent; name: "lock"; size: 15; color: keyDisc.live ? Theme.onAccent : Theme.inkDim }
+                    Icon { anchors.centerIn: parent; name: "lock"; size: Theme.icon(15); color: keyDisc.live ? Theme.onAccent : Theme.inkDim }
                 }
                 TextInput {
                     id: pwField
+                    cursorDelegate: Caret {}
                     anchors.left: keyDisc.right
                     anchors.leftMargin: Theme.s3
                     anchors.right: parent.right
@@ -183,7 +184,7 @@ Item {
                     onAccepted: root.submit()
                     Keys.onEscapePressed: root.cancel()
                     StyledText {
-                        capCentreIn: parent
+                        capCenterIn: parent
                         visible: pwField.text === "" && root.waiting
                         variant: "body"
                         text: "Enter your password"
@@ -216,7 +217,7 @@ Item {
                     radius: 17
                     color: cancelMa.containsMouse ? Theme.fillHigh : Theme.fillLow
                     Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
-                    StyledText { id: cancelLabel; anchors.horizontalCenter: parent.horizontalCenter; capCentreIn: parent; variant: "label"; font.weight: Theme.wMedium; text: "Cancel"; color: Theme.inkPrimary }
+                    StyledText { id: cancelLabel; anchors.horizontalCenter: parent.horizontalCenter; capCenterIn: parent; variant: "label"; font.weight: Theme.wMedium; text: "Cancel"; color: Theme.inkPrimary }
                     MouseArea { id: cancelMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.cancel() }
                 }
                 Rectangle {
@@ -226,7 +227,7 @@ Item {
                     color: Theme.hue("polkit")
                     opacity: root.waiting ? (authMa.containsMouse ? 0.9 : 1) : 0.45
                     Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dFast) } }
-                    StyledText { id: authLabel; anchors.horizontalCenter: parent.horizontalCenter; capCentreIn: parent; variant: "label"; font.weight: Theme.wMedium; text: "Authenticate"; color: Theme.onAccent }
+                    StyledText { id: authLabel; anchors.horizontalCenter: parent.horizontalCenter; capCenterIn: parent; variant: "label"; font.weight: Theme.wMedium; text: "Authenticate"; color: Theme.onAccent }
                     MouseArea { id: authMa; anchors.fill: parent; hoverEnabled: true; enabled: root.waiting; cursorShape: Qt.PointingHandCursor; onClicked: root.submit() }
                 }
             }

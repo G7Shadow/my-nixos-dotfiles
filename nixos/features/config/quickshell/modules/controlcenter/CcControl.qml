@@ -40,7 +40,7 @@ Item {
 
     // ── metrics, derived from the cell ──
     // The grid runs 5 to 9 columns, which puts the cell anywhere from ~94px down to ~47px.
-    // Everything a tile insets, sizes or centres comes from here instead of a fixed number,
+    // Everything a tile insets, sizes or centers comes from here instead of a fixed number,
     // or the same card is airy at 5 columns and overlapping at 9 (the slider cards' title
     // row and track were doing both). `k` is 1 at the default 7-column cell and every
     // constant below is the number the tiles used to hard-code, so nothing moves there.

@@ -51,6 +51,61 @@ Singleton {
         poppedIds = [];
     }
 
+    // A notification body may carry markup (we tell apps so: bodyMarkupSupported), and it
+    // was being drawn as plain text, tags and all. This turns a body into what a
+    // Text.StyledText can draw safely on one line:
+    //   <b> <i> <u> are kept, and entities (&amp; and friends) are left for the text item;
+    //   line breaks and <br> become a space;
+    //   <img> is dropped outright (a StyledText would go and fetch its source);
+    //   every other tag (<a href>, <span>, ...) is removed, its text kept;
+    //   any "<" left over is not a tag ("2 < 3"), so it is escaped and shows as itself.
+    // ── what the control center's card needs beyond the list itself ──
+    // `arrived`  when each notification came in (id -> ms): the server does not say;
+    // `seenAt`   the last time the control center was closed. Anything that arrived
+    //            after it is unread: it has a dot the first time you see it in the card
+    //            and has lost it the next time you open the card;
+    // `quietSince` when the list last became empty, for the empty card's line;
+    // `groups`   the list folded by app, newest app first, newest message first in each:
+    //            one chatty app is one block in the card, not ten rows.
+    property var arrived: ({})
+    property real seenAt: Date.now()
+    function markSeen() { seenAt = Date.now(); }
+    function isUnread(n) { return (arrived[n.id] || 0) > seenAt; }
+    property real quietSince: Date.now()
+    readonly property int count: list.length
+    onCountChanged: if (count === 0) quietSince = Date.now()
+    readonly property var groups: {
+        const out = [], by = {};
+        for (const n of list) {
+            const k = n.appName || "Notification";
+            if (!by[k]) { by[k] = { app: k, items: [], crit: false }; out.push(by[k]); }
+            by[k].items.push(n);
+            if (n.urgency === NotificationUrgency.Critical) by[k].crit = true;
+        }
+        return out;
+    }
+    // "now", "2m", "3h", "4d"
+    function ago(ms, now) {
+        if (!ms) return "";
+        const s = Math.max(0, (now - ms) / 1000);
+        if (s < 60) return "now";
+        if (s < 3600) return Math.floor(s / 60) + "m";
+        if (s < 86400) return Math.floor(s / 3600) + "h";
+        return Math.floor(s / 86400) + "d";
+    }
+
+    function markup(body) {
+        if (!body) return "";
+        return String(body)
+            .replace(/\r?\n/g, " ")
+            .replace(/<br\s*\/?>/gi, " ")
+            .replace(/<img\b[^<>]*>/gi, "")
+            .replace(/<(\/?)(b|i|u)\s*>/gi, "\u0001$1$2\u0002")
+            .replace(/<\/?[a-zA-Z][^<>]*>/g, "")
+            .replace(/</g, "&lt;")
+            .replace(/\u0001/g, "<").replace(/\u0002/g, ">");
+    }
+
     NotificationServer {
         id: server
 
@@ -64,6 +119,9 @@ Singleton {
         onNotification: notif => {
             notif.tracked = true;
             root.poppedIds = root.poppedIds.concat([notif.id]);
+            const a = Object.assign({}, root.arrived);
+            a[notif.id] = Date.now();
+            root.arrived = a;
         }
     }
 }

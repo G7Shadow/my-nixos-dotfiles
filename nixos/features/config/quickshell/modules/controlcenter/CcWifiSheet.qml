@@ -32,6 +32,10 @@ Column {
     readonly property int hidden: Math.max(0, listable - shownMax)
     onVisibleChanged: if (!visible) showAll = false
     readonly property bool scanning: Network.wifiDevice ? Network.wifiDevice.scannerEnabled : false
+    // Scanning is ASKED FOR ("Scan" on the Networks label), never started by opening the
+    // sheet: the list shows what NetworkManager already knows. A scan stops itself after
+    // a short while, and when the sheet closes (ControlCenterContent).
+    Timer { interval: 12000; running: wifiSheet.scanning; onTriggered: Network.setScanning(false) }
 
     function secured(net) { return net.security !== QN.WifiSecurityType.Open && net.security !== QN.WifiSecurityType.Owe && net.security !== QN.WifiSecurityType.Unknown; }
     function secLabel(net) {
@@ -85,10 +89,11 @@ Column {
             live: wifiSheet.on && !!wifiSheet.live
             WifiIcon {
                 anchors.centerIn: parent
+                scale: Theme.iconK
                 active: wifiSheet.on && !!wifiSheet.live
                 strength: wifiSheet.live ? wifiSheet.live.signalStrength : 0
                 color: heroDisc.live ? Theme.onAccent : Theme.inkPrimary
-                dimColor: heroDisc.live ? Theme.alpha(Theme.onAccent, 0.30) : Theme.inkFaint
+                dimColor: heroDisc.live ? Theme.alpha(Theme.onAccent, Math.min(1, 0.30 * Theme.iconUnlit)) : Theme.inkFaint
             }
         }
         Column {
@@ -112,9 +117,12 @@ Column {
             StyledText {
                 width: parent.width; elide: Text.ElideRight
                 variant: "caption"
-                text: !wifiSheet.on ? "Turn it on to see networks"
-                    : wifiSheet.live ? ((wifiSheet.live.stateChanging ? "Connecting" : "Connected") + "  ·  " + wifiSheet.secLabel(wifiSheet.live) + "  ·  " + Math.round(wifiSheet.live.signalStrength * 100) + "% signal")
-                    : "Pick a network below"
+                // the name and the Disconnect chip already say "connected"; this line is
+                // the signal strength, or "Connecting…" while that is happening
+                visible: text !== ""
+                text: !(wifiSheet.on && wifiSheet.live) ? ""
+                    : wifiSheet.live.stateChanging ? "Connecting…"
+                    : Math.round(wifiSheet.live.signalStrength * 100) + "% signal"
                 color: Theme.inkDim
             }
         }
@@ -123,8 +131,8 @@ Column {
             anchors.right: parent.right
             anchors.rightMargin: Theme.s3
             anchors.verticalCenter: parent.verticalCenter
-            visible: wifiSheet.on && !!wifiSheet.live
-            opacity: visible ? 1 : 0
+            visible: opacity > 0
+            opacity: (wifiSheet.on && !!wifiSheet.live) ? 1 : 0
             Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier } }
             text: "Disconnect"
             onClicked: if (wifiSheet.live) wifiSheet.live.disconnect()
@@ -133,10 +141,12 @@ Column {
 
     // ── the rest ────────────────────────────────────────────────────────────────────
     CcSheetBits.SectionLabel {
-        visible: wifiSheet.on
+        visible: opacity > 0
         text: "Networks"
         busy: wifiSheet.scanning
-        opacity: visible ? 1 : 0; Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier } }
+        action: "Scan"
+        onActed: Network.setScanning(!wifiSheet.scanning)
+        opacity: (wifiSheet.on) ? 1 : 0; Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier } }
     }
 
     ListView {
@@ -174,7 +184,7 @@ Column {
             // instant it connected while its height still had a spring to run
             visible: height > 0.5
             opacity: entered * Math.min(1, height / 44)
-            // delegate-owned entrance (patterns.md #5): a positioner `add` transition is cancelled
+            // delegate-owned entrance (patterns.md #5): a positioner `add` transition is canceled
             // by the next relayout and strands the row at opacity 0
             property real entered: 0
             Component.onCompleted: entered = 1
@@ -203,6 +213,7 @@ Column {
                 size: 32
                 WifiIcon {
                     anchors.centerIn: parent
+                    scale: Theme.iconK
                     active: true
                     strength: row.net.signalStrength
                     color: Theme.inkPrimary
@@ -225,8 +236,11 @@ Column {
                 StyledText {
                     width: parent.width; elide: Text.ElideRight
                     variant: "caption"
-                    text: row.net.stateChanging ? "Connecting…" : (wifiSheet.secLabel(row.net) + (row.net.known ? "  ·  Saved" : ""))
-                    color: row.net.stateChanging ? Theme.hue("toggles") : Theme.inkDim
+                    // the lock says "secured" and the chip says Connect vs Join; a second
+                    // line is only worth it while the row is connecting
+                    visible: row.net.stateChanging
+                    text: "Connecting…"
+                    color: Theme.hue("toggles")
                 }
             }
             // the lock is pinned to the row's edge so every row's lock lines up; the hover
@@ -238,12 +252,12 @@ Column {
                 anchors.rightMargin: Theme.s3
                 y: 0; height: 44
                 width: lock.width + verb.implicitWidth + Theme.s2
-                Icon { id: lock; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; visible: wifiSheet.secured(row.net); name: "lock"; size: 14; color: Theme.inkFaint; opacity: visible ? 1 : 0 }
+                Icon { id: lock; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; name: "lock"; size: Theme.icon(14); color: Theme.inkFaint; opacity: (wifiSheet.secured(row.net)) ? 1 : 0; visible: opacity > 0 }
                 StyledText {
                     id: verb
                     anchors.right: lock.visible ? lock.left : parent.right
                     anchors.rightMargin: lock.visible ? Theme.s2 : 0
-                    capCentreIn: parent
+                    capCenterIn: parent
                     variant: "caption"; font.weight: Theme.wMedium
                     text: row.net.known ? "Connect" : "Join"
                     color: Theme.hue("toggles")
@@ -267,6 +281,7 @@ Column {
                     color: Theme.sunken
                     TextInput {
                         id: psk
+                        cursorDelegate: Caret {}
                         anchors.left: parent.left; anchors.right: go.left
                         anchors.verticalCenter: parent.verticalCenter
                         anchors.leftMargin: Theme.s3; anchors.rightMargin: Theme.s2
@@ -305,21 +320,21 @@ Column {
 
     // the fold: how many more there are, and the way to see them
     Item {
-        visible: wifiSheet.on && wifiSheet.hidden > 0
+        visible: opacity > 0
         width: parent.width
         height: 32
-        opacity: visible ? 1 : 0; Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier } }
+        opacity: (wifiSheet.on && wifiSheet.hidden > 0) ? 1 : 0; Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier } }
         CcSheetBits.Chip { tint: Theme.hue("toggles");
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.verticalCenter: parent.verticalCenter
-            text: wifiSheet.showAll ? "Show fewer" : ("See all  ·  " + wifiSheet.hidden + " more")
+            text: wifiSheet.showAll ? "Show fewer" : "See all"
             onClicked: wifiSheet.showAll = !wifiSheet.showAll
         }
     }
 
     StyledText {
-        visible: wifiSheet.on && Network.wifiNetworks.length === 0
-        variant: "label"; text: "Looking for networks…"; color: Theme.inkDim
-        opacity: visible ? 1 : 0; Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier } }
+        visible: opacity > 0
+        variant: "label"; text: "No networks"; color: Theme.inkDim
+        opacity: (wifiSheet.on && Network.wifiNetworks.length === 0) ? 1 : 0; Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier } }
     }
 }

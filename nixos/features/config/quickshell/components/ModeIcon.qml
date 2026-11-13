@@ -2,9 +2,9 @@ import QtQuick
 import "../theme"
 
 // Generic toggle-mode status glyph: an icon inside a circle ring. ON → accent ring and
-// icon; OFF → grey ring and icon with a diagonal strike. The ring/icon colour and the
-// strike both animate on toggle (the strike grows out from / retracts to the centre).
-// Drives the mode OSD (Night Light, Game Mode, ...). Set `icon` to any name in Icon.qml.
+// icon; OFF → gray ring and icon with a diagonal strike. The ring/icon color and the
+// strike both animate on toggle (the strike grows out from / retracts to the center).
+// Drives the mode OSD (Night Light, ...). Set `icon` to any name in Icon.qml.
 Item {
     id: root
 
@@ -37,7 +37,7 @@ Item {
         Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dEffects) } }
     }
 
-    // diagonal strike: grows out from the centre when OFF, retracts when ON
+    // diagonal strike: grows out from the center when OFF, retracts when ON
     Rectangle {
         anchors.centerIn: parent
         height: 2.5

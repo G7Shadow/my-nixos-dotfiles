@@ -21,8 +21,7 @@ Singleton {
     property alias islandRadius: adapter.islandRadius         // px corner radius, collapsed
     property alias islandRadiusOpen: adapter.islandRadiusOpen // px corner radius, expanded
     property alias hyprGapsOut: adapter.hyprGapsOut           // must match Hyprland general:gaps_out (top)
-    property alias gameBarHeight: adapter.gameBarHeight       // px, Game Mode's full-width bar
-    property alias gameClusterGap: adapter.gameClusterGap     // px between each card and the clock in bar form
+
 
     // ── media (the island's now-playing card) ──
     property alias mediaTitleWidth: adapter.mediaTitleWidth   // px of song name shown before it elides
@@ -30,8 +29,6 @@ Singleton {
     property alias mediaShowAlbum: adapter.mediaShowAlbum     // show the album line
     property alias mediaShowArtist: adapter.mediaShowArtist   // show the artist line
     property alias mediaShowTransport: adapter.mediaShowTransport // show prev / play / next
-    property alias mediaLyrics: adapter.mediaLyrics           // synced lyrics under the player
-    property alias mediaScrollSwitch: adapter.mediaScrollSwitch   // scroll over the art to change track
 
     // ── clock ──
     property alias clockSeconds: adapter.clockSeconds         // show seconds in the collapsed clock
@@ -40,9 +37,8 @@ Singleton {
     property alias clockStatus: adapter.clockStatus           // battery + Wi-Fi capsules beside the collapsed clock
 
     // ── expanded island (the pill's companions, a size up, either side of the clock) ──
-    property alias islandWorkspaces: adapter.islandWorkspaces // the workspace capsules on the left
-    property alias islandStatus: adapter.islandStatus         // battery + signal on the right
-    property alias islandMedia: adapter.islandMedia           // the media card under the clock
+    property alias islandWorkspaces: adapter.islandWorkspaces // the workspace dots under the clock
+    property alias islandMedia: adapter.islandMedia           // the media block on the left
 
     // ── panel sizes ──
     property alias launcherWidth: adapter.launcherWidth
@@ -68,19 +64,17 @@ Singleton {
     // ── calendar ──
     property alias weekStartsOn: adapter.weekStartsOn         // 0 = Sunday … 6 = Saturday
     property alias calendarCellHeight: adapter.calendarCellHeight
-    property alias calendarShowAdjacent: adapter.calendarShowAdjacent // dim the neighbouring months' days
+    property alias calendarShowAdjacent: adapter.calendarShowAdjacent // dim the neighboring months' days
 
     // ── lock screen ──
-    property alias lockBlur: adapter.lockBlur                 // px blur radius over the freeze-frame
-    property alias lockDim: adapter.lockDim                   // % scrim over the blur
-    property alias lockShotQuality: adapter.lockShotQuality   // grim JPEG quality for the freeze-frame
+    property alias lockDim: adapter.lockDim                   // % scrim over the wallpaper
     property alias lockShowDots: adapter.lockShowDots         // bullets in the password field
     property alias caretBlink: adapter.caretBlink             // ms, password caret blink
 
     // ── motion ──
     property alias reducedMotion: adapter.reducedMotion       // collapse every duration to 0
     property alias motionSpring: adapter.motionSpring         // ms, position/size moves
-    property alias motionEffects: adapter.motionEffects       // ms, fades/colour
+    property alias motionEffects: adapter.motionEffects       // ms, fades/color
     property alias motionFast: adapter.motionFast             // ms, hover micro-interactions
     property alias motionBounce: adapter.motionBounce         // 0-100, spring overshoot on size/position moves
 
@@ -88,6 +82,26 @@ Singleton {
     property alias fontSize: adapter.fontSize
     property alias theme: adapter.theme
     property alias wallpaper: adapter.wallpaper
+    // Where the wallpaper picker looks. `wallpaperDir` is the root ("~" is the home
+    // folder); with `wallpaperPerTheme` each theme has its own folder inside it, named
+    // after the theme, and the picker shows the current theme's. Off, the root itself is
+    // the one set for every theme. This setup keeps the images in a `wallpapers/`
+    // subfolder under each theme, so the per-theme path includes it.
+    // ~/.config/wallust/theme-apply.sh reads the same two keys from config.json to find a
+    // theme's wallpaper, so they have to agree.
+    property alias wallpaperDir: adapter.wallpaperDir
+    property alias wallpaperPerTheme: adapter.wallpaperPerTheme
+    function expandHome(p) {
+        const h = Quickshell.env("HOME");
+        const t = String(p || "").trim();
+        if (t === "~") return h;
+        if (t.indexOf("~/") === 0) return h + t.slice(1);
+        return t;
+    }
+    readonly property string wallpaperFolder: {
+        const root = expandHome(wallpaperDir).replace(/\/+$/, "");
+        return wallpaperPerTheme ? root + "/" + theme + "/wallpapers" : root;
+    }
     property alias fontBody: adapter.fontBody                 // UI face
     property alias fontDisplay: adapter.fontDisplay           // numerals / clock face
     property alias radiusSmall: adapter.radiusSmall           // inner controls
@@ -96,11 +110,26 @@ Singleton {
     property alias screenCorners: adapter.screenCorners       // paint rounded corners over the display corners
     property alias screenCornerRadius: adapter.screenCornerRadius // px radius of those corners
     property alias accentOverride: adapter.accentOverride     // "" = the scheme's accent, else a #rrggbb
-    property alias colorBurst: adapter.colorBurst             // every surface its own palette colour
+    property alias accentFromWallpaper: adapter.accentFromWallpaper   // accent = the scheme hue nearest the wallpaper's main color
     property alias surfaceTint: adapter.surfaceTint           // how far the near-black surfaces lift off pure black (%)
     property alias spacingUnit: adapter.spacingUnit           // px base unit; the whole s1..s6 scale derives from it
     property alias iconSize: adapter.iconSize                 // px, global icon size
     property alias iconStroke: adapter.iconStroke             // stroke weight for the drawn icon set (x10)
+    // more properties of the DRAWN icon set (components/Icon.qml), all shell-wide
+    property alias iconStrokeFloor: adapter.iconStrokeFloor   // thinnest a stroke may render, px x10
+    property alias iconCap: adapter.iconCap                   // line ends: "Round" | "Square" | "Flat"
+    property alias iconJoin: adapter.iconJoin                 // corners: "Round" | "Pointed" | "Beveled"
+    property alias iconScale: adapter.iconScale               // % of its box the drawing fills
+    property alias iconUnlit: adapter.iconUnlit               // % strength of unlit parts (Wi-Fi arcs, signal bars)
+    property alias iconRenderer: adapter.iconRenderer         // "Smooth" (curve renderer) | "Multisampled" (geometry + MSAA)
+    // Material Symbols (the Settings sidebar and page headers). The family picks the
+    // style; the other four are the font's variable axes. All three families share the
+    // same symbol names, so switching can never break a glyph.
+    property alias symbolFamily: adapter.symbolFamily         // "Rounded" | "Outlined" | "Sharp"
+    property alias symbolFill: adapter.symbolFill             // % filled: 0 outlined .. 100 solid
+    property alias symbolWeight: adapter.symbolWeight         // stroke weight, 100 .. 700
+    property alias symbolGrade: adapter.symbolGrade           // fine thickness trim, -25 .. 200
+    property alias symbolOpsz: adapter.symbolOpsz             // optical size, 20 .. 48
     property alias hairlineAlpha: adapter.hairlineAlpha       // % borders / dividers
     property alias inkDimAlpha: adapter.inkDimAlpha           // % secondary text
     property alias inkFaintAlpha: adapter.inkFaintAlpha       // % tertiary text
@@ -117,7 +146,11 @@ Singleton {
     property alias brightnessPoll: adapter.brightnessPoll     // ms between internal-backlight reads
     property alias batteryLowThreshold: adapter.batteryLowThreshold // % at which battery reads "low"
     property alias nightLightTemp: adapter.nightLightTemp     // Kelvin
+    property alias nightLightSchedule: adapter.nightLightSchedule   // turn on/off by the clock
+    property alias nightLightStart: adapter.nightLightStart   // minutes after midnight it turns on
+    property alias nightLightEnd: adapter.nightLightEnd       // minutes after midnight it turns off
     property alias wallpaperFade: adapter.wallpaperFade       // ms crossfade when the wallpaper changes
+    property alias audioHidden: adapter.audioHidden           // JSON array of PipeWire node names hidden from the sound sheet
 
     // ── control center layout ──
     // A FREE-PLACEMENT grid (iOS 18 / macOS Tahoe style: gaps allowed, they persist) of
@@ -137,7 +170,6 @@ Singleton {
         { key: "bluetooth",     label: "Bluetooth",     kind: "toggle",        icon: "bluetooth",  sizes: [[1,1],[2,1],[3,1],[4,1],[2,2],[3,2]],                    def: [4,1] },
         { key: "focus",         label: "Focus",         kind: "toggle",        icon: "dnd",        sizes: [[1,1],[2,1],[3,1],[4,1],[2,2],[3,2]],                    def: [4,1] },
         { key: "nightlight",    label: "Night Light",   kind: "toggle",        icon: "night",      sizes: [[1,1],[2,1],[3,1],[4,1],[2,2]],                          def: [1,1] },
-        { key: "gamemode",      label: "Game Mode",     kind: "toggle",        icon: "controller", sizes: [[1,1],[2,1],[3,1],[4,1],[2,2]],                          def: [1,1] },
         { key: "lock",          label: "Lock",          kind: "action",        icon: "lock",       sizes: [[1,1],[2,1],[3,1]],                                      def: [1,1] },
         { key: "display",       label: "Display",       kind: "slider",        icon: "brightness", sizes: [[3,1],[4,1],[5,1],[6,1],[0,1],[1,2],[2,2],[0,2]],        def: [0,1] },
         { key: "sound",         label: "Sound",         kind: "slider",        icon: "volume",     sizes: [[3,1],[4,1],[5,1],[6,1],[0,1],[1,2],[2,2],[0,2]],        def: [0,1] },
@@ -149,12 +181,17 @@ Singleton {
         return null;
     }
 
-    // geometry. The control center rides the launcher's width, minus the morph host's s4
-    // insets; the gap is the shell's s3. Both are derived from Config (not Theme) so the
-    // layout math has no import cycle. The row budget is a PIXEL cap — the panel has to
-    // stay on screen — so narrower grids (bigger cells) hold fewer rows.
+    // geometry. The CELL is the constant: the square a 1x1 control gets, fixed at what a
+    // 7-column grid gets inside the launcher's width (the look the controls were tuned
+    // at). Choosing more or fewer columns adds or removes cells and the panel grows or
+    // shrinks to hold them; it never rescales the controls. Gap is the shell's s3, the
+    // panel adds the morph host's s4 insets. All derived from Config (not Theme) so the
+    // layout math has no import cycle. The row budget is a PIXEL cap, the panel has to
+    // stay on screen.
     readonly property int ccGap: spacingUnit * 3
-    readonly property int ccContentW: launcherWidth - spacingUnit * 8
+    readonly property real ccCell: CcLayout.cellSize(launcherWidth - spacingUnit * 8, 7, ccGap)
+    readonly property int ccContentW: Math.round(ccColumns * ccCell + (ccColumns - 1) * ccGap)
+    readonly property int ccPanelW: ccContentW + spacingUnit * 8
     readonly property int ccMaxPx: 620
     readonly property int ccMinColumns: 5
     readonly property int ccMaxColumns: 9
@@ -164,7 +201,7 @@ Singleton {
         catch (e) { return null; }
     }
     readonly property int ccColumns: Math.max(ccMinColumns, Math.min(ccMaxColumns, (_ccParsed && _ccParsed.columns) ? (_ccParsed.columns | 0) : 7))
-    readonly property real ccCell: CcLayout.cellSize(ccContentW, ccColumns, ccGap)
+    function ccContentWAt(n) { return Math.round(n * ccCell + (n - 1) * ccGap); }
     readonly property int ccMaxRows: CcLayout.maxRowsFor(ccContentW, ccColumns, ccGap, ccMaxPx)
     // the validated arrangement: unknown keys dropped, sizes snapped, overlaps repaired
     readonly property var ccItems: (_ccParsed && Array.isArray(_ccParsed.items))
@@ -239,12 +276,12 @@ Singleton {
         return ccPlace(key, x, y, sz[0], sz[1]);
     }
     function ccTidy() { _ccWrite(CcLayout.tidy(ccItems, ccColumns, ccMaxRows), ccColumns); return true; }
-    function ccReset() { _ccWrite(CcLayout.defaults(ccRegistry, 7, CcLayout.maxRowsFor(ccContentW, 7, ccGap, ccMaxPx)), 7); return true; }
+    function ccReset() { _ccWrite(CcLayout.defaults(ccRegistry, 7, CcLayout.maxRowsFor(ccContentWAt(7), 7, ccGap, ccMaxPx)), 7); return true; }
     // refused when the current layout would not survive the new cell budget
     function ccSetColumns(n) {
         n = Math.max(ccMinColumns, Math.min(ccMaxColumns, n | 0));
         if (n === ccColumns) return true;
-        const rowsAt = CcLayout.maxRowsFor(ccContentW, n, ccGap, ccMaxPx);
+        const rowsAt = CcLayout.maxRowsFor(ccContentWAt(n), n, ccGap, ccMaxPx);
         const next = CcLayout.normalize(ccItems, ccRegistry, n, rowsAt);
         if (next.length < ccItems.length) return false;
         _ccWrite(next, n);
@@ -271,16 +308,12 @@ Singleton {
             property int islandRadius: 20
             property int islandRadiusOpen: 30
             property int hyprGapsOut: 15
-            property int gameBarHeight: 50
-            property int gameClusterGap: 180
             // media
             property int mediaTitleWidth: 104
             property int mediaArtSize: 90
             property bool mediaShowAlbum: true
             property bool mediaShowArtist: true
             property bool mediaShowTransport: true
-            property bool mediaLyrics: true
-            property bool mediaScrollSwitch: true
             // clock
             property bool clockSeconds: false
             property bool clock24h: true
@@ -288,7 +321,6 @@ Singleton {
             property bool clockStatus: true
             // expanded island
             property bool islandWorkspaces: true
-            property bool islandStatus: true
             property bool islandMedia: true
             // panels
             property int launcherWidth: 560
@@ -313,9 +345,7 @@ Singleton {
             property int calendarCellHeight: 32
             property bool calendarShowAdjacent: true
             // lock
-            property int lockBlur: 64
             property int lockDim: 22
-            property int lockShotQuality: 85
             property bool lockShowDots: false
             property int caretBlink: 580
             // motion
@@ -328,6 +358,8 @@ Singleton {
             property int fontSize: 14
             property string theme: "dark"
             property string wallpaper: ""
+            property string wallpaperDir: "~/Pictures/Wallpapers"
+            property bool wallpaperPerTheme: true
             property string fontBody: "SF Pro Text"
             property string fontDisplay: "Manrope"
             property int radiusSmall: 10
@@ -336,11 +368,22 @@ Singleton {
             property bool screenCorners: true
             property int screenCornerRadius: 14
             property string accentOverride: ""
-            property bool colorBurst: false
+            property bool accentFromWallpaper: false
             property int surfaceTint: 4          // % ; surfaceBase step off black
             property int spacingUnit: 4
-            property int iconSize: 18
-            property int iconStroke: 22          // x10 (2.2)
+            property int iconSize: 20
+            property int iconStroke: 17          // x10
+            property int iconStrokeFloor: 12     // x10 (1.2 px)
+            property string iconCap: "Round"
+            property string iconJoin: "Round"
+            property int iconScale: 100
+            property int iconUnlit: 100
+            property string iconRenderer: "Smooth"
+            property string symbolFamily: "Rounded"
+            property int symbolFill: 100
+            property int symbolWeight: 500
+            property int symbolGrade: 0
+            property int symbolOpsz: 24
             property int hairlineAlpha: 14       // %
             property int inkDimAlpha: 60         // %
             property int inkFaintAlpha: 35       // %
@@ -356,7 +399,11 @@ Singleton {
             property int brightnessPoll: 2000
             property int batteryLowThreshold: 20
             property int nightLightTemp: 3000
+            property bool nightLightSchedule: false
+            property int nightLightStart: 1200
+            property int nightLightEnd: 420
             property int wallpaperFade: 450
+            property string audioHidden: "[]"
             // control center layout (see ccRegistry / CcLayout.js)
             property string ccLayout: ""
         }

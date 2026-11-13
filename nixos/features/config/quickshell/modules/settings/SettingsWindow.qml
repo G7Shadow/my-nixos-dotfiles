@@ -5,7 +5,7 @@ import "../../config"
 import "../../components"
 
 // Settings as its OWN floating desktop window (not an island morph anymore). Two panes,
-// modelled on macOS System Settings: a sidebar (search + category list with tinted icons)
+// modeled on macOS System Settings: a sidebar (search + category list with tinted icons)
 // on the left, a detail pane (back/forward, a header block, then grouped rows) on the
 // right. No title-bar buttons by request. It's a real toplevel — on Hyprland add a float
 // windowrule for it (title "Settings") so it doesn't tile. Backed by Config like before.
@@ -22,13 +22,15 @@ FloatingWindow {
     visible: GlobalState.settingsOpen
 
     property int currentIndex: 0
+    property bool iconPreviewOn: false       // the pinned icon preview on the Appearance page
     property string filter: ""
 
     // sidebar categories: each maps to a page of the existing settings. `c` is the tint for
-    // the little rounded icon, `glyph` a Material Symbols Rounded ligature name (the font
-    // shapes the name text into its icon), `desc` the header blurb.
+    // the little rounded icon, `glyph` a Material Symbols ligature name (the font shapes
+    // the name text into its icon; family and axes come from Theme.symbolFont /
+    // Theme.symbolAxes, set on the Appearance page), `desc` the header blurb.
     readonly property var cats: [
-        { key: "bar",        label: "Bar & Island",   glyph: "web_asset",        c: "#3b82f6", desc: "Shape and size of the island, the notch, and the Game Mode bar." },
+        { key: "bar",        label: "Bar & Island",   glyph: "web_asset",        c: "#3b82f6", desc: "Shape and size of the island and the notch." },
         { key: "media",      label: "Media",          glyph: "music_note",       c: "#e0457b", desc: "The now-playing card inside the expanded island." },
         { key: "clock",      label: "Clock & Date",   glyph: "schedule",         c: "#f2a33c", desc: "Time format, what sits beside the clock, and the calendar." },
         { key: "appearance", label: "Appearance",     glyph: "palette",          c: "#7c6cf0", desc: "Theme, wallpaper, fonts, corners, and surface depth." },
@@ -57,18 +59,44 @@ FloatingWindow {
 
     // ── reusable grouped-row bits (a card is just a rounded surfacePanel wrapping these) ──
 
-    // label left, live value right, full-width slider below. `first` drops the top divider.
-    component SliderRow: Item {
+    // What every row is built on: a row can fold away. A setting that only means
+    // something while another one is on (the notch's flare, the motion timings) says
+    // `shown: <that setting>` and opens and closes under it: its height runs between
+    // nothing and its own, it fades, and the rows below ride along, since the column
+    // lays them out by height. `visible:` would do the same job in one frame, with
+    // everything underneath jumping to make room. No bounce on this one: the row is
+    // clipped while it moves, and an overshoot would flash the row below.
+    component FoldRow: Item {
+        property bool shown: true
+        property real fold: shown ? 1 : 0
+        Behavior on fold { NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier } }
+        width: parent ? parent.width : 0
+        height: implicitHeight * fold
+        opacity: fold
+        visible: fold > 0
+        clip: fold < 1
+    }
+
+    // label left, the value (a field you can type into) right, full-width slider below.
+    // `first` drops the top divider.
+    // `step` is the size of one notch (every setting here is a whole number, so 1 unless a
+    // row says otherwise); a row with only a handful of notches is drawn as dots, the
+    // rest as a fill (see components/Slider).
+    component SliderRow: FoldRow {
         id: sr
         property string label: ""
         property string unit: ""
         property real from: 0
         property real to: 1
         property real value: 0
+        property real step: 1
+        // names for the values, when a number would mean nothing ("Week starts on: 1").
+        // With names the right side is the name, not a field to type in.
+        property var names: null
         property bool first: false
         signal moved(real v)
         width: parent ? parent.width : 0
-        implicitHeight: 66
+        implicitHeight: 48 + srSlider.implicitHeight
         Rectangle {
             visible: !sr.first
             anchors { top: parent.top; left: parent.left; right: parent.right; leftMargin: Theme.s4; rightMargin: Theme.s4 }
@@ -79,22 +107,78 @@ FloatingWindow {
             anchors { left: parent.left; leftMargin: Theme.s4; top: parent.top; topMargin: Theme.s3 }
             variant: "label"; text: sr.label; color: Theme.inkPrimary
         }
+        // The value is a field: click it, type a number, Enter (or clicking away) sets
+        // it, Escape puts the old one back. Whatever is typed is held to the row's range
+        // and snapped to its step. At rest it looks like the plain number it was; hover
+        // gives it a faint pill so it reads as something you can click into.
+        function setTyped(t) {
+            const n = parseFloat(String(t).replace(",", "."));
+            if (isNaN(n)) return;
+            let v = Math.max(sr.from, Math.min(sr.to, n));
+            if (sr.step > 0) v = sr.from + Math.round((v - sr.from) / sr.step) * sr.step;
+            if (v !== sr.value) sr.moved(v);
+        }
         StyledText {
+            visible: sr.names !== null
             anchors { right: parent.right; rightMargin: Theme.s4 }
-            capCentreIn: srLabel
-            variant: "label"; font.features: { "tnum": 1 }
-            text: Math.round(sr.value) + (sr.unit ? " " + sr.unit : "")
+            capCenterIn: srLabel
+            variant: "label"
+            text: sr.names ? (sr.names[Math.round(sr.value - sr.from)] || "") : ""
             color: Theme.inkDim
         }
+        Row {
+            id: srVal
+            visible: sr.names === null
+            anchors { right: parent.right; rightMargin: Theme.s4 - 6; verticalCenter: srLabel.verticalCenter }
+            spacing: 0
+            Rectangle {
+                anchors.verticalCenter: parent.verticalCenter
+                width: srField.width + 12; height: 22
+                radius: Theme.rSm
+                color: srField.activeFocus ? Theme.fillHigh : (srHover.containsMouse ? Theme.fillLow : "transparent")
+                border.width: 1
+                border.color: srField.activeFocus ? Theme.accent : "transparent"
+                Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
+                Behavior on border.color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
+                TextInput {
+                    id: srField
+                    cursorDelegate: Caret {}
+                    anchors.centerIn: parent
+                    width: Math.max(10, contentWidth + 2)
+                    horizontalAlignment: TextInput.AlignRight
+                    color: activeFocus ? Theme.inkPrimary : Theme.inkDim
+                    font.family: Theme.fontBody
+                    font.pixelSize: Theme.fsLabel
+                    font.features: { "tnum": 1 }
+                    selectByMouse: true
+                    validator: RegularExpressionValidator { regularExpression: /-?[0-9]*[.,]?[0-9]*/ }
+                    onAccepted: { sr.setTyped(text); win.dropFocus(); }
+                    onActiveFocusChanged: { if (activeFocus) selectAll(); else sr.setTyped(text); }
+                    Keys.onEscapePressed: { text = String(Math.round(sr.value)); win.dropFocus(); }
+                }
+                // shows the live value whenever the field is not being typed in
+                Binding { target: srField; property: "text"; value: String(Math.round(sr.value)); when: !srField.activeFocus; restoreMode: Binding.RestoreNone }
+                // I-beam on hover. NoButton so the TextInput still gets every click itself.
+                MouseArea { id: srHover; anchors.fill: parent; acceptedButtons: Qt.NoButton; hoverEnabled: true; cursorShape: Qt.IBeamCursor }
+            }
+            StyledText {
+                anchors.verticalCenter: parent.verticalCenter
+                visible: sr.unit !== ""
+                variant: "label"
+                text: sr.unit
+                color: Theme.inkDim
+            }
+        }
         Slider {
-            anchors { left: parent.left; right: parent.right; leftMargin: Theme.s4; rightMargin: Theme.s4; top: srLabel.bottom; topMargin: Theme.s2 }
-            from: sr.from; to: sr.to; value: sr.value
-            onMoved: sr.moved(value)
+            id: srSlider
+            anchors { left: parent.left; right: parent.right; leftMargin: Theme.s4; rightMargin: Theme.s4; top: srLabel.bottom; topMargin: Theme.s2 + 2 }
+            from: sr.from; to: sr.to; value: sr.value; step: sr.step
+            onMoved: v => sr.moved(v)
         }
     }
 
     // label left, toggle right.
-    component ToggleRow: Item {
+    component ToggleRow: FoldRow {
         id: tr
         property string label: ""
         property bool first: false
@@ -109,7 +193,7 @@ FloatingWindow {
         }
         StyledText {
             anchors { left: parent.left; leftMargin: Theme.s4 }
-            capCentreIn: parent
+            capCenterIn: parent
             variant: "label"; text: tr.label; color: Theme.inkPrimary
         }
         Toggle {
@@ -120,7 +204,7 @@ FloatingWindow {
     }
 
     // label left, value + chevron right, whole row is a button (hands off to a morph).
-    component LinkRow: Item {
+    component LinkRow: FoldRow {
         id: lr
         property string label: ""
         property string value: ""
@@ -140,14 +224,14 @@ FloatingWindow {
         }
         StyledText {
             anchors { left: parent.left; leftMargin: Theme.s4 }
-            capCentreIn: parent
+            capCenterIn: parent
             variant: "label"; text: lr.label; color: Theme.inkPrimary
         }
         Row {
             anchors { right: parent.right; rightMargin: Theme.s4; verticalCenter: parent.verticalCenter }
             spacing: Theme.s1
-            StyledText { capCentreIn: parent; variant: "label"; text: lr.value; color: Theme.inkDim }
-            Icon { anchors.verticalCenter: parent.verticalCenter; name: "back"; rotation: 180; size: 14; color: Theme.inkFaint }
+            StyledText { capCenterIn: parent; variant: "label"; text: lr.value; color: Theme.inkDim }
+            Icon { anchors.verticalCenter: parent.verticalCenter; name: "back"; rotation: 180; size: Theme.icon(14); color: Theme.inkFaint }
         }
         MouseArea {
             id: lrMa
@@ -159,7 +243,7 @@ FloatingWindow {
     }
 
     // label left, editable text field right (font names and the like).
-    component TextRow: Item {
+    component TextRow: FoldRow {
         id: txr
         property string label: ""
         property string value: ""
@@ -174,7 +258,7 @@ FloatingWindow {
         }
         StyledText {
             anchors { left: parent.left; leftMargin: Theme.s4 }
-            capCentreIn: parent
+            capCenterIn: parent
             variant: "label"; text: txr.label; color: Theme.inkPrimary
         }
         Rectangle {
@@ -191,6 +275,7 @@ FloatingWindow {
             Behavior on border.color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
             TextInput {
                 id: tf
+                cursorDelegate: Caret {}
                 anchors.fill: parent
                 anchors.leftMargin: Theme.s2
                 anchors.rightMargin: Theme.s2
@@ -282,9 +367,10 @@ FloatingWindow {
                             anchors.leftMargin: Theme.s3
                             anchors.rightMargin: Theme.s3
                             spacing: Theme.s2
-                            Icon { anchors.verticalCenter: parent.verticalCenter; name: "search"; size: 14; color: Theme.inkFaint }
+                            Icon { anchors.verticalCenter: parent.verticalCenter; name: "search"; size: Theme.icon(14); color: Theme.inkFaint }
                             TextInput {
                                 id: searchField
+                                cursorDelegate: Caret {}
                                 anchors.verticalCenter: parent.verticalCenter
                                 width: parent.width - 30
                                 color: Theme.inkPrimary
@@ -320,8 +406,8 @@ FloatingWindow {
                             width: parent.width
                             height: 44
                             radius: Theme.rMd
-                            // image.png style: monochrome, no accent. Selected = a subtle grey card,
-                            // hover = a fainter grey fill, otherwise transparent.
+                            // image.png style: monochrome, no accent. Selected = a subtle gray card,
+                            // hover = a fainter gray fill, otherwise transparent.
                             color: catDel.selected ? Theme.fillHigh
                                  : catMa.containsMouse ? Theme.fillLow : "transparent"
                             Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
@@ -341,14 +427,14 @@ FloatingWindow {
                                     Text {
                                         anchors.centerIn: parent
                                         text: modelData.glyph
-                                        font.family: "Material Symbols Rounded"
-                                        font.variableAxes: ({ "FILL": 1, "wght": 500, "opsz": 24 })
+                                        font.family: Theme.symbolFont
+                                        font.variableAxes: Theme.symbolAxes
                                         font.pixelSize: 18
                                         color: catDel.selected ? Theme.onAccent : Theme.accent
                                     }
                                 }
                                 StyledText {
-                                    capCentreIn: parent
+                                    capCenterIn: parent
                                     variant: "label"
                                     text: modelData.label
                                     color: Theme.inkPrimary
@@ -386,7 +472,7 @@ FloatingWindow {
                     opacity: win.currentIndex > 0 ? 1 : 0.4
                     color: (backMa.containsMouse && win.currentIndex > 0) ? Theme.fillHigh : Theme.fillLow
                     Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
-                    Icon { anchors.centerIn: parent; name: "back"; size: 14; color: Theme.inkPrimary }
+                    Icon { anchors.centerIn: parent; name: "back"; size: Theme.icon(14); color: Theme.inkPrimary }
                     MouseArea { id: backMa; anchors.fill: parent; enabled: win.currentIndex > 0; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: win.currentIndex-- }
                 }
                 Rectangle {
@@ -394,14 +480,42 @@ FloatingWindow {
                     opacity: win.currentIndex < win.cats.length - 1 ? 1 : 0.4
                     color: (fwdMa.containsMouse && win.currentIndex < win.cats.length - 1) ? Theme.fillHigh : Theme.fillLow
                     Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
-                    Icon { anchors.centerIn: parent; name: "back"; rotation: 180; size: 14; color: Theme.inkPrimary }
+                    Icon { anchors.centerIn: parent; name: "back"; rotation: 180; size: Theme.icon(14); color: Theme.inkPrimary }
                     MouseArea { id: fwdMa; anchors.fill: parent; enabled: win.currentIndex < win.cats.length - 1; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: win.currentIndex++ }
                 }
             }
 
+            // Pinned icon preview: the shell's drawn icons where they are most visible, under
+            // the page so it stays in view while the knobs in "Drawn icons" are dragged.
+            // Switched from that section (win.iconPreviewOn, this session only).
+            // It DOCKS: `dock` runs 0 -> 1 on the spring, the strip rises from under the
+            // window's edge and fades in on it, and the page above gives up exactly the
+            // room the strip has taken so far (the Flickable's bottom margin follows the
+            // same value). Nothing is ever covered: the page ends where the dock begins.
+            IconPreview {
+                id: iconPreview
+                property real dock: (win.iconPreviewOn && win.cat.key === "appearance") ? 1 : 0
+                Behavior on dock { NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } }
+                readonly property real room: Math.max(0, dock) * (height + Theme.s3 * 2)
+                // PUSH, don't cover: as the dock takes room the page scrolls up by the same
+                // amount, so the rows it would have landed on ride up above it (and come
+                // back down when it leaves). The page is shrinking by the same step, so
+                // the furthest it can scroll grows with it.
+                property real _took: 0
+                onRoomChanged: {
+                    const d = room - _took;
+                    _took = room;
+                    flick.contentY = Math.max(0, Math.min(Math.max(0, flick.contentHeight - (flick.height - d)), flick.contentY + d));
+                }
+                visible: dock > 0.005
+                opacity: Math.max(0, Math.min(1, dock))
+                anchors { left: parent.left; right: parent.right; bottom: parent.bottom; leftMargin: detail.pad; rightMargin: detail.pad; bottomMargin: Theme.s3 - (1 - dock) * (height + Theme.s3) }
+            }
+
             Flickable {
                 id: flick
-                anchors { top: navRow.bottom; topMargin: Theme.s2; left: parent.left; right: parent.right; bottom: parent.bottom }
+                // the docked icon preview pushes the page up by the room it has taken
+                anchors { top: navRow.bottom; topMargin: Theme.s2; left: parent.left; right: parent.right; bottom: parent.bottom; bottomMargin: iconPreview.room }
                 contentWidth: width
                 contentHeight: contentCol.implicitHeight + detail.pad * 2
                 clip: true
@@ -450,7 +564,7 @@ FloatingWindow {
                                 anchors.horizontalCenter: parent.horizontalCenter
                                 width: 62; height: 62; radius: width / 2   // circular accent-tinted disc, like the sidebar badges
                                 color: Theme.alpha(Theme.accent, 0.18)
-                                Text { anchors.centerIn: parent; text: win.cat.glyph; font.family: "Material Symbols Rounded"; font.variableAxes: ({ "FILL": 1, "wght": 500, "opsz": 40 }); font.pixelSize: 34; color: Theme.accent }
+                                Text { anchors.centerIn: parent; text: win.cat.glyph; font.family: Theme.symbolFont; font.variableAxes: Theme.symbolAxes; font.pixelSize: 34; color: Theme.accent }
                             }
                             StyledText {
                                 anchors.horizontalCenter: parent.horizontalCenter
@@ -481,7 +595,7 @@ FloatingWindow {
                                 id: barShapeCol
                                 width: parent.width
                                 ToggleRow { first: true; label: "Notch mode"; checked: Config.notchMode; onToggled: v => Config.notchMode = v }
-                                SliderRow { visible: Config.notchMode; label: "Notch flare"; unit: "px"; from: 0; to: 24; value: Config.notchFlare; onMoved: Config.notchFlare = Math.round(v) }
+                                SliderRow { shown: Config.notchMode; label: "Notch flare"; unit: "px"; from: 0; to: 24; value: Config.notchFlare; onMoved: Config.notchFlare = Math.round(v) }
                                 SliderRow { label: "Bar height"; unit: "px"; from: 24; to: 64; value: Config.barHeight; onMoved: Config.barHeight = Math.round(v) }
                                 SliderRow { label: "Collapsed width"; unit: "px"; from: 90; to: 400; value: Config.islandCollapsedWidth; onMoved: Config.islandCollapsedWidth = Math.round(v) }
                                 SliderRow { label: "Expanded height"; unit: "px"; from: 80; to: 200; value: Config.islandExpandedHeight; onMoved: Config.islandExpandedHeight = Math.round(v) }
@@ -490,17 +604,6 @@ FloatingWindow {
                                 SliderRow { label: "Corner radius"; unit: "px"; from: 0; to: 40; value: Config.islandRadius; onMoved: Config.islandRadius = Math.round(v) }
                                 SliderRow { label: "Corner radius (expanded)"; unit: "px"; from: 0; to: 48; value: Config.islandRadiusOpen; onMoved: Config.islandRadiusOpen = Math.round(v) }
                                 SliderRow { label: "Minimum expanded width"; unit: "px"; from: 360; to: 1200; value: Config.islandMinWidth; onMoved: Config.islandMinWidth = Math.round(v) }
-                            }
-                        }
-                        SectionLabel { text: "Game mode" }
-                        Rectangle {
-                            width: parent.width; radius: Theme.rMd; color: Theme.surfacePanel
-                            implicitHeight: gameCol.implicitHeight
-                            Column {
-                                id: gameCol
-                                width: parent.width
-                                SliderRow { first: true; label: "Bar height"; unit: "px"; from: 28; to: 72; value: Config.gameBarHeight; onMoved: Config.gameBarHeight = Math.round(v) }
-                                SliderRow { label: "Cluster gap"; unit: "px"; from: 40; to: 400; value: Config.gameClusterGap; onMoved: Config.gameClusterGap = Math.round(v) }
                             }
                         }
                         SectionLabel { text: "Panel widths" }
@@ -555,8 +658,6 @@ FloatingWindow {
                                 ToggleRow { first: true; label: "Album line"; checked: Config.mediaShowAlbum; onToggled: v => Config.mediaShowAlbum = v }
                                 ToggleRow { label: "Artist line"; checked: Config.mediaShowArtist; onToggled: v => Config.mediaShowArtist = v }
                                 ToggleRow { label: "Transport buttons"; checked: Config.mediaShowTransport; onToggled: v => Config.mediaShowTransport = v }
-                                ToggleRow { label: "Lyrics"; checked: Config.mediaLyrics; onToggled: v => Config.mediaLyrics = v }
-                                ToggleRow { label: "Scroll to change track"; checked: Config.mediaScrollSwitch; onToggled: v => Config.mediaScrollSwitch = v }
                             }
                         }
                     }
@@ -574,8 +675,18 @@ FloatingWindow {
                                 width: parent.width
                                 ToggleRow { first: true; label: "24-hour time"; checked: Config.clock24h; onToggled: v => Config.clock24h = v }
                                 ToggleRow { label: "Show seconds"; checked: Config.clockSeconds; onToggled: v => Config.clockSeconds = v }
-                                ToggleRow { label: "Workspace dots beside the clock"; checked: Config.clockDots; onToggled: v => Config.clockDots = v }
-                                ToggleRow { label: "Battery and Wi-Fi beside the clock"; checked: Config.clockStatus; onToggled: v => Config.clockStatus = v }
+                            }
+                        }
+                        // what the collapsed pill shows beside the time
+                        SectionLabel { text: "Collapsed island" }
+                        Rectangle {
+                            width: parent.width; radius: Theme.rMd; color: Theme.surfacePanel
+                            implicitHeight: restCol.implicitHeight
+                            Column {
+                                id: restCol
+                                width: parent.width
+                                ToggleRow { first: true; label: "Workspace capsules at rest"; checked: Config.clockDots; onToggled: v => Config.clockDots = v }
+                                ToggleRow { label: "Battery and Wi-Fi at rest"; checked: Config.clockStatus; onToggled: v => Config.clockStatus = v }
                             }
                         }
                         SectionLabel { text: "Expanded island" }
@@ -585,9 +696,8 @@ FloatingWindow {
                             Column {
                                 id: openCol
                                 width: parent.width
-                                ToggleRow { first: true; label: "Workspaces on the left"; checked: Config.islandWorkspaces; onToggled: v => Config.islandWorkspaces = v }
-                                ToggleRow { label: "Status on the right"; checked: Config.islandStatus; onToggled: v => Config.islandStatus = v }
-                                ToggleRow { label: "Media card under the clock"; checked: Config.islandMedia; onToggled: v => Config.islandMedia = v }
+                                ToggleRow { first: true; label: "Workspaces under the clock"; checked: Config.islandWorkspaces; onToggled: v => Config.islandWorkspaces = v }
+                                ToggleRow { label: "Media on the left"; checked: Config.islandMedia; onToggled: v => Config.islandMedia = v }
                             }
                         }
                         SectionLabel { text: "Calendar" }
@@ -597,9 +707,9 @@ FloatingWindow {
                             Column {
                                 id: calCol
                                 width: parent.width
-                                SliderRow { first: true; label: "Week starts on"; from: 0; to: 6; value: Config.weekStartsOn; onMoved: Config.weekStartsOn = Math.round(v) }
+                                SliderRow { first: true; label: "Week starts on"; from: 0; to: 6; names: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]; value: Config.weekStartsOn; onMoved: Config.weekStartsOn = Math.round(v) }
                                 SliderRow { label: "Day cell height"; unit: "px"; from: 22; to: 48; value: Config.calendarCellHeight; onMoved: Config.calendarCellHeight = Math.round(v) }
-                                ToggleRow { label: "Show neighbouring months"; checked: Config.calendarShowAdjacent; onToggled: v => Config.calendarShowAdjacent = v }
+                                ToggleRow { label: "Show neighboring months"; checked: Config.calendarShowAdjacent; onToggled: v => Config.calendarShowAdjacent = v }
                             }
                         }
                     }
@@ -626,11 +736,21 @@ FloatingWindow {
                             Column {
                                 id: accentCol
                                 width: parent.width
+                                // The wallpaper can choose: the accent is then whichever of the
+                                // scheme's hues is closest to the picture's most prominent color,
+                                // and follows every wallpaper change. Picking by hand means nothing
+                                // while that is on, so the two rows for it fold away under it.
+                                ToggleRow { first: true; label: "Accent from the wallpaper"; checked: Config.accentFromWallpaper; onToggled: v => Config.accentFromWallpaper = v }
                                 // swatches: the scheme's own accent first, then its palette; the
                                 // current pick wears a ring
-                                Item {
-                                    width: parent.width; implicitHeight: 48
-                                    StyledText { anchors { left: parent.left; leftMargin: Theme.s4 } capCentreIn: parent; variant: "label"; text: "Accent colour"; color: Theme.inkPrimary }
+                                FoldRow {
+                                    shown: !Config.accentFromWallpaper
+                                    implicitHeight: 48
+                                    Rectangle {
+                                        anchors { top: parent.top; left: parent.left; right: parent.right; leftMargin: Theme.s4; rightMargin: Theme.s4 }
+                                        height: 1; color: Theme.hairline
+                                    }
+                                    StyledText { anchors { left: parent.left; leftMargin: Theme.s4 } capCenterIn: parent; variant: "label"; text: "Accent color"; color: Theme.inkPrimary }
                                     Row {
                                         anchors { right: parent.right; rightMargin: Theme.s4; verticalCenter: parent.verticalCenter }
                                         spacing: Theme.s2
@@ -650,8 +770,7 @@ FloatingWindow {
                                         }
                                     }
                                 }
-                                TextRow { label: "Custom (#rrggbb)"; value: Config.accentOverride; onCommitted: t => { const v = t.trim(); if (v === "" || /^#[0-9a-fA-F]{6}$/.test(v)) Config.accentOverride = v; } }
-                                ToggleRow { label: "Color burst (a different palette colour per surface)"; checked: Config.colorBurst; onToggled: v => Config.colorBurst = v }
+                                TextRow { shown: !Config.accentFromWallpaper; label: "Custom (#rrggbb)"; value: Config.accentOverride; onCommitted: t => { const v = t.trim(); if (v === "" || /^#[0-9a-fA-F]{6}$/.test(v)) Config.accentOverride = v; } }
                             }
                         }
                         SectionLabel { text: "Type" }
@@ -679,8 +798,42 @@ FloatingWindow {
                                 SliderRow { label: "Large radius"; unit: "px"; from: 0; to: 32; value: Config.radiusLarge; onMoved: Config.radiusLarge = Math.round(v) }
                                 ToggleRow { label: "Screen corners"; checked: Config.screenCorners; onToggled: v => Config.screenCorners = v }
                                 SliderRow { label: "Screen corner radius"; unit: "px"; from: 0; to: 40; value: Config.screenCornerRadius; onMoved: Config.screenCornerRadius = Math.round(v) }
-                                SliderRow { label: "Icon size"; unit: "px"; from: 12; to: 28; value: Config.iconSize; onMoved: Config.iconSize = Math.round(v) }
-                                SliderRow { label: "Icon stroke"; unit: "×10"; from: 10; to: 34; value: Config.iconStroke; onMoved: Config.iconStroke = Math.round(v) }
+                            }
+                        }
+                        SectionLabel { text: "Drawn icons" }
+                        Rectangle {
+                            width: parent.width; radius: Theme.rMd; color: Theme.surfacePanel
+                            implicitHeight: iconCol.implicitHeight
+                            Column {
+                                id: iconCol
+                                width: parent.width
+                                // the shell's own vector icons (components/Icon.qml): every
+                                // property a drawing has, set for the whole set at once
+                                ToggleRow { first: true; label: "Pin a live preview under this page"; checked: win.iconPreviewOn; onToggled: v => win.iconPreviewOn = v }
+                                SliderRow { label: "Size"; unit: "px"; from: 12; to: 28; value: Config.iconSize; onMoved: Config.iconSize = Math.round(v) }
+                                SliderRow { label: "Scale in box"; unit: "%"; from: 70; to: 130; value: Config.iconScale; onMoved: Config.iconScale = Math.round(v) }
+                                SliderRow { label: "Stroke"; unit: "×10"; from: 10; to: 34; value: Config.iconStroke; onMoved: Config.iconStroke = Math.round(v) }
+                                SliderRow { label: "Minimum stroke at small sizes"; unit: "×10 px"; from: 8; to: 25; value: Config.iconStrokeFloor; onMoved: Config.iconStrokeFloor = Math.round(v) }
+                                ChoiceRow { label: "Line ends"; options: ["Round", "Square", "Flat"]; value: Config.iconCap; onPicked: v => Config.iconCap = v }
+                                ChoiceRow { label: "Corners"; options: ["Round", "Pointed", "Beveled"]; value: Config.iconJoin; onPicked: v => Config.iconJoin = v }
+                                SliderRow { label: "Unlit strength"; unit: "%"; from: 40; to: 200; value: Config.iconUnlit; onMoved: Config.iconUnlit = Math.round(v) }
+                                ChoiceRow { label: "Renderer"; options: ["Smooth", "Multisampled"]; value: Config.iconRenderer; onPicked: v => Config.iconRenderer = v }
+                            }
+                        }
+                        SectionLabel { text: "Symbols" }
+                        Rectangle {
+                            width: parent.width; radius: Theme.rMd; color: Theme.surfacePanel
+                            implicitHeight: symCol.implicitHeight
+                            Column {
+                                id: symCol
+                                width: parent.width
+                                // Material Symbols, the font behind this window's sidebar and
+                                // headers. The three families share one set of names.
+                                ChoiceRow { first: true; label: "Style"; options: ["Rounded", "Outlined", "Sharp"]; value: Config.symbolFamily; onPicked: v => Config.symbolFamily = v }
+                                SliderRow { label: "Fill"; unit: "%"; from: 0; to: 100; value: Config.symbolFill; onMoved: Config.symbolFill = Math.round(v) }
+                                SliderRow { label: "Weight"; from: 100; to: 700; step: 50; value: Config.symbolWeight; onMoved: Config.symbolWeight = Math.round(v / 50) * 50 }
+                                SliderRow { label: "Grade"; from: -25; to: 200; step: 25; value: Config.symbolGrade; onMoved: Config.symbolGrade = Math.round(v / 25) * 25 }
+                                SliderRow { label: "Optical size"; from: 20; to: 48; value: Config.symbolOpsz; onMoved: Config.symbolOpsz = Math.round(v) }
                             }
                         }
                         SectionLabel { text: "Surfaces & ink" }
@@ -719,7 +872,9 @@ FloatingWindow {
                             Column {
                                 id: wpCol
                                 width: parent.width
-                                SliderRow { first: true; label: "Crossfade"; unit: "ms"; from: 0; to: 2000; value: Config.wallpaperFade; onMoved: Config.wallpaperFade = Math.round(v) }
+                                TextRow { first: true; label: "Folder"; value: Config.wallpaperDir; onCommitted: t => { if (t.trim() !== "") Config.wallpaperDir = t.trim(); } }
+                                ToggleRow { label: "A folder per theme inside it"; checked: Config.wallpaperPerTheme; onToggled: v => Config.wallpaperPerTheme = v }
+                                SliderRow { label: "Crossfade"; unit: "ms"; from: 0; to: 2000; value: Config.wallpaperFade; onMoved: Config.wallpaperFade = Math.round(v) }
                             }
                         }
                     }
@@ -736,10 +891,10 @@ FloatingWindow {
                                 id: motionCol
                                 width: parent.width
                                 ToggleRow { first: true; label: "Reduce motion"; checked: Config.reducedMotion; onToggled: v => Config.reducedMotion = v }
-                                SliderRow { visible: !Config.reducedMotion; label: "Movement (size / position)"; unit: "ms"; from: 80; to: 800; value: Config.motionSpring; onMoved: Config.motionSpring = Math.round(v) }
-                                SliderRow { visible: !Config.reducedMotion; label: "Fades & colour"; unit: "ms"; from: 40; to: 600; value: Config.motionEffects; onMoved: Config.motionEffects = Math.round(v) }
-                                SliderRow { visible: !Config.reducedMotion; label: "Hover response"; unit: "ms"; from: 0; to: 400; value: Config.motionFast; onMoved: Config.motionFast = Math.round(v) }
-                                SliderRow { visible: !Config.reducedMotion; label: "Bounce"; unit: "%"; from: 0; to: 100; value: Config.motionBounce; onMoved: Config.motionBounce = Math.round(v) }
+                                SliderRow { shown: !Config.reducedMotion; label: "Movement (size / position)"; unit: "ms"; from: 80; to: 800; value: Config.motionSpring; onMoved: Config.motionSpring = Math.round(v) }
+                                SliderRow { shown: !Config.reducedMotion; label: "Fades & color"; unit: "ms"; from: 40; to: 600; value: Config.motionEffects; onMoved: Config.motionEffects = Math.round(v) }
+                                SliderRow { shown: !Config.reducedMotion; label: "Hover response"; unit: "ms"; from: 0; to: 400; value: Config.motionFast; onMoved: Config.motionFast = Math.round(v) }
+                                SliderRow { shown: !Config.reducedMotion; label: "Bounce"; unit: "%"; from: 0; to: 100; value: Config.motionBounce; onMoved: Config.motionBounce = Math.round(v) }
                             }
                         }
                     }
@@ -804,9 +959,7 @@ FloatingWindow {
                             Column {
                                 id: lockCol
                                 width: parent.width
-                                SliderRow { first: true; label: "Blur"; unit: "px"; from: 0; to: 128; value: Config.lockBlur; onMoved: Config.lockBlur = Math.round(v) }
-                                SliderRow { label: "Dim"; unit: "%"; from: 0; to: 60; value: Config.lockDim; onMoved: Config.lockDim = Math.round(v) }
-                                SliderRow { label: "Snapshot quality"; unit: "%"; from: 40; to: 100; value: Config.lockShotQuality; onMoved: Config.lockShotQuality = Math.round(v) }
+                                SliderRow { first: true; label: "Dim"; unit: "%"; from: 0; to: 60; value: Config.lockDim; onMoved: Config.lockDim = Math.round(v) }
                                 ToggleRow { label: "Show password dots"; checked: Config.lockShowDots; onToggled: v => Config.lockShowDots = v }
                                 SliderRow { label: "Caret blink"; unit: "ms"; from: 200; to: 1200; value: Config.caretBlink; onMoved: Config.caretBlink = Math.round(v) }
                             }
@@ -898,7 +1051,7 @@ FloatingWindow {
                     hoverEnabled: true
                     property real grabDy: 0
                     onPressed: (m) => {
-                        // grabbed the thumb → keep the offset; clicked the track → jump, centred
+                        // grabbed the thumb → keep the offset; clicked the track → jump, centered
                         if (m.y >= sbThumb.y && m.y <= sbThumb.y + sbThumb.height) {
                             grabDy = m.y - sbThumb.y;
                         } else {

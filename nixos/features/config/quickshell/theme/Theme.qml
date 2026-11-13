@@ -56,26 +56,20 @@ Singleton {
     readonly property color background: pal.background
     readonly property color foreground: pal.foreground
     readonly property color fg: foreground
-    // the accent: the scheme's by default, or the user's override from Settings
+    // the accent: the scheme's by default, or the user's override from Settings, or (a
+    // setting too, and it wins while it is on) whichever of the scheme's six hues is
+    // closest to the wallpaper's most prominent color. WallpaperHue is only reached for
+    // behind the setting, so with it off the wallpaper is never looked at.
     readonly property color schemeAccent: pal.color6
     readonly property bool accentOverridden: /^#[0-9a-fA-F]{6}$/.test(Config.accentOverride)
-    readonly property color accent: accentOverridden ? Config.accentOverride : schemeAccent
-    // Color burst: each GROUP of surfaces takes its own colour of the scheme's palette
-    // instead of everything wearing the one accent. A group is one coloured thing: the
-    // workspace row, the status cluster, the control center's toggles, its sliders, its
-    // media card, the launcher, the calendar, the polkit prompt. A sheet inherits its
-    // tile's group. `hue(group)` is the accent unless burst is on; an unknown group hashes
-    // to a stable slot so a new surface still gets one colour of its own.
-    readonly property bool burst: Config.colorBurst
+    readonly property bool accentFromWallpaper: Config.accentFromWallpaper && WallpaperHue.valid
+    readonly property color accent: accentFromWallpaper ? WallpaperHue.pick(hues, schemeAccent)
+                                  : accentOverridden ? Config.accentOverride : schemeAccent
+    // Every colored thing in the shell wears the one accent. `hue(group)` is kept as the
+    // call site because the surfaces name their group; it answers the accent for all.
+    function hue(group) { return accent; }
+    // the scheme's six palette colors, for the accent picker in Settings
     readonly property var hues: [pal.color1, pal.color2, pal.color3, pal.color4, pal.color5, pal.color6]
-    readonly property var hueSlots: ({ workspaces: 5, status: 3, toggles: 4, sliders: 1, media: 0,
-                                      launcher: 2, calendar: 0, polkit: 0, notifications: 2 })
-    function hue(group) {
-        if (!burst) return accent;
-        let s = hueSlots[group];
-        if (s === undefined) { s = 0; for (let k = 0; k < group.length; k++) s = (s * 31 + group.charCodeAt(k)) % 6; }
-        return hues[s];
-    }
     function inkOn(c) { return lum(c) > 0.55 ? "#0b0b0b" : "#f6f6f6"; }
 
     readonly property color red: pal.color1
@@ -85,8 +79,8 @@ Singleton {
     readonly property color blue: pal.color4
     readonly property color purple: pal.color5
     readonly property color aqua: pal.color6
-    readonly property color grey0: pal.color8
-    readonly property color grey2: pal.color7
+    readonly property color gray0: pal.color8
+    readonly property color gray2: pal.color7
 
     // DESIGN.md "Obsidian" token system. Build new UI from these; the legacy
     // tokens below stick around for back-compat 'til every surface is migrated.
@@ -100,7 +94,7 @@ Singleton {
     readonly property bool isLight: lum(background) > lum(foreground)
 
     // The shell (island + all its surfaces) is solid BLACK on a dark scheme, so elevation is
-    // built from relatives of black, NOT the wallpaper-tinted `background`: near-black greys
+    // built from relatives of black, NOT the wallpaper-tinted `background`: near-black grays
     // that carry a whisper of the fg hue so they still fit the scheme. `background` stays
     // palette-derived for the true desktop base (wallpaper fallback). Accents are untouched.
     //
@@ -190,7 +184,7 @@ Singleton {
     readonly property int fsCaption: Math.round(fontSize * 0.78)
     // notch clock, scales with fontSize so the settings slider drives it too
     readonly property int fsClock: fontSize + 2       // collapsed time
-    readonly property int fsClockBig: fontSize + 9    // expanded "hero" time
+    readonly property int fsClockBig: fontSize + 20   // expanded "hero" time
     // weights (400/500 only)
     readonly property int wRegular: 400
     readonly property int wMedium: 500
@@ -199,6 +193,33 @@ Singleton {
     // iconography
     readonly property int iconSize: Config.iconSize
     readonly property real iconStroke: Config.iconStroke / 10
+    // the drawn icon set's other properties (see components/Icon.qml)
+    readonly property real iconStrokeFloor: Config.iconStrokeFloor / 10
+    readonly property string iconCap: Config.iconCap
+    readonly property string iconJoin: Config.iconJoin
+    readonly property real iconScale: Math.max(0.5, Math.min(1.5, Config.iconScale / 100))
+    readonly property real iconUnlit: Config.iconUnlit / 100
+    readonly property bool iconMsaa: Config.iconRenderer === "Multisampled"
+    readonly property int iconCapStyle: iconCap === "Square" ? Qt.SquareCap : iconCap === "Flat" ? Qt.FlatCap : Qt.RoundCap
+    readonly property int iconJoinStyle: iconJoin === "Pointed" ? Qt.MiterJoin : iconJoin === "Beveled" ? Qt.BevelJoin : Qt.RoundJoin
+    // EVERY icon follows the Size and Stroke knobs, not only the ones without a size of
+    // their own. Sizes and stroke widths written at a call site were tuned at these
+    // anchors (also the Config defaults), so they are scaled by knob / anchor: at the
+    // anchor nothing moves, and away from it everything moves together, each icon keeping
+    // its own proportion.
+    readonly property real iconAnchor: 20
+    readonly property real strokeAnchor: 1.7
+    readonly property real iconK: iconSize / iconAnchor
+    readonly property real strokeK: iconStroke / strokeAnchor
+    function icon(n) { return Math.round(n * iconK); }
+    // a stroke width drawn in a `box`-unit grid and shown at `size` px: scaled by the
+    // Stroke knob and held above the minimum-stroke floor
+    function stroke(base, size, box) { return Math.max(base * strokeK, iconStrokeFloor * (box || 24) / Math.max(1, size)); }
+    // Material Symbols, as used by Settings: the family and the font's four axes. Anything
+    // that draws a symbol sets `font.family: Theme.symbolFont` and
+    // `font.variableAxes: Theme.symbolAxes`.
+    readonly property string symbolFont: "Material Symbols " + (["Rounded", "Outlined", "Sharp"].indexOf(Config.symbolFamily) >= 0 ? Config.symbolFamily : "Rounded")
+    readonly property var symbolAxes: ({ "FILL": Config.symbolFill / 100, "wght": Config.symbolWeight, "GRAD": Config.symbolGrade, "opsz": Config.symbolOpsz })
 
     // MOTION. Every curve here is a real SPRING: the step response of a damped harmonic
     // oscillator, sampled and handed to Qt as a cubic bezier spline. That's what gives motion
@@ -252,8 +273,15 @@ Singleton {
     // so speeding the shell up moves everything together.
     readonly property real springDamping: 1.0 - (Config.motionBounce / 100) * 0.5
     readonly property var springBezier: springCurve(springDamping, 8)
+    // A livelier ring for small things that should visibly bounce (the lock screen's
+    // island): 2.3x the Settings bounce, so "no bounce" still means none, and a little
+    // longer so the ring can be seen. EIGHT segments like every other curve here, and
+    // no more: a 12-segment curve on a Behavior that was animating as a fresh instance
+    // started segfaulted Quickshell every time, at any damping (bisected 2026-11-10).
+    readonly property var bounceBezier: springCurve(Math.max(0.4, 1.0 - (1.0 - springDamping) * 2.3), 8)
+    readonly property int dBounce: Math.round(dSpring * 1.3)
     readonly property int dSpring: Config.motionSpring
-    // effects (opacity / colour: fades, borders) — critically damped ON PURPOSE. A fade that
+    // effects (opacity / color: fades, borders) — critically damped ON PURPOSE. A fade that
     // overshoots just clamps at 0/1 and lands early, which reads as an abrupt cut, not a bounce.
     readonly property var effectsBezier: springCurve(1.0, 8)
     readonly property int dEffects: Config.motionEffects
@@ -265,12 +293,8 @@ Singleton {
     readonly property int dEnter: Math.round(dSpring * 1.5)
     readonly property int stagger: Math.round(dSpring * 0.225)
     readonly property bool reducedMotion: Config.reducedMotion
-    // Game Mode strips the drop shadows (an FBO + a big blur per surface, every frame while
-    // anything moves), which is where the GPU cost measurably was. It no longer touches the
-    // durations: the shell kept animating and games did not notice, while the shell at zero
-    // duration felt broken. Set from shell.qml so theme/ needn't import services/.
-    property bool gameMode: false
-    readonly property bool shadows: !gameMode
+    // the drop shadows on floating surfaces (an FBO + a big blur per surface)
+    readonly property bool shadows: true
     // collapse durations when reduced motion is on
     function dur(d) { return reducedMotion ? 0 : d; }
 

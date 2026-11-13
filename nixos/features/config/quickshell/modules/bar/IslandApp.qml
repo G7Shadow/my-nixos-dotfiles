@@ -7,8 +7,8 @@ import "../../theme"
 import "../../components"
 
 // The focused app, above the workspace capsules in the expanded island: its icon and its
-// name, nothing else. The icon is TINTED the way iOS 18 tints icons: colourised from its
-// own luminance with one hue (the workspace hue), so a logo in six colours reads as part
+// name, nothing else. The icon is TINTED the way iOS 18 tints icons: colorised from its
+// own luminance with one hue (the workspace hue), so a logo in six colors reads as part
 // of the island instead of a sticker on it.
 //
 // Motion, in the capsules' own energy (their spring, their stagger): on entrance the icon
@@ -24,7 +24,7 @@ Item {
     property real maxW: 128
     property int iconSize: 18
     // the entrance's gap between the icon and the name: wide enough to READ as two beats
-    // (the capsules' 40ms gap between neighbours made the two land as one), each part on
+    // (the capsules' 40ms gap between neighbors made the two land as one), each part on
     // the shorter base clock so the pair is still over before the capsules settle
     property int stagger: Math.round(Theme.stagger * 1.3)
 
@@ -227,7 +227,7 @@ Item {
             source: img
             // colorization alone: it already works from the pixel's luminance, and
             // MultiEffect applies saturation AFTER it, so saturation -1 drained the tint
-            // back to gray (seen: a gray icon with the colour set to pure red)
+            // back to gray (seen: a gray icon with the color set to pure red)
             colorization: 1.0
             colorizationColor: root.tone
             visible: img.status === Image.Ready && img.source.toString() !== ""

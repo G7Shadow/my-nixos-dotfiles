@@ -70,7 +70,7 @@ Item {
     Rectangle { anchors.fill: parent; radius: bg.radius; visible: tile.hasArt; color: Theme.alpha(Theme.mix(Theme.base, tile.tone, 0.32), 0.68) }
 
 
-    // Hairline rim (Tahoe's glass edge, without the glass): a 1px stroke in the ink colour at
+    // Hairline rim (Tahoe's glass edge, without the glass): a 1px stroke in the ink color at
     // hairline alpha, drawn ON TOP so hover veils and album art never soften it. It is what
     // separates a tile from the black island without any glow.
     Rectangle {
@@ -121,7 +121,7 @@ Item {
         visible: tile.mini
         x: tile.inset + tile.disc + tile.pad
         width: parent.width - x - tile.pad
-        capCentreIn: parent
+        capCenterIn: parent
         elide: Text.ElideRight
         variant: "label"
         font.weight: Theme.wMedium

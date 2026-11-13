@@ -28,16 +28,16 @@ Item {
     readonly property var reg: Config.ccReg(key)
     readonly property string label: reg ? reg.label : ""
     readonly property string icon: reg ? reg.icon : ""
-    readonly property bool hasMenu: key === "wifi" || key === "bluetooth"
+    readonly property bool hasMenu: key === "wifi" || key === "bluetooth" || key === "nightlight"
     readonly property bool on: key === "wifi" ? Network.wifiEnabled
                              : key === "bluetooth" ? Bluetooth.enabled
                              : key === "focus" ? GlobalState.dnd
                              : key === "nightlight" ? NightLight.enabled
-                             : key === "gamemode" ? GameMode.enabled
                              : false
     readonly property string sublabel: key === "wifi" ? (Network.wifiEnabled ? Network.label : "Off")
                                      : key === "bluetooth" ? (Bluetooth.enabled ? (Bluetooth.hasConnection ? Bluetooth.label : "On") : "Off")
                                      : key === "lock" ? "Screen"
+                                     : key === "nightlight" ? (NightLight.scheduled ? NightLight.scheduleHint : (on ? NightLight.temperature + " K" : "Off"))
                                      : (on ? "On" : "Off")
 
     function toggle() {
@@ -45,7 +45,6 @@ Item {
         else if (key === "bluetooth") Bluetooth.toggle();
         else if (key === "focus") GlobalState.toggleDnd();
         else if (key === "nightlight") NightLight.toggle();
-        else if (key === "gamemode") GameMode.toggle();
         else if (key === "lock" && ctl) ctl.lockRequested();
     }
     // the BODY opens the sub-view, so the body is what morphs into it: the sheet starts as
@@ -77,7 +76,7 @@ Item {
         color: tile.circleOnly && tile.on ? tile.tone : Theme.surfaceOverlay
         Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
     }
-    Rectangle {   // hover veil, under the state circle so it never tints the state colour
+    Rectangle {   // hover veil, under the state circle so it never tints the state color
         anchors.fill: parent
         radius: bg.radius
         color: Theme.fillLow
@@ -104,15 +103,15 @@ Item {
     WifiIcon {
         anchors.centerIn: parent
         visible: tile.circleOnly && tile.key === "wifi"
-        scale: tile.glyph / Theme.iconSize
+        scale: tile.glyph / Theme.iconAnchor   // the fan is drawn for the anchor size; glyph already carries the Size knob
         active: Network.connected
         strength: Network.connected ? (Network.isWifi ? Network.signalStrength : 1) : 0
         color: tile.on ? Theme.onAccent : Theme.inkPrimary
-        dimColor: tile.on ? Theme.alpha(Theme.onAccent, 0.30) : Theme.inkFaint
+        dimColor: tile.on ? Theme.alpha(Theme.onAccent, Math.min(1, 0.45 * Theme.iconUnlit)) : Theme.inkFaint   // strong enough that an unlit arc still reads as part of the fan (at 0.30 the lit part looked like a smaller icon sitting low)
     }
 
 
-    // Hairline rim (Tahoe's glass edge, without the glass): a 1px stroke in the ink colour at
+    // Hairline rim (Tahoe's glass edge, without the glass): a 1px stroke in the ink color at
     // hairline alpha, drawn ON TOP so hover veils and album art never soften it. It is what
     // separates a tile from the black island without any glow.
     Rectangle {
@@ -143,11 +142,11 @@ Item {
         WifiIcon {
             anchors.centerIn: parent
             visible: tile.key === "wifi"
-            scale: tile.glyph / Theme.iconSize
+            scale: tile.glyph / Theme.iconAnchor   // the fan is drawn for the anchor size; glyph already carries the Size knob
             active: Network.connected
             strength: Network.connected ? (Network.isWifi ? Network.signalStrength : 1) : 0
             color: tile.on ? Theme.onAccent : Theme.inkPrimary
-            dimColor: tile.on ? Theme.alpha(Theme.onAccent, 0.30) : Theme.inkFaint
+            dimColor: tile.on ? Theme.alpha(Theme.onAccent, Math.min(1, 0.45 * Theme.iconUnlit)) : Theme.inkFaint   // strong enough that an unlit arc still reads as part of the fan (at 0.30 the lit part looked like a smaller icon sitting low)
         }
         MouseArea {
             id: circleMa
@@ -175,13 +174,60 @@ Item {
             text: tile.label
             color: Theme.inkPrimary
         }
-        StyledText {
+        // The sublabel ROLLS when it changes, the way the clock's digits do: the old
+        // line travels up and fades while the new one rises into its place, masked to the
+        // line box. It is the tile answering the press (Off -> On, On -> a network's
+        // name), in the shell's own vocabulary for "this value just changed".
+        Item {
+            id: sub
             width: parent.width
-            elide: Text.ElideRight
-            variant: "caption"
-            visible: (tile.w >= 3 || tile.card) && text !== ""
-            text: tile.sublabel
-            color: Theme.inkDim
+            height: curS.implicitHeight
+            visible: (tile.w >= 3 || tile.card) && (shown !== "" || roll.running)
+            clip: true
+            // what is on screen; lags tile.sublabel by one roll
+            property string shown: ""
+            property bool ready: false
+            property real lastRoll: 0
+            Component.onCompleted: { shown = tile.sublabel; ready = true; }
+            Connections {
+                target: tile
+                function onSublabelChanged() {
+                    if (!sub.ready || sub.shown === tile.sublabel) return;
+                    // a value that streams (the Night Light temperature under a drag) just
+                    // swaps in place: restarting the roll every few ms would only stutter
+                    const now = Date.now();
+                    if (now - sub.lastRoll < 180 || !sub.visible) { sub.shown = tile.sublabel; sub.lastRoll = now; return; }
+                    sub.lastRoll = now;
+                    outS.text = sub.shown;
+                    sub.shown = tile.sublabel;
+                    roll.restart();
+                }
+            }
+            StyledText {
+                id: curS
+                width: parent.width
+                elide: Text.ElideRight
+                variant: "caption"
+                text: sub.shown
+                color: Theme.inkDim
+            }
+            StyledText {
+                id: outS
+                width: parent.width
+                elide: Text.ElideRight
+                variant: "caption"
+                color: Theme.inkDim
+                opacity: 0
+            }
+            ParallelAnimation {
+                id: roll
+                // incoming: rises from below into place
+                NumberAnimation { target: curS; property: "y"; from: sub.height * 0.7; to: 0; duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier }
+                NumberAnimation { target: curS; property: "opacity"; from: 0; to: 1; duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier }
+                // outgoing: keeps traveling up and out
+                NumberAnimation { target: outS; property: "y"; from: 0; to: -sub.height * 0.7; duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier }
+                NumberAnimation { target: outS; property: "opacity"; from: 1; to: 0; duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier }
+            }
         }
     }
 }

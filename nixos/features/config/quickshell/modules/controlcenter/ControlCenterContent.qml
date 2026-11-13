@@ -16,20 +16,30 @@ Item {
     id: root
 
     property bool active: false
+    // the top-left clock: its size, whether the island's flying copy is still on its way
+    // (the bar sets this), and where its box sits inside this panel (for the bar to aim at)
+    readonly property int clockPx: 17
+    property bool clockFlying: false
+    signal clockPressed()
+    function clockSpot() { return ccClock.mapToItem(root, 0, 0); }
+    // the middle of the time, in the window: where the lock screen picks it up
+    function clockCenter() { return ccClock.mapToItem(null, ccClock.width / 2, ccClock.height / 2); }
     implicitHeight: column.implicitHeight
     clip: true
 
-    property string view: "main"          // which sub-view we're in: main | wifi | bluetooth | audio | display
+    property string view: "main"          // which sub-view we're in: main | wifi | bluetooth | audio | display | nightlight
     // every sub-view opens as a SHEET over the grid, morphing out of the control that asked
     readonly property bool sheetOpen: view !== "main"
     // a list inside a sheet is folding open/closed on its own spring: the island's height
     // spring stands aside and tracks the content instantly for the duration (patterns.md #48)
-    readonly property bool folding: dispSheetView.folding > 0
+    readonly property bool folding: dispSheetView.folding > 0 || nlSheetView.folding > 0
+    // a field inside a sheet hands the keyboard back here when it is done
+    function refocus() { keyCatcher.forceActiveFocus(); }
     // The sheet is a CONTAINER TRANSFORM: one progress value on the spring, and the sheet's
     // rect + corner radius are pure functions of it, from a 28px circle over the chevron
     // that asked for it to the full card (patterns.md #7: animate progress, derive geometry).
     // Closing runs the same path backwards, so it folds back into the chevron.
-    property var sheetFrom: null          // rect in `views` coords; null = grow from the panel's centre
+    property var sheetFrom: null          // rect in `views` coords; null = grow from the panel's center
     property var sheetCtl: null           // the control whose chevron the sheet is wearing
     property real sheetT: sheetOpen ? 1 : 0
     Behavior on sheetT { NumberAnimation { id: sheetAnim; duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } }
@@ -89,12 +99,11 @@ Item {
     }
 
     function lockSoon() {
-        // the lock backdrop is a grim screenshot of the desktop: close first and give
-        // the island a beat to collapse, or the control center ends up IN the shot
-        close();
-        lockDelay.restart();
+        // lock (instant). The bar hands this panel over to the lock screen and closes it
+        // once the lock screen's island is over it; closing it here sent the island
+        // springing shut under the lock
+        LockState.lock();
     }
-    Timer { id: lockDelay; interval: 650; onTriggered: LockState.captureThenLock() }
 
     Column {
         id: column
@@ -118,7 +127,7 @@ Item {
             // Instant binding to content: while a sheet is open the island tracks this exactly
             // (never clips the card), and the smoothness comes from the content's own spring
             // and, during transitions, the notch's height spring (gated by stableOpen).
-            implicitHeight: root.sheetOpen ? Math.max(mainCol.implicitHeight, sheet.openH + Theme.s2 * 2)
+            implicitHeight: root.sheetOpen ? Math.max(mainCol.implicitHeight, sheet.openHTarget + Theme.s2 * 2)
                                            : mainCol.implicitHeight
 
             // MAIN: the grid. Positions come from Config.ccItems; this draws each control
@@ -132,6 +141,93 @@ Item {
                 anchors.right: parent.right
                 spacing: Theme.s3
                 enabled: root.view === "main"     // the grid stays put under a sheet, just inert
+
+                // The top line: the time at the left, the battery at the right (how long is
+                // left or until it is full, the number, and the same battery drawing the
+                // island wears; those three are not there on a machine with no battery).
+                Item {
+                    id: battLine
+                    width: parent.width
+                    height: 18
+                    // The time. It is the island's own clock, arrived: pressing the big time
+                    // in the open island flies a copy of it here (Bar.qml's flyClock) and
+                    // this one stays hidden until that copy has landed on it, so there is
+                    // only ever one time on screen. Same face and weight as the island's.
+                    SystemClock { id: ccClk; precision: Config.clockSeconds ? SystemClock.Seconds : SystemClock.Minutes }
+                    // the same quiet fill the island's clock shows under the pointer: it
+                    // says the time can be pressed
+                    Rectangle {
+                        x: ccClock.x - Theme.s2
+                        anchors.verticalCenter: ccClock.verticalCenter
+                        width: ccClock.width + 2 * Theme.s2
+                        height: ccClock.height + Theme.s1
+                        radius: Theme.rSm
+                        color: ccClockMa.containsMouse ? Theme.fillLow : "transparent"
+                        Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
+                        opacity: root.clockFlying ? 0 : 1
+                    }
+                    Text {
+                        id: ccClock
+                        x: Theme.s2
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: Qt.formatDateTime(ccClk.date, (Config.clock24h ? "HH:mm" : "h:mm") + (Config.clockSeconds ? ":ss" : "") + (Config.clock24h ? "" : " AP"))
+                        font.family: Theme.fontDisplay
+                        font.weight: Theme.wSemiBold
+                        font.pixelSize: root.clockPx
+                        color: Theme.inkPrimary
+                        renderType: Text.QtRendering
+                        // the colon as the island draws it (see Bar.qml's flyClock), so the
+                        // time does not change shape when the flying copy lands here
+                        font.features: { "calt": 0 }
+                        opacity: root.clockFlying ? 0 : 1
+                        // pressing it goes back to the open island (the bar flies the time home)
+                        MouseArea {
+                            id: ccClockMa
+                            anchors.fill: parent
+                            anchors.margins: -6
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.clockPressed()
+                        }
+                    }
+                    // Three things centered on ONE line: the battery by its body, and both
+                    // texts by their capital height (capCenterIn), so the smaller status text
+                    // sits in the middle of the line beside the number, not down on its
+                    // baseline.
+                    BatteryIcon {
+                        id: battIcon
+                        visible: Battery.available
+                        anchors.right: parent.right
+                        anchors.rightMargin: Theme.s2
+                        anchors.verticalCenter: parent.verticalCenter
+                        bodyWidth: 24; bodyHeight: 12
+                        level: Battery.percentage / 100
+                        charging: Battery.charging
+                        low: Battery.low
+                        tint: Theme.inkPrimary
+                    }
+                    StyledText {
+                        id: battPct
+                        visible: Battery.available
+                        anchors.right: battIcon.left
+                        anchors.rightMargin: Theme.s2
+                        capCenterIn: parent
+                        variant: "label"
+                        font.weight: Theme.wMedium
+                        font.features: { "tnum": 1 }
+                        color: Battery.low ? Theme.bad : Theme.inkPrimary
+                        text: Battery.percentage + "%"
+                    }
+                    StyledText {
+                        visible: Battery.available
+                        anchors.right: battPct.left
+                        anchors.rightMargin: Theme.s2
+                        capCenterIn: parent
+                        variant: "caption"
+                        color: Theme.inkDim
+                        text: Battery.detail
+                    }
+                }
 
                 Item {
                     id: mosaic
@@ -175,10 +271,11 @@ Item {
                                 root.sheetFrom = Qt.rect(o.x, o.y, origin.width, origin.height);
                                 root.sheetCtl = this;
                                 chevronLent = true;
-                                if (k === "wifi") { root.view = "wifi"; Network.setScanning(true); }
+                                if (k === "wifi") root.view = "wifi";   // no scan on open: it is asked for in the sheet
                                 else if (k === "bluetooth") root.view = "bluetooth";
                                 else if (k === "audio") root.view = "audio";
                                 else if (k === "display") { root.view = "display"; Display.refresh(); }
+                                else if (k === "nightlight") root.view = "nightlight";
                             }
                             onLockRequested: root.lockSoon()
                         }
@@ -199,14 +296,24 @@ Item {
                 color: Theme.scrim
                 opacity: Math.max(0, Math.min(1, root.sheetT))
                 visible: opacity > 0
-                MouseArea { anchors.fill: parent; onClicked: root.back() }
+                // The scrim is a WALL, not only a click target: it takes hover, every
+                // button and the wheel, so nothing under an open sheet can light up, show
+                // a hand cursor or scroll. (`enabled: false` on the grid stops presses, but
+                // hover still reached the tiles' own MouseAreas through it.)
+                MouseArea {
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    acceptedButtons: Qt.AllButtons
+                    onWheel: wheel => { wheel.accepted = true; }
+                    onClicked: root.back()
+                }
             }
             Rectangle {
                 id: sheet
                 // A container transform, the Android quick-settings way: the DISC behind the
                 // chevron is the thing that becomes the card. One progress value on the shell's
                 // spring; position, size and corner radius are pure functions of it, from the
-                // disc's own rect to the centred card. The chevron cross-fades out IN PLACE
+                // disc's own rect to the centered card. The chevron cross-fades out IN PLACE
                 // while the container grows around it; the card's content cross-fades in, laid
                 // out at its final width and revealed by the clip. Close is the same path
                 // backwards. Geometry reads the RAW progress on purpose, so the morph overshoots
@@ -219,13 +326,26 @@ Item {
                 // spring, revealing or clipping the content as it goes, instead of snapping to
                 // the new size. During the open/close morph itself the value follows the
                 // content instantly so the transform always targets the true final size.
-                // follows content instantly; the single height spring lives on `views`
-                readonly property real openH: sheetCol.implicitHeight + Theme.s4 * 2
+                // `openHTarget` is the content's height right now. `openH`, what the card
+                // is drawn at, follows it on the spring ONLY while the sheet is at rest:
+                // that is a list filling in (Wi-Fi networks arriving, Bluetooth devices
+                // found), and it used to snap, because a card shorter than the grid never
+                // moves the island and so had no spring at all. The island still reads the
+                // target, so when the card does outgrow the grid the two start together,
+                // same curve, same length, and stay in step. It stands aside during the
+                // open/close morph (the transform needs the true final size) and while a
+                // fold inside a sheet is running its own spring.
+                readonly property real openHTarget: sheetCol.implicitHeight + Theme.s4 * 2
+                property real openH: openHTarget
+                Behavior on openH {
+                    enabled: root.sheetOpen && !sheetAnim.running && !root.folding
+                    NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier }
+                }
                 readonly property real openX: Theme.s2
                 readonly property real openY: Math.max(0, (views.height - openH) / 2)
                 readonly property real t: root.sheetT
                 readonly property real tc: Math.max(0, Math.min(1, t))
-                // the source: the disc behind the chevron that was pressed, else the panel centre
+                // the source: the disc behind the chevron that was pressed, else the panel center
                 readonly property rect from: root.sheetFrom ? root.sheetFrom
                                            : Qt.rect(openX + openW / 2 - 13, openY + openH / 2 - 13, 26, 26)
                 readonly property real w: Math.max(10, from.width + (openW - from.width) * t)
@@ -242,7 +362,8 @@ Item {
                 border.color: Theme.rim
                 visible: root.sheetLive
                 enabled: root.sheetOpen
-                MouseArea { anchors.fill: parent }   // so a click inside never reaches the scrim
+                // so nothing done inside the card (click, hover, wheel) reaches what is under it
+                MouseArea { anchors.fill: parent; hoverEnabled: true; acceptedButtons: Qt.AllButtons; onWheel: wheel => { wheel.accepted = true; } }
 
                 // the disc's own fill, so frame 0 is the tile's disc pixel for pixel: the
                 // hovered shade on the way out (a press is always under hover), the resting
@@ -281,7 +402,7 @@ Item {
                 Icon {
                     z: 10
                     name: "chevron"
-                    size: 14
+                    size: Theme.icon(14)
                     x: (sheet.from.x + sheet.from.width / 2) - sheet.x - 7
                     y: (sheet.from.y + sheet.from.height / 2) - sheet.y - 7
                     color: Theme.inkDim
@@ -322,7 +443,7 @@ Item {
                                 anchors.centerIn: parent
                                 name: "chevron"
                                 rotation: 180
-                                size: 14
+                                size: Theme.icon(14)
                                 color: sheetBackMa.containsMouse ? Theme.accent : Theme.inkDim
                                 Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
                             }
@@ -332,22 +453,25 @@ Item {
                             id: sheetTitle
                             anchors.left: sheetBack.right
                             anchors.leftMargin: Theme.s3
-                            // caps on the row's centre line, level with the disc and the toggle
-                            // (logged 20.00 / 20.00 / 20.00); see StyledText.capCentreIn
-                            capCentreIn: parent
+                            // caps on the row's center line, level with the disc and the toggle
+                            // (logged 20.00 / 20.00 / 20.00); see StyledText.capCenterIn
+                            capCenterIn: parent
                             variant: "header"
                             text: root.sheetView === "audio" ? "Sound"
                                 : root.sheetView === "wifi" ? "Wi-Fi"
-                                : root.sheetView === "bluetooth" ? "Bluetooth" : "Display"
+                                : root.sheetView === "bluetooth" ? "Bluetooth"
+                                : root.sheetView === "nightlight" ? "Night Light" : "Display"
                             color: Theme.inkPrimary
                         }
                         Toggle {
                             id: sheetToggle
                             anchors.right: parent.right
                             anchors.verticalCenter: parent.verticalCenter
-                            visible: root.sheetView === "wifi" || root.sheetView === "bluetooth"
-                            checked: root.sheetView === "wifi" ? Network.wifiEnabled : Bluetooth.enabled
-                            onToggled: root.sheetView === "wifi" ? Network.toggleWifi() : Bluetooth.toggle()
+                            visible: root.sheetView === "wifi" || root.sheetView === "bluetooth" || root.sheetView === "nightlight"
+                            checked: root.sheetView === "wifi" ? Network.wifiEnabled
+                                   : root.sheetView === "nightlight" ? NightLight.enabled : Bluetooth.enabled
+                            onToggled: root.sheetView === "wifi" ? Network.toggleWifi()
+                                     : root.sheetView === "nightlight" ? NightLight.toggle() : Bluetooth.toggle()
                         }
                     }
 
@@ -357,6 +481,7 @@ Item {
                     // WI-FI and BLUETOOTH, each its own component (CcWifiSheet / CcBluetoothSheet)
                     CcWifiSheet { id: wifiSheetView; width: parent.width; visible: root.sheetView === "wifi"; panel: root }
                     CcBluetoothSheet { id: btSheetView; width: parent.width; visible: root.sheetView === "bluetooth"; panel: root }
+                    CcNightLightSheet { id: nlSheetView; width: parent.width; visible: root.sheetView === "nightlight"; panel: root }
                 }
             }
         }

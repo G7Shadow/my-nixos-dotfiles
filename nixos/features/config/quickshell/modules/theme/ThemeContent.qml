@@ -1,21 +1,23 @@
 import QtQuick
+import QtQuick.Effects
+import Qt.labs.folderlistmodel
 import Quickshell
+import Quickshell.Io
 import "../../theme"
 import "../../config"
 import "../../services"
 import "../../components"
 
 // Theme switcher that lives INSIDE the bar island (the island morphs into it, see
-// Bar.qml). LANDSCAPE: one horizontal row of wide preview cards rather than a tall grid,
-// so the panel stays short and picking a colour doesn't swallow the screen.
-//
-// Each card is an actual preview of the scheme drawn IN the scheme — its background, a
-// mock of the island wearing its accent, its six hues, and its name in its own
-// foreground. You can tell schemes apart at a glance instead of reading names.
+// Bar.qml). A list in the launcher's own language, where the row you are on turns into
+// a page of a COLOR BOOK: closed, a theme is a launcher row (a badge in its background
+// and accent, its name, its six hues at the end); open, it is a band drawn in the theme
+// itself, the name large in its own foreground, the hues under it, and the wallpaper the
+// theme would bring on the right.
 //
 // Driven from the keyboard the same way the launcher is: type to filter, arrows to move,
-// Enter to apply; hovering only previews (click selects). Same mark language as
-// the wallpaper carousel — the RING is the candidate, the DOT is what's live right now.
+// Enter to apply. A click moves to a band; a click on the open band applies it. The DOT
+// before a name marks the theme that is live right now.
 Item {
     id: root
 
@@ -25,38 +27,25 @@ Item {
 
     property string query: ""
     property int index: 0
-    onIndexChanged: strip.go(index)   // every selection change is one spring from where the strip is
 
-    // Landscape cards, four across, sized off the panel's SETTLED width rather than its
-    // live one. Both matter:
-    //   · fixed count, so the strip can't reflow mid-morph and drag the selected card out
-    //     from under the ring;
-    //   · fixed SIZE, because the card height feeds implicitHeight, which is what the island
-    //     animates its height toward. Read from the animating width, the island could only
-    //     learn how tall to be after it had finished getting wide — so it expanded outward
-    //     first and then downward, in two beats instead of one motion. Off a constant, the
-    //     final height is known on the first frame and both axes travel together.
-    // The strip is still only as wide as the panel, so during the morph the cards are simply
-    // revealed rather than resized.
-    readonly property int perView: 4
-    readonly property int panelW: Math.max(240, Config.themeSwitcherWidth - Theme.s4 * 2)
-    readonly property int cardW: Math.floor(panelW / perView)
-    readonly property int cardH: Math.round(cardW * 0.50)
-    // How far the selected card rises, and the headroom the strip reserves for it. The lift
-    // AND the 1.07 swell both push the picked card past its own bounds, and the strip clips
-    // horizontally (it has to), so without room set aside the top of the selected card — and
-    // its ring — got sliced off. The row is cardH + 2*cardPad tall and the card sits centred
-    // in it, so the whole animation happens INSIDE the clip instead of fighting it.
-    readonly property int liftPx: 9
-    readonly property int cardPad: 14
-    readonly property int rowH: cardH + cardPad * 2
+    // ── geometry, all settled values (the island animates toward implicitHeight, so
+    // nothing here may be read off something that is itself animating) ──
+    readonly property int bookW: Math.min(Config.themeSwitcherWidth, 640)   // the island's width (Bar reads this)
+    readonly property int closedH: Config.launcherRowHeight   // a closed row is a launcher row
+    readonly property int openH: 104
+    readonly property int gap: 0
+    readonly property int pitch: closedH + gap
+    readonly property int rowsAround: 4            // closed rows visible besides the open one
+    readonly property int totalH: count > 0 ? openH + (count - 1) * pitch : 0
+    readonly property int viewH: count > 0 ? Math.min(totalH, openH + rowsAround * pitch) : 56
+    // where the stack is scrolled to: the open band in the middle of the view, held to the ends
+    readonly property real scrollTarget: Math.max(0, Math.min(totalH - viewH, index * pitch + openH / 2 - viewH / 2))
 
     // Matches are RANKED, not just filtered. A plain substring filter kept the list in its
     // alphabetical order, so a single character put the wrong theme first: "n" matches
     // "anime" and "kanagawa" as well as "nightfox"/"noir"/"nord", and alphabetically the
-    // incidental matches win. It only looked right once you'd typed enough to leave one
-    // survivor. Now: names that START with what you typed come first, then the rest ordered
-    // by how early the match lands, alphabetical within each tier.
+    // incidental matches win. Names that START with what you typed come first, then the
+    // rest ordered by how early the match lands, alphabetical within each tier.
     readonly property var shown: {
         const all = Themes.list ?? [];
         const q = query.trim().toLowerCase();
@@ -72,6 +61,7 @@ Item {
         return hits.map(h => h.t);
     }
     readonly property int count: shown.length
+    readonly property var current: count > 0 ? shown[Math.max(0, Math.min(index, count - 1))] : null
 
     function close() { GlobalState.themeSwitcherOpen = false; }
 
@@ -83,20 +73,23 @@ Item {
         // one. We just kick off the script; the FileView reload pulls in theme + wallpaper.
         Quickshell.execDetached(["bash", `${Quickshell.env("HOME")}/.config/wallust/theme-apply.sh`, name]);
     }
-    function activate() {
-        if (root.count === 0) return;
-        const t = root.shown[Math.max(0, Math.min(root.index, root.count - 1))];
-        if (t) root.apply(t.name);
-    }
-
-    // step, or rubber-band at either end (same feel as the wallpaper carousel)
+    function activate() { if (root.current) root.apply(root.current.name); }
     function step(dir) {
         if (root.count === 0) return;
-        const next = root.index + dir;
-        root.touched = true;
-        if (next < 0 || next >= root.count) { strip.kick(dir); return; }
-        root.index = next;
+        root.userMoved();
+        root.index = Math.max(0, Math.min(root.count - 1, root.index + dir));
     }
+    // The list of themes can land AFTER the switcher has opened (right after the shell
+    // starts or reloads it is still being read): the book then opened on the first theme
+    // instead of the live one. Until you have moved, a list arriving re-opens it on the
+    // live theme.
+    property bool moved: false
+    // The first move hands the book to you: from then on changes are MOTION. The open
+    // places things without animating for the length of the island's morph, and a move
+    // made inside that window used to be placed too, so stepping right after opening
+    // showed no animation at all until you had waited it out.
+    function userMoved() { moved = true; placing = false; placed.stop(); }
+    onCountChanged: if (active && !moved && query === "") { placing = true; placed.restart(); syncToCurrent(); }
 
     // Open sitting on whatever's applied, so Enter alone is a no-op instead of a surprise.
     function syncToCurrent() {
@@ -105,62 +98,111 @@ Item {
             if (root.shown[i].name === Config.theme) { found = i; break; }
         }
         root.index = found;
-        strip.jump(found);
     }
 
-    // True while the island is still morphing open: the strip is being laid out and centred
-    // across those frames, so the ring gets PLACED rather than animated into position (a
-    // colour tween in flight rides a recycled delegate onto a card it never belonged to).
-    property bool opening: false
-    // set by the first step after an open: from then on the strip is the user's, and the
-    // per-frame recentre of the open morph stands aside so the step's animation survives
-    property bool touched: false
-    Timer { id: openSettle; interval: Theme.dur(Theme.dSpring) + 60; onTriggered: root.opening = false }
+    // placed, not animated, while the island is still morphing open (and after a filter
+    // change): the stack should already be where it belongs when it is revealed
+    property bool placing: false
+    Timer { id: placed; interval: Theme.dur(Theme.dSpring) + 60; onTriggered: root.placing = false }
 
     onActiveChanged: {
         if (active) {
             Themes.refresh();
-            field.text = "";      // the box kept its old text across opens; clear it with the query
+            stateFile.reload();
+            animateIn = false;
+            field.text = "";
             query = "";
-            lastFilterAt = 0;
-            // synchronously, BEFORE the first frame — deferred, the strip painted a frame
-            // sitting on index 0 and only then jumped, dragging the ring across the panel
-            opening = true;
-            touched = false;
-            openSettle.restart();
+            placing = true;
+            placed.restart();
+            moved = false;
             syncToCurrent();
             Qt.callLater(() => field.forceActiveFocus());
         } else {
-            opening = false;
-            openSettle.stop();
+            placing = false;
+            placed.stop();
         }
     }
-    // Changing the query hands the ListView a brand-new array, so it tears every delegate
-    // down and builds fresh ones — which is why results used to just blink into place. The
-    // cards animate their own entry (see the delegate), and this flag is what tells them the
-    // rebuild came from a SEARCH rather than from scrolling a new card into view, so plain
-    // navigation doesn't set everything fading.
-    property bool filtering: false
-    Timer { id: filterSettle; interval: Theme.dur(Theme.dEffects) + 220; onTriggered: root.filtering = false }
-    property double lastFilterAt: 0
-    onQueryChanged: {
-        index = 0;
-        // Animate the cards in only when this is a SETTLED change. Every keystroke replaces
-        // the model, which rebuilds every delegate, and the entry fade runs ~500ms — type
-        // faster than that and each fresh card restarts at zero opacity, so the strip just
-        // goes blank for as long as you keep typing. Changes arriving in quick succession
-        // skip the animation and appear instantly, which is what you want mid-search anyway:
-        // you're scanning results, not watching them land.
+    onQueryChanged: { placing = true; placed.restart(); index = 0; }
+    // A search hands the list a new set of rows, which are built fresh: they used to just
+    // be there. Each row now fades and rises in, a beat after the one above it. Only for a
+    // SETTLED change though: typed fast, every keystroke rebuilds the rows, and restarting
+    // a fade on each one would leave the list blank for as long as you kept typing, so
+    // keystrokes in quick succession show their rows at once.
+    property bool animateIn: false
+    property double lastTypedAt: 0
+    function setQuery(t) {
         const now = Date.now();
-        filtering = (now - lastFilterAt) > 260;
-        lastFilterAt = now;
-        filterSettle.restart();
-        // the model is REPLACED here, so whatever the strip was scrolled to is meaningless
-        // afterwards; put it on the first result outright rather than sliding to it
-        Qt.callLater(() => strip.jump(0));
+        animateIn = (now - lastTypedAt) > 220;
+        lastTypedAt = now;
+        query = t;
     }
-    // A normal index change is `strip.go(index)`: one spring from wherever the strip is.
-    // Only the open and a filter reset place the strip outright (`strip.jump`).
+
+    // ── the wallpaper a theme would bring ──
+    // theme-apply.sh restores the one last used with that theme (wallpaper-state: one
+    // "theme<TAB>path" line each), else the first in its folder. The open band shows the
+    // same: the remembered one, or the folder's first.
+    FileView { id: stateFile; path: Quickshell.shellDir + "/wallpaper-state"; blockLoading: true; printErrors: false }
+    readonly property var remembered: {
+        const m = {};
+        for (const line of String(stateFile.text()).split("\n")) {
+            const at = line.indexOf("\t");
+            if (at > 0) m[line.slice(0, at)] = line.slice(at + 1);
+        }
+        return m;
+    }
+    // A theme with nothing remembered falls back to the first picture in its folder,
+    // found by a small folder model of its own (see the warm-up below).
+    property var firstOf: ({})
+    function wallOf(name) {
+        const r = root.remembered[name];
+        return r ? "file://" + r : (root.firstOf[name] || "");
+    }
+    readonly property string openWall: root.current ? root.wallOf(root.current.name) : ""
+
+    // ── warm-up: every theme's picture is decoded BEFORE it is asked for ──
+    // The open band used to start decoding its wallpaper when it opened: a 5K picture
+    // takes a few hundred ms, so every step through the book showed an empty band and then
+    // a fade. Now a hidden Image per theme holds each picture, already decoded at the size
+    // the band draws it, from a moment after the shell starts. Qt keeps one copy per
+    // (file, size, fill mode), so the band's own Image finds it ready and shows it on the
+    // frame it opens. `thumb` and the fill mode MUST match the band's Image exactly, or it
+    // is a different entry and nothing is saved.
+    readonly property size thumb: Qt.size(640, 360)
+    property bool warm: false
+    Timer { interval: 2500; running: true; onTriggered: root.warm = true }
+    Item {
+        visible: false
+        Repeater {
+            model: Themes.list
+            delegate: Item {
+                id: pre
+                required property var modelData
+                Loader {
+                    active: !root.remembered[pre.modelData.name]
+                    sourceComponent: FolderListModel {
+                        folder: "file://" + Config.expandHome(Config.wallpaperDir).replace(/\/+$/, "") + (Config.wallpaperPerTheme ? "/" + pre.modelData.name : "")
+                        nameFilters: ["*.jpg", "*.jpeg", "*.png"]
+                        showDirs: false
+                        sortField: FolderListModel.Name
+                        onCountChanged: {
+                            if (count === 0) return;
+                            const o = Object.assign({}, root.firstOf);
+                            o[pre.modelData.name] = String(get(0, "fileUrl"));
+                            root.firstOf = o;
+                        }
+                    }
+                }
+                Image {
+                    width: 1; height: 1
+                    source: root.warm ? root.wallOf(pre.modelData.name) : ""
+                    sourceSize: root.thumb
+                    fillMode: Image.PreserveAspectCrop
+                    asynchronous: true
+                    cache: true
+                }
+            }
+        }
+    }
 
     Column {
         id: col
@@ -169,7 +211,7 @@ Item {
         anchors.top: parent.top
         spacing: Theme.s3
 
-        // search row — doubles as the header, same idiom as the launcher
+        // search row: doubles as the header, same idiom as the launcher
         Item {
             id: searchBar
             width: parent.width
@@ -182,9 +224,9 @@ Item {
                 name: "search"
                 color: Theme.inkDim
             }
-
             TextInput {
                 id: field
+                cursorDelegate: Caret {}
                 anchors.left: glass.right
                 anchors.leftMargin: Theme.s3
                 anchors.right: countLabel.left
@@ -196,291 +238,280 @@ Item {
                 selectionColor: Theme.alpha(Theme.accent, 0.4)
                 font.family: Theme.fontBody
                 font.pixelSize: Theme.fsBody
-
-                onTextChanged: root.query = text
-
+                onTextChanged: root.setQuery(text)
                 // the field keeps focus the whole time so you can keep typing; it just
-                // forwards the navigation keys to the strip
+                // forwards the navigation keys to the book
                 onAccepted: root.activate()
                 Keys.onEscapePressed: root.close()
-                Keys.onReleased: event => { if (!event.isAutoRepeat && (event.key === Qt.Key_Left || event.key === Qt.Key_Right || event.key === Qt.Key_Up || event.key === Qt.Key_Down || event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab)) strip.release(); }
-                Keys.onLeftPressed: root.step(-1)
-                Keys.onRightPressed: root.step(1)
-                Keys.onUpPressed: root.step(-root.perView)     // a screenful — it's one row now
-                Keys.onDownPressed: root.step(root.perView)
+                Keys.onUpPressed: root.step(-1)
+                Keys.onDownPressed: root.step(1)
                 Keys.onPressed: event => {
-                    if (event.key === Qt.Key_Home) { root.index = 0; event.accepted = true; }
-                    else if (event.key === Qt.Key_End) { root.index = Math.max(0, root.count - 1); event.accepted = true; }
+                    if (event.key === Qt.Key_Home) { root.userMoved(); root.index = 0; event.accepted = true; }
+                    else if (event.key === Qt.Key_End) { root.userMoved(); root.index = Math.max(0, root.count - 1); event.accepted = true; }
+                    else if (event.key === Qt.Key_PageUp) { root.step(-root.rowsAround); event.accepted = true; }
+                    else if (event.key === Qt.Key_PageDown) { root.step(root.rowsAround); event.accepted = true; }
                     else if (event.key === Qt.Key_Tab) { root.step(1); event.accepted = true; }
                     else if (event.key === Qt.Key_Backtab) { root.step(-1); event.accepted = true; }
                 }
-
                 StyledText {
-                    capCentreIn: parent
+                    capCenterIn: parent
                     visible: field.text.length === 0
                     variant: "body"
                     color: Theme.inkFaint
                     text: "Search themes…"
                 }
             }
-
             StyledText {
                 id: countLabel
                 anchors.right: parent.right
-                capCentreIn: parent
+                anchors.verticalCenter: parent.verticalCenter
                 variant: "caption"
-                color: Theme.inkFaint
-                text: root.count > 0 ? `${root.index + 1}/${root.count}` : ""
+                font.features: { "tnum": 1 }
+                text: root.count > 0 ? (root.index + 1) + "/" + root.count : ""
+                color: Theme.inkDim
             }
         }
 
-        // the landscape strip
+        // the same hairline the launcher has under its search row
+        Rectangle { width: parent.width; height: 1; color: Theme.hairline }
+
+        // ── the book ──
         Item {
+            id: view
             width: parent.width
-            height: root.rowH
+            height: root.viewH
+            clip: true
 
-            ListView {
-                id: strip
-                // SETTLED width, centred, from frame one: the root clip reveals it as the
-                // island grows. A strip that filled the growing parent was resized every frame
-                // of the morph, and a ListView under StrictlyEnforceRange re-places itself
-                // INSTANTLY on every resize, so a step made during the open snapped instead
-                // of animating, and the open itself needed a per-frame recentre.
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.top: parent.top
-                anchors.bottom: parent.bottom
-                width: root.panelW
-                orientation: ListView.Horizontal
-                model: root.shown
-                currentIndex: root.index
-                clip: true
-
-                // ── the strip owns its scrolling ──
-                // No highlight range, no snap mode: the view's range enforcement re-places
-                // itself INSTANTLY whenever the current index moves against a fast highlight
-                // animation (a left pressed mid-sweep jumped the strip 58px in one frame,
-                // measured), and no amount of tuning changes that. Instead the content position
-                // is animated explicitly: `go` stops whatever is in flight and starts a fresh
-                // spring from wherever the strip IS to the centre of the index, so a reversal,
-                // a burst or a hitch is always one continuous motion. `jump` places it
-                // instantly (the open, a filter reset). A drag stops the animation and hands
-                // the strip back to the nearest card on release.
-                highlightRangeMode: ListView.NoHighlightRange
-                highlightFollowsCurrentItem: false
-                snapMode: ListView.NoSnap
-                readonly property real pitch: root.cardW + spacing
-                readonly property real centreOff: (width - root.cardW) / 2
-                function xFor(i) { return i * pitch - centreOff; }
-                function nearest() { return Math.max(0, Math.min(count - 1, Math.round((contentX + centreOff) / pitch))); }
-                function go(i) { scroll.stop(); if (count === 0) return; scroll.from = contentX; scroll.to = xFor(i); scroll.start(); }
-                function jump(i) { scroll.stop(); if (count === 0) return; contentX = xFor(i); }
-                // a full card of travel per step: the island's longer entrance timing, not the
-                // base spring, or the strip reads as snapping between cards
-                NumberAnimation { id: scroll; target: strip; property: "contentX"; duration: Theme.dur(Theme.dEnter); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier }
-                onDragStarted: scroll.stop()
-                onMovementEnded: { const n = nearest(); if (n === root.index) go(n); else root.index = n; }
-                // Room at both ends so the FIRST and LAST items can actually reach the centre.
-                leftMargin: Math.max(0, (width - root.cardW) / 2)
-                rightMargin: Math.max(0, (width - root.cardW) / 2)
-                boundsBehavior: Flickable.DragOverBounds
-                boundsMovement: Flickable.FollowBoundsBehavior
-                // the panel is still growing while it morphs open, so a centre computed a
-                // frame ago is wrong once there's more room — re-assert until it settles
-
-                // run-into-the-end rubber band: a pull, held while the KEY is held. A press
-                // sets ONE target (the shove) and the spring carries the strip there; repeats
-                // keep the same target, so nothing restarts (a new target per repeat restarted
-                // the spring from a standstill 30 times a second and the strip spazzed). The
-                // let-go follows the key's RELEASE, not a timer: the compositor's repeat delay
-                // (~280ms here) is longer than any sensible timer, so a timed let-go dropped
-                // the strip and the first repeat pulled it out again, every hold. The timer
-                // stays only as a long fallback for a release that never arrives.
-                property real bumpX: 0
-                Behavior on bumpX { NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } }
-                Timer { id: bumpBack; interval: 900; onTriggered: strip.bumpX = 0 }
-                function kick(dir) { bumpX = -dir * 24; bumpBack.interval = 900; bumpBack.restart(); }
-                // a tap releases within a few ms of pressing; give the pull a beat to show
-                function release() { bumpBack.interval = Theme.dur(Theme.dFast); bumpBack.restart(); }
-                transform: Translate { x: strip.bumpX }
-
-                delegate: Item {
-                    id: cell
-                    required property int index
-                    required property var modelData
-
-                    width: root.cardW
-                    height: root.rowH
-
-                    readonly property bool live: modelData.name === Config.theme
-                    readonly property bool picked: index === root.index
-                    // distance from the viewport centre in CARD units, read off the live
-                    // contentX so the falloff tracks a drag continuously instead of stepping
-                    readonly property real dist: Math.abs((x + width / 2) - (strip.contentX + strip.width / 2)) / Math.max(1, root.cardW)
-
-                    // Depth here is opacity ONLY — deliberately never scale. These cards
-                    // carry a label, and text inside a scaled item gets rasterised once at its
-                    // natural size and then stretched, so it can't honour hinting or subpixel
-                    // AA however it's rendered. Holding every card at scale 1 is what lets the
-                    // names go through fontconfig and stay crisp. The falloff is un-animated so
-                    // it tracks a drag frame for frame; selection reads through the lift, the
-                    // ring, and the weight change instead of a swell.
-                    // 0 while the card is arriving, 1 once it's in. Only animated when the
-                    // rebuild came from a search; otherwise it starts settled so scrolling
-                    // doesn't make cards fade in as they're recycled into view.
-                    property real entry: 1
-                    Component.onCompleted: if (root.filtering) { entry = 0; entryAnim.start(); }
-                    SequentialAnimation {
-                        id: entryAnim
-                        // cascade outward from the middle of the strip, so results read as
-                        // landing rather than all snapping in together
-                        PauseAnimation { duration: Theme.dur(Math.min(4, Math.abs(cell.index - root.index)) * 45) }
-                        NumberAnimation {
-                            target: cell; property: "entry"; to: 1
-                            duration: Theme.dur(Theme.dSpring)
-                            easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier
-                        }
-                    }
-
-                    opacity: (1 - Math.min(0.55, dist * 0.3)) * cell.entry
-                    // first Translate: rises as it takes the selection, and nudges up under
-                    // the pointer. second: the entry drop, kept separate so its animation and
-                    // the lift's Behavior don't fight over one value.
-                    transform: [
-                        Translate {
-                            y: cell.picked ? -root.liftPx : (cellMa.containsMouse ? -3 : 0)
-                            Behavior on y { NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } }
-                        },
-                        Translate { y: (1 - cell.entry) * 14 }
-                    ]
-
-                    // the preview: the scheme drawn in its own colours
-                    Rectangle {
-                        id: card
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        anchors.verticalCenter: parent.verticalCenter
-                        width: parent.width - Theme.s1 * 2
-                        height: root.cardH
-                        radius: Theme.rMd
-                        color: cell.modelData.bg || Theme.base
-                        clip: true
-
-                        // the six hues — what actually distinguishes one scheme from another
-                        Row {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            anchors.verticalCenter: parent.verticalCenter
-                            // sits just above centre so the name below balances it
-                            anchors.verticalCenterOffset: -Math.round(card.height * 0.08)
-                            spacing: Math.max(3, Math.round(card.width * 0.022))
-
-                            Repeater {
-                                model: cell.modelData.palette ?? []
-                                Rectangle {
-                                    required property var modelData
-                                    width: Math.max(7, Math.round(card.width * 0.075))
-                                    height: width
-                                    radius: width / 2
-                                    color: modelData
-                                }
-                            }
-                        }
-
-                        // name, in the scheme's own foreground — legible on its own background
-                        // by construction, since that's the pairing the scheme ships
-                        StyledText {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            anchors.bottom: parent.bottom
-                            anchors.bottomMargin: Math.round(card.height * 0.10)
-                            width: parent.width - Theme.s3 * 2
-                            horizontalAlignment: Text.AlignHCenter
-                            elide: Text.ElideRight
-                            variant: "caption"
-                            // no renderType override: inherits StyledText's NativeRendering,
-                            // which is the only path that honours fontconfig (hintslight +
-                            // rgb subpixel here). Safe now that nothing scales the card.
-                            font.weight: cell.picked ? Theme.wMedium : Theme.wRegular
-                            text: cell.modelData.name
-                            color: cell.modelData.fg || Theme.inkPrimary
-                        }
-                    }
-
-                    // ring = candidate. Drawn OUTSIDE the clipped card so it never gets cut.
-                    Rectangle {
-                        anchors.fill: card
-                        radius: card.radius
-                        color: "transparent"
-                        // hover needs to be clearly brighter than idle — hairline (0.14) against
-                        // idle (0.10) was a difference you couldn't actually see
-                        border.color: cell.picked ? Theme.accent
-                                    : cellMa.containsMouse ? Theme.alpha(Theme.foreground, 0.45)
-                                    : Theme.alpha(Theme.foreground, 0.10)
-                        border.width: cell.picked ? 2 : 1
-                        // never while opening: a tween in flight rides a recycled delegate
-                        // onto a card it never belonged to
-                        Behavior on border.color { enabled: !root.opening; ColorAnimation { duration: Theme.dur(Theme.dFast) } }
-                    }
-
-                    // dot = live right now
-                    Rectangle {
-                        anchors.top: card.top
-                        anchors.right: card.right
-                        anchors.margins: Theme.s2
-                        width: 8; height: 8
-                        radius: 4
-                        visible: cell.live
-                        color: cell.modelData.accent || Theme.accent
-                        border.width: 1
-                        border.color: Theme.alpha(Theme.base, 0.45)
-                    }
-
-                    MouseArea {
-                        id: cellMa
-                        anchors.fill: card
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        // Hover only lights the ring, it does NOT move the selection. In a
-                        // centred carousel that was a feedback loop: hovering a card recentred
-                        // it, which scrolled the strip out from under the pointer, which
-                        // hovered a different card, which recentred again — the cursor could
-                        // never settle on anything. Click is what selects.
-                        onClicked: {
-                            if (cell.picked) root.apply(cell.modelData.name);
-                            else root.index = cell.index;
-                        }
-                    }
-                }
+            StyledText {
+                anchors.centerIn: parent
+                visible: root.count === 0
+                variant: "label"
+                color: Theme.inkDim
+                text: (Themes.list?.length ?? 0) === 0 ? "No colorschemes found" : "No themes match"
             }
 
-            // wheel steps the strip. NoButton so it never eats the cards' clicks.
+            // the wheel turns the pages, one band a notch
             MouseArea {
                 anchors.fill: parent
                 acceptedButtons: Qt.NoButton
                 onWheel: wheel => {
-                    const d = wheel.angleDelta.y !== 0 ? wheel.angleDelta.y : wheel.pixelDelta.y;
-                    if (d !== 0) root.step(d < 0 ? 1 : -1);
+                    const dy = wheel.angleDelta.y !== 0 ? wheel.angleDelta.y : wheel.pixelDelta.y;
+                    if (dy !== 0) root.step(dy > 0 ? -1 : 1);
                 }
             }
-        }
 
-        // footer: empty state on the left, the commit hint on the right
-        Item {
-            width: parent.width
-            height: 18
+            Column {
+                id: stack
+                width: parent.width
+                spacing: root.gap
+                y: -scroll
+                property real scroll: root.scrollTarget
+                Behavior on scroll { enabled: !root.placing; NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } }
 
-            StyledText {
-                anchors.left: parent.left
-                capCentreIn: parent
-                variant: "caption"
-                color: Theme.inkFaint
-                visible: root.count === 0
-                text: (Themes.list?.length ?? 0) === 0 ? "No colorschemes found" : "No themes match"
-            }
-            StyledText {
-                anchors.right: parent.right
-                capCentreIn: parent
-                variant: "caption"
-                color: Theme.inkFaint
-                visible: root.count > 0
-                text: "Enter to apply"
+                Repeater {
+                    model: root.shown
+                    // CLOSED, a theme is a row out of the launcher: same height, same
+                    // corner, a 36px badge on the left (the theme's background with its
+                    // accent in the middle), the name in the shell's own ink, the same
+                    // hover tint. Only the row you are on leaves that language: it opens
+                    // into a band in the theme's colors. One value `t` on the spring takes
+                    // every part from the one look to the other.
+                    delegate: Item {
+                        id: band
+                        required property var modelData
+                        required property int index
+                        readonly property bool on: index === root.index
+                        readonly property bool live: modelData.name === Config.theme
+                        property real t: on ? 1 : 0
+                        Behavior on t { enabled: !root.placing; NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } }
+                        readonly property real tc: Math.max(0, Math.min(1, t))
+                        // The live mark comes and goes on the spring: applying a theme
+                        // shrinks the dot out of the old row and pops it into the new one,
+                        // and the names slide to give it room. (It used to jump.)
+                        property real liveT: live ? 1 : 0
+                        Behavior on liveT { enabled: !root.placing; NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } }
+                        readonly property color themeBg: modelData.bg || Theme.surfaceOverlay
+                        readonly property color themeFg: modelData.fg || Theme.inkPrimary
+                        readonly property color themeAccent: modelData.accent || Theme.accent
+
+                        width: stack.width
+                        height: root.closedH + (root.openH - root.closedH) * t
+
+                        // the row's own entrance (see root.animateIn)
+                        property real entered: 1
+                        opacity: entered
+                        transform: Translate { y: (1 - band.entered) * 10 }
+                        Component.onCompleted: if (root.animateIn) { entered = 0; enter.start(); }
+                        SequentialAnimation {
+                            id: enter
+                            PauseAnimation { duration: Theme.dur(Math.min(band.index, 7) * 24) }
+                            NumberAnimation { target: band; property: "entered"; to: 1; duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier }
+                        }
+
+                        // the band: nothing when closed, the theme's own background when open
+                        Rectangle {
+                            id: fill
+                            anchors.fill: parent
+                            radius: Theme.rSm + (20 - Theme.rSm) * band.tc
+                            color: band.themeBg
+                            opacity: band.tc
+                        }
+                        // closed: the launcher's hover tint
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: Theme.rSm
+                            color: Theme.glassLow
+                            opacity: (bandMa.containsMouse && !band.on) ? 1 : 0
+                            Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dFast) } }
+                        }
+
+                        // the wallpaper, on the open band only: the right half, fading into
+                        // the band's own color toward the name, cut to the band's corners
+                        Loader {
+                            anchors.fill: parent
+                            active: band.on && root.openWall !== ""
+                            sourceComponent: Item {
+                                // comes in with the band opening, no fade of its own to
+                                // wait for (a picture that is somehow not ready stays out)
+                                opacity: pic.status === Image.Ready ? band.tc : 0
+                                Item {
+                                    id: art
+                                    anchors.fill: parent
+                                    visible: false
+                                    layer.enabled: true
+                                    Image {
+                                        id: pic
+                                        anchors.right: parent.right
+                                        width: Math.round(parent.width * 0.46)
+                                        height: root.openH
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        source: root.openWall
+                                        // same size and fill mode as the warm-up copy:
+                                        // that is what makes this one instant
+                                        sourceSize: root.thumb
+                                        fillMode: Image.PreserveAspectCrop
+                                        asynchronous: true
+                                        cache: true
+                                    }
+                                    Rectangle {
+                                        anchors.left: pic.left
+                                        width: Math.round(pic.width * 0.55)
+                                        height: parent.height
+                                        gradient: Gradient {
+                                            orientation: Gradient.Horizontal
+                                            GradientStop { position: 0; color: band.themeBg }
+                                            GradientStop { position: 1; color: Theme.alpha(band.themeBg, 0) }
+                                        }
+                                    }
+                                }
+                                Rectangle { id: artMask; anchors.fill: parent; radius: fill.radius; visible: false; layer.enabled: true }
+                                MultiEffect {
+                                    anchors.fill: parent
+                                    source: art
+                                    maskEnabled: true
+                                    maskSource: artMask
+                                    maskThresholdMin: 0.5
+                                    maskSpreadAtMin: 1.0
+                                }
+                            }
+                        }
+
+                        // the badge, where the launcher has an app's icon: the theme's
+                        // background with its accent in the middle. It fades as the row
+                        // opens, since the whole band is that color by then.
+                        Rectangle {
+                            id: badge
+                            x: Theme.s3
+                            y: (root.closedH - height) / 2
+                            width: 36; height: 36
+                            radius: Theme.rSm
+                            color: band.themeBg
+                            border.width: 1
+                            border.color: Theme.rim
+                            opacity: 1 - band.tc
+                            visible: opacity > 0
+                            Rectangle { anchors.centerIn: parent; width: 14; height: 14; radius: 7; color: band.themeAccent }
+                        }
+
+                        // closed, the name starts where the launcher's titles do; open, at
+                        // the band's own left inset. The live dot sits in front of it.
+                        readonly property real nameX0: Theme.s3 + 36 + Theme.s3
+                        readonly property real nameX: nameX0 + (18 - nameX0) * tc
+                        Rectangle {
+                            x: band.nameX
+                            y: nameText.y + nameText.height / 2 - height / 2
+                            width: 7 + 2 * band.tc; height: width; radius: width / 2
+                            color: band.themeAccent
+                            opacity: Math.max(0, Math.min(1, band.liveT))
+                            scale: band.liveT
+                            visible: opacity > 0
+                        }
+                        // The name is two texts, each set once at its own size: the closed
+                        // row's line and the open band's heading. Growing one text's
+                        // font.pixelSize through the morph laid it out again at every whole
+                        // size on the way (15, 16, ... 22), each with its own hinted letter
+                        // spacing, so the far end of a long name jumped about while the
+                        // near end slid. These only scale and cross-fade, which is smooth,
+                        // and each is at scale 1 (pixel-crisp) whenever it is at rest.
+                        readonly property real nameScale: Theme.fsBody + (22 - Theme.fsBody) * tc   // the size it looks, px
+                        // open, the name and the hues sit together as one block in the
+                        // middle of the band: the heading's top lands on 23
+                        readonly property real nameMid: root.closedH / 2 + (23 + headText.height / 2 - root.closedH / 2) * t
+                        readonly property real headIn: Math.min(1, tc / 0.35)
+                        Text {
+                            id: nameText
+                            x: band.nameX + (7 + 2 * band.tc + 7) * band.liveT
+                            y: band.nameMid - height / 2
+                            text: band.modelData.name
+                            // a closed row is a line in a list and is set like a launcher title
+                            font.family: Theme.fontBody
+                            font.weight: Theme.wMedium
+                            font.pixelSize: Theme.fsBody
+                            color: Theme.inkPrimary
+                            renderType: Text.NativeRendering
+                            transformOrigin: Item.Left
+                            scale: band.nameScale / Theme.fsBody
+                            opacity: 1 - band.headIn
+                            visible: opacity > 0
+                        }
+                        Text {
+                            id: headText
+                            x: nameText.x
+                            y: band.nameMid - height / 2
+                            text: band.modelData.name
+                            // the display face is for the open band's heading only
+                            font.family: Theme.fontDisplay
+                            font.weight: Theme.wSemiBold
+                            font.pixelSize: 22
+                            color: band.themeFg
+                            renderType: Text.NativeRendering
+                            transformOrigin: Item.Left
+                            scale: band.nameScale / 22
+                            opacity: band.headIn
+                            visible: opacity > 0
+                        }
+                        // the six hues: at the right end of a closed row, under the name on the open one
+                        Row {
+                            readonly property real d: 8 + 4 * band.tc
+                            readonly property real x0: band.width - width - Theme.s3
+                            spacing: d * 0.5
+                            x: x0 + (18 - x0) * band.tc
+                            y: (root.closedH - d) / 2 + (63 - (root.closedH - d) / 2) * band.t
+                            Repeater {
+                                model: band.modelData.palette || []
+                                delegate: Rectangle { required property string modelData; width: parent.d; height: parent.d; radius: parent.d / 2; color: modelData }
+                            }
+                        }
+
+                        MouseArea {
+                            id: bandMa
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: { if (band.on) root.activate(); else { root.userMoved(); root.index = band.index; } }
+                        }
+                    }
+                }
             }
         }
     }

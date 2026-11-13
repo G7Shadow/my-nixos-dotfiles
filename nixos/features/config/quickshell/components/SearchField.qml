@@ -19,6 +19,7 @@ Rectangle {
 
     TextInput {
         id: input
+        cursorDelegate: Caret {}
         anchors.fill: parent
         anchors.leftMargin: Theme.s3
         anchors.rightMargin: Theme.s3
@@ -33,7 +34,7 @@ Rectangle {
 
     StyledText {
         anchors.left: input.left
-        capCentreIn: parent
+        capCenterIn: parent
         text: root.placeholder
         color: Theme.inkFaint
         visible: input.text.length === 0

@@ -226,6 +226,8 @@ Singleton {
                         // the ramp we're climbing. Hardware-key presses still land as before
                         // once nothing is in flight.
                         if (rampTick.running || Date.now() - mon.rampEndedAt < 500) return;
+                        // asleep: the backlight is parked at zero on purpose (Sleep.qml)
+                        if (Sleep.dark) return;
                         mon.hw = v;
                         mon.percentage = v;
                     }

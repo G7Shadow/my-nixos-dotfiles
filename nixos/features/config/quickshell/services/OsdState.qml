@@ -12,7 +12,7 @@ Singleton {
     property string kind: ""      // "volume" | "brightness" | "mode"
     property int value: 0          // 0..100
     property bool muted: false     // volume only
-    // generic toggle-mode indicator (Night Light, Game Mode, whatever)
+    // generic toggle-mode indicator (Night Light, whatever)
     property string modeLabel: ""
     property string modeIcon: ""
     property bool modeOn: false

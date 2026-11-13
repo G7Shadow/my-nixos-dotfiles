@@ -8,8 +8,7 @@ import "../../components"
 // The Display sheet: one card per monitor (name, resolution, refresh, a focused tag), each
 // with its OWN brightness track (the laptop panel through the backlight, the Dell over
 // DDC; both fade, see the Brightness service), the scale chips, and an inline resolution /
-// refresh picker that folds out of the current mode. Then Night Light with its toggle and
-// a warmth slider that re-applies live.
+// refresh picker that folds out of the current mode. (Night Light has its own sheet.)
 Column {
     id: displaySheet
 
@@ -21,11 +20,12 @@ Column {
     onVisibleChanged: if (!visible) modesOpenFor = ""
 
     Repeater {
-        model: Display.monitors
+        // focused monitor first; the rest keep Hyprland's order
+        model: Display.monitors.slice().sort((a, b) => (b.focused ? 1 : 0) - (a.focused ? 1 : 0))
         delegate: Rectangle {
             id: card
             opacity: entered
-            // delegate-owned entrance (patterns.md #5): a positioner `add` transition is cancelled
+            // delegate-owned entrance (patterns.md #5): a positioner `add` transition is canceled
             // by the next relayout and strands the row at opacity 0
             property real entered: 0
             Component.onCompleted: entered = 1
@@ -43,7 +43,7 @@ Column {
             Column {
                 id: body
                 anchors { left: parent.left; right: parent.right; top: parent.top; margins: Theme.s3 }
-                spacing: Theme.s2
+                spacing: Theme.s2 + 3   // a touch more air than the sheet default between a card's rows
 
                 // header: name, geometry, focused
                 Item {
@@ -58,7 +58,7 @@ Column {
                         StyledText { width: parent.width; elide: Text.ElideRight; variant: "label"; font.weight: Theme.wMedium; text: card.mon.name; color: Theme.inkPrimary }
                         StyledText { width: parent.width; elide: Text.ElideRight; variant: "caption"; text: card.mon.width + "×" + card.mon.height + (card.mon.hz ? "  ·  " + Math.round(card.mon.hz) + " Hz" : "") + "  ·  " + Display.fmtScale(card.mon.scale) + "×"; color: Theme.inkDim }
                     }
-                    StyledText { id: focusTag; anchors.right: parent.right; capCentreIn: parent; visible: card.mon.focused; variant: "caption"; text: "focused"; color: Theme.hue("sliders") }
+                    StyledText { id: focusTag; anchors.right: parent.right; capCenterIn: parent; visible: card.mon.focused && Display.monitors.length > 1; variant: "caption"; text: "focused"; color: Theme.hue("sliders") }
                 }
 
                 // brightness, per display
@@ -74,7 +74,7 @@ Column {
                     width: parent.width
                     spacing: Theme.s1
                     Repeater {
-                        model: Display.scaleOptions
+                        model: Display.scalesFor(card.mon)
                         delegate: Rectangle {
                             id: chip
                             required property var modelData
@@ -85,7 +85,7 @@ Column {
                             color: current ? Theme.hue("sliders") : (chipMa.containsMouse ? Theme.fillHigh : Theme.fillLow)
                             opacity: Display.busy ? 0.5 : 1
                             Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
-                            StyledText { id: chipText; anchors.horizontalCenter: parent.horizontalCenter; capCentreIn: parent; variant: "caption"; font.weight: Theme.wMedium; text: Display.fmtScale(chip.modelData) + "×"; color: chip.current ? Theme.onAccent : Theme.inkPrimary }
+                            StyledText { id: chipText; anchors.horizontalCenter: parent.horizontalCenter; capCenterIn: parent; variant: "caption"; font.weight: Theme.wMedium; text: Display.fmtScale(chip.modelData) + "×"; color: chip.current ? Theme.onAccent : Theme.inkPrimary }
                             MouseArea { id: chipMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; enabled: !Display.busy && !chip.current; onClicked: Display.setScale(card.mon.name, chip.modelData) }
                         }
                     }
@@ -96,9 +96,9 @@ Column {
                     width: parent.width
                     height: 32
                     Rectangle { anchors.fill: parent; radius: Theme.rSm; color: modeMa.containsMouse ? Theme.fillHigh : "transparent"; Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } } }
-                    StyledText { anchors.left: parent.left; anchors.leftMargin: Theme.s2; capCentreIn: parent; variant: "caption"; text: "Resolution"; color: Theme.inkDim }
-                    StyledText { anchors.right: modeChev.left; anchors.rightMargin: Theme.s2; capCentreIn: parent; variant: "caption"; font.weight: Theme.wMedium; text: card.mon.width + "×" + card.mon.height + (card.mon.hz ? " @ " + Math.round(card.mon.hz) + " Hz" : ""); color: Theme.inkPrimary }
-                    Icon { id: modeChev; anchors.right: parent.right; anchors.rightMargin: Theme.s2; anchors.verticalCenter: parent.verticalCenter; name: "chevron"; size: 12; rotation: card.modesOpen ? 90 : 0; color: Theme.inkDim; Behavior on rotation { NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } } }
+                    StyledText { anchors.left: parent.left; anchors.leftMargin: Theme.s2; capCenterIn: parent; variant: "caption"; text: "Resolution"; color: Theme.inkDim }
+                    StyledText { anchors.right: modeChev.left; anchors.rightMargin: Theme.s2; capCenterIn: parent; variant: "caption"; font.weight: Theme.wMedium; text: card.mon.width + "×" + card.mon.height + (card.mon.hz ? " @ " + Math.round(card.mon.hz) + " Hz" : ""); color: Theme.inkPrimary }
+                    Icon { id: modeChev; anchors.right: parent.right; anchors.rightMargin: Theme.s2; anchors.verticalCenter: parent.verticalCenter; name: "chevron"; size: Theme.icon(12); rotation: card.modesOpen ? 90 : 0; color: Theme.inkDim; Behavior on rotation { NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } } }
                     MouseArea { id: modeMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: displaySheet.modesOpenFor = card.modesOpen ? "" : card.mon.name }
                 }
                 // A monitor can advertise a dozen-plus modes; an uncapped Column ran the card
@@ -150,9 +150,9 @@ Column {
                             radius: Theme.rSm
                             color: mrowMa.containsMouse ? Theme.fillHigh : "transparent"
                             Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
-                            StyledText { anchors.left: parent.left; anchors.leftMargin: Theme.s2; capCentreIn: parent; variant: "label"; text: mrow.modelData.label || ""; color: mrow.current ? Theme.hue("sliders") : Theme.inkPrimary }
-                            StyledText { anchors.right: mtick.visible ? mtick.left : parent.right; anchors.rightMargin: Theme.s2; capCentreIn: parent; variant: "caption"; text: mrow.modelData.sublabel || ""; color: Theme.inkDim }
-                            Icon { id: mtick; visible: mrow.current; anchors.right: parent.right; anchors.rightMargin: Theme.s2; anchors.verticalCenter: parent.verticalCenter; name: "check"; size: 14; color: Theme.hue("sliders") }
+                            StyledText { anchors.left: parent.left; anchors.leftMargin: Theme.s2; capCenterIn: parent; variant: "label"; text: mrow.modelData.label || ""; color: mrow.current ? Theme.hue("sliders") : Theme.inkPrimary }
+                            StyledText { anchors.right: mtick.visible ? mtick.left : parent.right; anchors.rightMargin: Theme.s2; capCenterIn: parent; variant: "caption"; text: mrow.modelData.sublabel || ""; color: Theme.inkDim }
+                            Icon { id: mtick; visible: mrow.current; anchors.right: parent.right; anchors.rightMargin: Theme.s2; anchors.verticalCenter: parent.verticalCenter; name: "check"; size: Theme.icon(14); color: Theme.hue("sliders") }
                             MouseArea { id: mrowMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; enabled: !Display.busy && !mrow.current; onClicked: { Display.setMode(card.mon.name, mrow.modelData.mode); displaySheet.modesOpenFor = ""; } }
                     }
                 }
@@ -161,56 +161,4 @@ Column {
         }
     }
     StyledText { visible: Display.monitors.length === 0; variant: "label"; text: "No displays detected"; color: Theme.inkDim }
-
-    // ── night light ──
-    Rectangle {
-        width: parent.width
-        height: nlBody.implicitHeight + Theme.s3 * 2
-        radius: Theme.rLg
-        color: Theme.fillLow
-        clip: true
-        Column {
-            id: nlBody
-            anchors { left: parent.left; right: parent.right; top: parent.top; margins: Theme.s3 }
-            spacing: Theme.s2
-            Item {
-                width: parent.width
-                height: 36
-                CcSheetBits.Disc { tint: Theme.hue("sliders"); id: nlDisc; anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; size: 32; icon: "night"; live: NightLight.enabled }
-                Column {
-                    anchors.left: nlDisc.right; anchors.leftMargin: Theme.s3
-                    anchors.right: nlToggle.left; anchors.rightMargin: Theme.s3
-                    anchors.verticalCenter: parent.verticalCenter
-                    spacing: 1
-                    StyledText { variant: "label"; font.weight: Theme.wMedium; text: "Night Light"; color: Theme.inkPrimary }
-                    StyledText { variant: "caption"; text: NightLight.enabled ? (NightLight.temperature + " K") : "Off"; color: Theme.inkDim }
-                }
-                Toggle { id: nlToggle; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; checked: NightLight.enabled; onToggled: NightLight.toggle() }
-            }
-            // warmth: 6500 K (neutral) at the left, down to 1500 K (very warm) at the right.
-            // Wrapped so it fades AND grows/shrinks in when Night Light flips: height is
-            // instant (the island's single spring reveals it through the clip) and opacity
-            // fades. The tint follows the drag LIVE (onMoved -> NightLight.setTemp, which
-            // throttles the daemon socket call to ~90ms), and the disk write happens ONCE on
-            // release: a Config write per mouse-move is a JSON serialise + file write + reload
-            // each time and stalls the drag (patterns.md #49).
-            Item {
-                width: parent.width
-                height: NightLight.enabled ? warmth.implicitHeight : 0
-                clip: true
-                opacity: NightLight.enabled ? 1 : 0
-                Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier } }
-                CcSheetBits.Track { tint: Theme.hue("sliders");
-                    id: warmth
-                    width: parent.width
-                    icon: "night"
-                    showPercent: false
-                    value: 1 - (NightLight.temperature - 1500) / 5000
-                    function kelvin(v) { return Math.round((1500 + (1 - v) * 5000) / 100) * 100; }
-                    onMoved: v => NightLight.setTemp(kelvin(v))                      // tint live
-                    onReleased: v => { NightLight.setTemp(kelvin(v)); Config.nightLightTemp = kelvin(v); }   // persist once
-                }
-            }
-        }
-    }
 }

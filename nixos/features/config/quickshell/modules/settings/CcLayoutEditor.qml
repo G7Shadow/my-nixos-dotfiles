@@ -237,7 +237,7 @@ Item {
                 }
             }
             StyledText {
-                capCentreIn: parent
+                capCenterIn: parent
                 variant: "caption"
                 text: chip.cw + "×" + chip.ch
                 color: chip.current ? Theme.onAccent : Theme.inkPrimary
@@ -263,6 +263,7 @@ Item {
                 spacing: Theme.s2
 
                 // column count: refused (and the old choice kept) when the layout wouldn't survive
+                StyledText { variant: "caption"; color: Theme.inkDim; text: "Columns"; anchors.verticalCenter: parent.verticalCenter }
                 Rectangle {
                     height: 28
                     width: colRow.implicitWidth + 4
@@ -305,7 +306,7 @@ Item {
                 ToolButton { text: "Tidy"; anchors.verticalCenter: parent.verticalCenter; onClicked: Config.ccTidy() }
                 ToolButton { text: "Undo"; enabled: Config.ccCanUndo; anchors.verticalCenter: parent.verticalCenter; onClicked: Config.ccUndo() }
                 ToolButton {
-                    // two-step: the first click arms it (in the destructive colour) for 3s
+                    // two-step: the first click arms it (in the destructive color) for 3s
                     text: editor.resetArmed ? "Reset layout?" : "Reset"
                     active: editor.resetArmed
                     activeColor: Theme.bad
@@ -318,7 +319,7 @@ Item {
             }
             StyledText {
                 anchors { left: toolRow.right; leftMargin: Theme.s3; right: parent.right }
-                capCentreIn: parent
+                capCenterIn: parent
                 horizontalAlignment: Text.AlignRight
                 elide: Text.ElideRight
                 variant: "caption"
@@ -731,11 +732,11 @@ Item {
                             width: 22; height: 18
                             anchors.verticalCenter: parent.verticalCenter
                             // Wi-Fi has no path icon: its meter component stands in
-                            WifiIcon { anchors.centerIn: parent; visible: gchip.key === "wifi"; strength: 1; active: true; color: Theme.inkPrimary }
-                            Icon { anchors.centerIn: parent; visible: gchip.key !== "wifi"; name: gchip.modelData.icon; size: 18 }
+                            WifiIcon { anchors.centerIn: parent; scale: Theme.iconK; visible: gchip.key === "wifi"; strength: 1; active: true; color: Theme.inkPrimary }
+                            Icon { anchors.centerIn: parent; visible: gchip.key !== "wifi"; name: gchip.modelData.icon; size: Theme.icon(18) }
                         }
-                        StyledText { capCentreIn: parent; variant: "label"; text: gchip.modelData.label; color: Theme.inkPrimary }
-                        StyledText { capCentreIn: parent; variant: "caption"; text: gchip.def[0] + "×" + gchip.def[1]; color: Theme.inkDim }
+                        StyledText { capCenterIn: parent; variant: "label"; text: gchip.modelData.label; color: Theme.inkPrimary }
+                        StyledText { capCenterIn: parent; variant: "caption"; text: gchip.def[0] + "×" + gchip.def[1]; color: Theme.inkDim }
                     }
                     // click adds at the first free spot; a drag carries it onto the canvas
                     MouseArea {
@@ -822,6 +823,12 @@ Item {
         // hoverEnabled here also freezes the cards' hover chrome while the menu is up,
         // which is what a menu should do; the grace margin and the delay keep it alive
         // while the pointer crosses the gap between the card and the menu.
+        // The backdrop sits UNDER menuBox, so the pointer moving onto a chip or Remove
+        // (which have their own MouseAreas) fires the backdrop's `exited`. That used to
+        // arm the close timer, so hovering an option dismissed the menu 260ms later and a
+        // click landed on nothing. The menu's own HoverHandler is the truth: the timer
+        // only closes when the pointer is not over the menu, and exits onto the menu are
+        // ignored.
         MouseArea {
             anchors.fill: parent
             acceptedButtons: Qt.AllButtons
@@ -833,9 +840,9 @@ Item {
                           && m.y >= menuBox.y - g && m.y <= menuBox.y + menuBox.height + g;
                 if (near) menuLeave.stop(); else menuLeave.restart();
             }
-            onExited: menuLeave.restart()
+            onExited: if (!menuHover.hovered) menuLeave.restart()
         }
-        Timer { id: menuLeave; interval: 260; onTriggered: editor.menuKey = "" }
+        Timer { id: menuLeave; interval: 260; onTriggered: if (!menuHover.hovered) editor.menuKey = "" }
 
         Rectangle {
             id: menuBox
@@ -847,6 +854,10 @@ Item {
             color: Theme.surfaceOverlay
             border.width: 1
             border.color: Theme.hairline
+            HoverHandler {
+                id: menuHover
+                onHoveredChanged: hovered ? menuLeave.stop() : menuLeave.restart()
+            }
             Column {
                 id: menuCol
                 anchors { left: parent.left; right: parent.right; top: parent.top; margins: Theme.s2 }
@@ -882,7 +893,7 @@ Item {
                     color: rmMa.containsMouse ? Theme.alpha(Theme.bad, 0.12) : "transparent"
                     StyledText {
                         anchors { left: parent.left; leftMargin: Theme.s2 }
-                        capCentreIn: parent
+                        capCenterIn: parent
                         variant: "label"
                         color: Theme.bad
                         text: "Remove"

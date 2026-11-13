@@ -16,6 +16,12 @@ Item {
     implicitWidth: size
     implicitHeight: size
 
+    // the Settings knobs the shared icon set has, applied to this drawing too: stroke
+    // (scaled by the knob, held above the minimum), scale in box, line ends, renderer
+    readonly property real sw: Theme.stroke(2.2, size)
+    layer.enabled: Theme.iconMsaa
+    layer.samples: 4
+
     readonly property real lv: Math.max(0, Math.min(1, level))
     // each part's visibility, animated
     property real w1: (!muted && lv > 0.001) ? 1 : 0
@@ -28,8 +34,11 @@ Item {
     Shape {
         anchors.fill: parent
         antialiasing: true
-        preferredRendererType: Shape.CurveRenderer
-        transform: Scale { xScale: root.size / 24; yScale: root.size / 24 }
+        preferredRendererType: Theme.iconMsaa ? Shape.GeometryRenderer : Shape.CurveRenderer
+        transform: [
+            Scale { xScale: root.size / 24 * Theme.iconScale; yScale: root.size / 24 * Theme.iconScale },
+            Translate { x: root.size * (1 - Theme.iconScale) / 2; y: root.size * (1 - Theme.iconScale) / 2 }
+        ]
 
         // speaker body: always drawn, filled
         ShapePath {
@@ -38,17 +47,17 @@ Item {
         }
         // wave 1 (small)
         ShapePath {
-            fillColor: "transparent"; strokeColor: Theme.alpha(root.color, root.w1); strokeWidth: 2.2; capStyle: ShapePath.RoundCap
+            fillColor: "transparent"; strokeColor: Theme.alpha(root.color, root.w1); strokeWidth: root.sw; capStyle: Theme.iconCapStyle
             PathSvg { path: "M14,9.5 a3.5,3.5 0 0,1 0,5" }
         }
         // wave 2 (large)
         ShapePath {
-            fillColor: "transparent"; strokeColor: Theme.alpha(root.color, root.w2); strokeWidth: 2.2; capStyle: ShapePath.RoundCap
+            fillColor: "transparent"; strokeColor: Theme.alpha(root.color, root.w2); strokeWidth: root.sw; capStyle: Theme.iconCapStyle
             PathSvg { path: "M16.5,7 a7,7 0 0,1 0,10" }
         }
         // mute X
         ShapePath {
-            fillColor: "transparent"; strokeColor: Theme.alpha(root.color, root.xo); strokeWidth: 2.2; capStyle: ShapePath.RoundCap
+            fillColor: "transparent"; strokeColor: Theme.alpha(root.color, root.xo); strokeWidth: root.sw; capStyle: Theme.iconCapStyle
             PathSvg { path: "M14.5,9.5 L19.5,14.5 M19.5,9.5 L14.5,14.5" }
         }
     }

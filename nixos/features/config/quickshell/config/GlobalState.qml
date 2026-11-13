@@ -62,4 +62,9 @@ Singleton {
     function toggleThemeSwitcher() { themeSwitcherOpen = !themeSwitcherOpen; }
     function toggleSettings() { settingsOpen = !settingsOpen; }
     function toggleCalendar() { calendarOpen = !calendarOpen; }
+    // leave the calendar for the expanded island it was opened from (the bar reads the
+    // flag as the calendar closes and holds the island open instead of collapsing)
+    property bool returnToIsland: false
+    function calendarBack() { returnToIsland = true; calendarOpen = false; }
+    function controlCenterBack() { returnToIsland = true; controlCenterOpen = false; }
 }

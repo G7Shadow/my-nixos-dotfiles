@@ -8,7 +8,7 @@
 // at most `maxRows` tall. An item is {key, x, y, w, h} in cell units. Placement is FREE —
 // like iOS 18 / macOS Tahoe: gaps are allowed and persist — with iOS-style DISPLACEMENT:
 // dropping onto occupied cells shoves whatever was there to the next free footprint in
-// reading order. `tidy()` is the Android behaviour on demand: pack everything in reading
+// reading order. `tidy()` is the Android behavior on demand: pack everything in reading
 // order, no holes. Sizes are snapped to what each control supports (`sizes` per registry
 // entry; a width of 0 means "full width" and resolves to `cols`).
 
@@ -164,7 +164,7 @@ function normalize(items, registry, cols, maxRows) {
 // The default mosaic (the Tahoe-style arrangement), tidied for the given width so it still
 // reads correctly on a 5- or 9-column grid.
 function defaults(registry, cols, maxRows) {
-    const order = ["wifi", "media", "bluetooth", "focus", "nightlight", "gamemode", "lock", "display", "sound", "notifications"];
+    const order = ["wifi", "media", "bluetooth", "focus", "nightlight", "lock", "display", "sound", "notifications"];
     const byKey = {};
     for (let i = 0; i < registry.length; i++) byKey[registry[i].key] = registry[i];
     const out = [];

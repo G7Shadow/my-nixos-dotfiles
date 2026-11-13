@@ -1,13 +1,13 @@
 pragma Singleton
 import QtQuick
 import Quickshell
-import Quickshell.Io
 import Quickshell.Services.Pam
 import "../theme"
 import "../config"
 
 // Lock state + PAM auth, kept in a singleton 'cause the per-screen
 // WlSessionLockSurface is its own isolated scope and can't see ids, only this.
+// Locking is instant: lock() flips `locked` and nothing else.
 // `locked` is cleared in exactly ONE place (unlockTimer), and that timer is armed
 // from exactly ONE place (PamResult.Success). Every failure or error stays locked,
 // no exceptions (fail closed). Password's never stored, logged, or echoed. Ever.
@@ -25,70 +25,57 @@ Singleton {
     // Auth already succeeded here; this only defers the teardown, it never gates it.
     property bool unlocking: false
 
-    // Per-output snapshot of the desktop, grabbed the instant before we lock, so the
-    // lock screen can show a blurred freeze-frame of what was on screen (macOS-style)
-    // instead of the wallpaper. Keyed by connector name -> file:// url. The lock surface
-    // is opaque, so this MUST be captured before `locked` flips (can't blur through it).
-    // No cache-buster needed: the surface (and its Image) is recreated on every lock and
-    // the Image loads with cache: false, so it always reads the fresh file off disk.
-    property var shots: ({})
-    function shotFor(name) { return shots[name] ?? ""; }
+    // The lock screen draws its own island on the exact spot of the bar's, so the two
+    // have to agree. `rest` is each bar's resting pill (screen name -> { w, h }), written
+    // by the bar; `covered` is the screens whose lock surface has put its first frame up,
+    // written by LockContent, and the bar hides its own island on those so there is only
+    // ever one. Both are plain look-and-feel: nothing here gates the lock.
+    property var rest: ({})
+    property var covered: ({})
+    function setRest(name, g) { if (!name) return; var r = Object.assign({}, rest); r[name] = g; rest = r; }
+    function setCovered(name, on) {
+        if (!name || !!covered[name] === on) return;
+        var c = Object.assign({}, covered); c[name] = on; covered = c;
+    }
 
-    function lock() {
+    // Lock NOW. One assignment flips the WlSessionLock; nothing runs before it (no
+    // screenshot, no timer, no animation): the key press and the locked screen are the
+    // same instant. The lock screen draws the wallpaper, which is already on disk.
+    // `pill` names the screen whose island is the POWER MENU right now, and `from` its
+    // size: the lock screen on that screen starts as that very menu and shrinks it to the
+    // padlock pill itself, instead of starting from the bar's clock. The lock is still
+    // instant: the morph plays on the lock surface, after the session is locked, never
+    // before it. Empty for every other way of locking.
+    property string pillScreen: ""
+    property var pillFrom: null         // { w, h }: the power menu's island at the moment of the press
+    // What that island was. "" = the power menu (the lock screen draws a copy of the menu
+    // in it while it shrinks). "island" = the open island, locked from a shortcut while
+    // the pointer was on it or it was pinned. "panel" = a panel (launcher, control
+    // center, a switcher, the calendar) was open: `pillFrom` is its island and
+    // `pillShot` a picture of the whole of it. The bar fills these in itself on
+    // `aboutToLock`, which is sent before `locked` flips so the bar still knows it is
+    // open (the lock takes the hover away). For the open island `pillFrom` also says
+    // where the big time is (tx, ty: its middle on the screen, ts: its scale) and where
+    // the island's contents sit in it (gx, gy, gw, gh), and `pillShot` is a picture of
+    // those contents, taken by the bar right after the lock: the lock screen starts as
+    // the open island, sends its time to the middle and closes around the padlock.
+    property string pillKind: ""
+    property var pillShot: null
+    signal aboutToLock()
+    function lock(pill, from) {
         if (locked)
             return;
+        pillKind = "";
+        pillShot = null;
+        pillScreen = pill || "";
+        pillFrom = (pill && from) ? from : null;
         errorMsg = "";
         authenticating = false;
         unlocking = false;
-        // Grab the screen(s), THEN lock. engageLock() runs on grim's exit, and a safety
-        // timer engages it anyway if grim stalls or isn't installed (fail closed: a
-        // missing screenshot must never mean a missing lock).
-        captureThenLock();
-    }
-
-    // Actually engage the lock. Idempotent + guarded so the grim exit and the safety
-    // timer can't double-fire it.
-    function engageLock() {
-        if (locked)
-            return;
-        safety.stop();
-        unlocking = false;
+        covered = ({});
+        aboutToLock();
         locked = true;
         pam.start();
-    }
-
-    function captureThenLock() {
-        const dir = Quickshell.env("XDG_RUNTIME_DIR") || "/tmp";
-        const map = {};
-        const cmds = [];
-        for (const s of Quickshell.screens) {
-            const path = dir + "/qs-lockshot-" + s.name + ".jpg";
-            map[s.name] = "file://" + path;
-            // grim -o <output> writes just that monitor; run them in parallel then wait.
-            // JPEG, not PNG: PNG's zlib encode of a full-res frame runs ~850ms (that's the
-            // delay before the lock shows), JPEG is ~75ms. The heavy blur on top eats any
-            // JPEG artifacts, so quality here is irrelevant. Fast is what matters.
-            cmds.push("grim -t jpeg -q " + Config.lockShotQuality + " -o '" + s.name + "' '" + path + "'");
-        }
-        root.shots = map;
-        safety.restart();                 // hard cap: lock within 700ms no matter what
-        shotProc.command = ["sh", "-c", cmds.join(" & ") + " ; wait"];
-        shotProc.running = true;
-    }
-
-    // grim done (or failed): the freeze-frames are on disk, engage the lock now.
-    Process {
-        id: shotProc
-        onExited: root.engageLock()
-    }
-
-    // Fail-closed backstop: if grim wedges or is absent, lock anyway. The lock just
-    // falls back to a dark background instead of the blurred snapshot.
-    Timer {
-        id: safety
-        interval: 700
-        repeat: false
-        onTriggered: root.engageLock()
     }
 
     function submit(pw) {
@@ -127,14 +114,24 @@ Singleton {
     }
 
     // Fires after the exit animation. The one and only place `locked` gets cleared, and
-    // it's only ever armed by PamResult.Success above. Length matches LockContent's exit.
+    // it's only ever armed by PamResult.Success above. Length matches LockContent's exit:
+    // the padlock's beat (110ms), the time flying home (the ground starts lifting once it
+    // is nearly in, measured ~300ms after the unlock at the default spring), then the
+    // ground's own fade, a full dExpand: ~1.6x dExpand in all. The rest is air, because Qt
+    // stretches animations when frames run slow and a short timer would cut the ground
+    // off mid-fade.
     Timer {
         id: unlockTimer
-        interval: Theme.reducedMotion ? 0 : Theme.dExpand   // matches LockContent's exit
+        interval: Theme.reducedMotion ? 0 : Math.round(Theme.dExpand * 2)
         repeat: false
         onTriggered: {
             root.locked = false;
             root.unlocking = false;
+            root.covered = ({});
+            root.pillScreen = "";
+            root.pillKind = "";
+            root.pillFrom = null;
+            root.pillShot = null;
         }
     }
 }

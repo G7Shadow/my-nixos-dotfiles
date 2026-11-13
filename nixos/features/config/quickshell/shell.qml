@@ -25,21 +25,15 @@ import "modules/wallpaper"
 import "modules/theme"
 import "modules/settings"
 import "modules/screencorners"
+import "modules/sleep"
 
 ShellRoot {
     // Flip any "mode" and morph the island into its status indicator (ringed icon +
-    // label, accent ring when on, struck-through grey when off) through the OSD's
+    // label, accent ring when on, struck-through gray when off) through the OSD's
     // transient machinery, which auto-hides on the focused monitor. Want a new mode?
     // Make a service singleton exposing { label, iconName, enabled, toggle() } (copy
-    // NightLight or GameMode), then add a GlobalShortcut + IpcHandler below that call
+    // NightLight), then add a GlobalShortcut + IpcHandler below that call
     // toggleMode(<Service>).
-    // Game Mode turns the shell's effects off wholesale (durations to 0, shadows off), the
-    // same trade it makes on Hyprland's side. Bound here because theme/ can't import services/.
-    Binding {
-        target: Theme
-        property: "gameMode"
-        value: GameMode.enabled
-    }
 
     function toggleMode(m) {
         m.toggle();
@@ -138,26 +132,59 @@ ShellRoot {
     // Lock screen. Kicked off by GlobalState.lockRequested() (from the power menu,
     // the shortcut, or IPC), which calls LockState.lock().
     Lock {}
+    // Keep the lock's wallpaper DECODED, one per screen, at exactly the size the lock
+    // surface will ask for. Qt's pixmap cache is keyed on url + requested size, so the
+    // lock's own Image is then a cache hit and its first frame is immediate. Without
+    // this a 4K PNG took ~800ms to decode, and the compositor paints black (then its
+    // lockdead screen) from the key press until our surface's first commit. The desktop
+    // wallpaper layer can't serve this: it loads with cache: false. ~9MB per screen.
+    Variants {
+        model: Quickshell.screens
+        Image {
+            required property var modelData
+            source: Config.wallpaper
+            fillMode: Image.PreserveAspectCrop   // part of the cache key: must match LockContent's
+            sourceSize.width: modelData.width
+            sourceSize.height: modelData.height
+            asynchronous: true
+            cache: true
+            visible: false
+        }
+    }
 
     // Polkit auth agent (session-global). The bar's island morphs into the auth
     // prompt now (modules/polkit/PolkitContent.qml). This Connections instantiates
     // the Polkit singleton so the agent registers at startup, before any request
     // shows up. Without that, escalation prompts just silently fail.
-    Connections {
-        target: Polkit
-    }
+    Connections { target: Polkit }
 
     Connections {
         target: GlobalState
-        function onLockRequested() {
-            LockState.lock();
-        }
+        function onLockRequested() { LockState.lock(); }
     }
+
+    // Sleep closes the screens' eyes and wake opens them (services/Sleep.qml). One black
+    // sheet per monitor; the Connections wakes the singleton up so it is listening to
+    // logind from startup.
+    Variants {
+        model: Quickshell.screens
+        Eyelids {}
+    }
+    Connections { target: Sleep }
 
     GlobalShortcut {
         name: "lock"
         description: "Lock the screen"
         onPressed: GlobalState.requestLock()
+    }
+
+    // The control center, as a global shortcut like the launcher's. A key bound to
+    // `qs ipc call controlcenter toggle` starts a process first and opens about 70 ms
+    // later (measured); `hl.dsp.global("quickshell:controlcenter")` comes straight in.
+    GlobalShortcut {
+        name: "controlcenter"
+        description: "Toggle the control center"
+        onPressed: GlobalState.toggleControlCenter()
     }
 
     // Global shortcut. Bind it over in hyprland.conf:
@@ -175,20 +202,12 @@ ShellRoot {
     GlobalShortcut {
         name: "brightnessUp"
         description: "Brightness +5% (focused monitor)"
-        onPressed: {
-            const m = Brightness.focused();
-            if (m)
-                m.setBrightness(m.percentage + Config.brightnessStep);
-        }
+        onPressed: { const m = Brightness.focused(); if (m) m.setBrightness(m.percentage + Config.brightnessStep); }
     }
     GlobalShortcut {
         name: "brightnessDown"
         description: "Brightness -5% (focused monitor)"
-        onPressed: {
-            const m = Brightness.focused();
-            if (m)
-                m.setBrightness(m.percentage - Config.brightnessStep);
-        }
+        onPressed: { const m = Brightness.focused(); if (m) m.setBrightness(m.percentage - Config.brightnessStep); }
     }
 
     // Volume keys, also in-process. Bind with repeating binds, e.g.:
@@ -216,144 +235,88 @@ ShellRoot {
         description: "Toggle Night Light"
         onPressed: toggleMode(NightLight)
     }
-    GlobalShortcut {
-        name: "gamemode"
-        description: "Toggle Game Mode (disable Hyprland effects)"
-        onPressed: toggleMode(GameMode)
-    }
 
     // Portable / test hook:  qs ipc call launcher toggle|open|close
     IpcHandler {
         target: "launcher"
-        function toggle() {
-            GlobalState.toggleLauncher();
-        }
-        function open() {
-            GlobalState.launcherOpen = true;
-        }
-        function close() {
-            GlobalState.launcherOpen = false;
-        }
+        function toggle() { GlobalState.toggleLauncher(); }
+        function open() { GlobalState.launcherOpen = true; }
+        function close() { GlobalState.launcherOpen = false; }
     }
 
     // Portable / test hook:  qs ipc call controlcenter toggle|open|close
     IpcHandler {
         target: "controlcenter"
-        function toggle() {
-            GlobalState.toggleControlCenter();
-        }
-        function open() {
-            GlobalState.controlCenterOpen = true;
-        }
-        function close() {
-            GlobalState.controlCenterOpen = false;
-        }
+        function toggle() { GlobalState.toggleControlCenter(); }
+        function open() { GlobalState.controlCenterOpen = true; }
+        function close() { GlobalState.controlCenterOpen = false; }
     }
 
     // qs ipc call logout toggle|open|close
     IpcHandler {
         target: "logout"
-        function toggle() {
-            GlobalState.toggleLogout();
-        }
-        function open() {
-            GlobalState.logoutOpen = true;
-        }
-        function close() {
-            GlobalState.logoutOpen = false;
-        }
+        function toggle() { GlobalState.toggleLogout(); }
+        function open() { GlobalState.logoutOpen = true; }
+        function close() { GlobalState.logoutOpen = false; }
     }
 
     // qs ipc call lock lock
     IpcHandler {
         target: "lock"
-        function lock() {
-            GlobalState.requestLock();
-        }
+        function lock() { GlobalState.requestLock(); }
+    }
+
+    // qs ipc call sleep close|open: just the eyes, nothing locks and nothing sleeps
+    IpcHandler {
+        target: "sleep"
+        function close() { Sleep.close(); }
+        function open() { Sleep.open(); }
     }
 
     // qs ipc call wallpaper toggle|open|close
     IpcHandler {
         target: "wallpaper"
-        function toggle() {
-            GlobalState.toggleWallpaperPicker();
-        }
-        function open() {
-            GlobalState.wallpaperPickerOpen = true;
-        }
-        function close() {
-            GlobalState.wallpaperPickerOpen = false;
-        }
+        function toggle() { GlobalState.toggleWallpaperPicker(); }
+        function open() { GlobalState.wallpaperPickerOpen = true; }
+        function close() { GlobalState.wallpaperPickerOpen = false; }
     }
 
     // qs ipc call theme toggle|open|close
     IpcHandler {
         target: "theme"
-        function toggle() {
-            GlobalState.toggleThemeSwitcher();
-        }
-        function open() {
-            GlobalState.themeSwitcherOpen = true;
-        }
-        function close() {
-            GlobalState.themeSwitcherOpen = false;
-        }
+        function toggle() { GlobalState.toggleThemeSwitcher(); }
+        function open() { GlobalState.themeSwitcherOpen = true; }
+        function close() { GlobalState.themeSwitcherOpen = false; }
     }
 
     // qs ipc call island toggle|open|close: hold the island expanded, no pointer needed
     IpcHandler {
         target: "island"
-        function toggle() {
-            GlobalState.toggleIsland();
-        }
-        function open() {
-            GlobalState.islandHold = true;
-        }
-        function close() {
-            GlobalState.islandHold = false;
-        }
+        function toggle() { GlobalState.toggleIsland(); }
+        function open() { GlobalState.islandHold = true; }
+        function close() { GlobalState.islandHold = false; }
     }
 
     // qs ipc call settings toggle|open|close
     IpcHandler {
         target: "settings"
-        function toggle() {
-            GlobalState.toggleSettings();
-        }
-        function open() {
-            GlobalState.settingsOpen = true;
-        }
-        function close() {
-            GlobalState.settingsOpen = false;
-        }
+        function toggle() { GlobalState.toggleSettings(); }
+        function open() { GlobalState.settingsOpen = true; }
+        function close() { GlobalState.settingsOpen = false; }
     }
 
     // qs ipc call calendar toggle|open|close
     IpcHandler {
         target: "calendar"
-        function toggle() {
-            GlobalState.toggleCalendar();
-        }
-        function open() {
-            GlobalState.calendarOpen = true;
-        }
-        function close() {
-            GlobalState.calendarOpen = false;
-        }
+        function toggle() { GlobalState.toggleCalendar(); }
+        function open() { GlobalState.calendarOpen = true; }
+        function close() { GlobalState.calendarOpen = false; }
     }
 
-    // qs ipc call nightlight toggle  /  qs ipc call gamemode toggle
+    // qs ipc call nightlight toggle
     IpcHandler {
         target: "nightlight"
-        function toggle() {
-            toggleMode(NightLight);
-        }
-    }
-    IpcHandler {
-        target: "gamemode"
-        function toggle() {
-            toggleMode(GameMode);
-        }
+        function toggle() { toggleMode(NightLight); }
     }
 
     // Brightness control: bind your keys to these so changes route through the
@@ -365,25 +328,21 @@ ShellRoot {
         // Adjust/set a specific display by connector name (e.g. "DP-1", "eDP-1").
         function adjust(name: string, delta: int): void {
             const m = Brightness.forName(name);
-            if (m)
-                m.setBrightness(m.percentage + delta);
+            if (m) m.setBrightness(m.percentage + delta);
         }
         function set(name: string, value: int): void {
             const m = Brightness.forName(name);
-            if (m)
-                m.setBrightness(value);
+            if (m) m.setBrightness(value);
         }
 
         // Adjust/set whichever monitor is focused (bind brightness up/down here).
         function adjustFocused(delta: int): void {
             const m = Brightness.focused();
-            if (m)
-                m.setBrightness(m.percentage + delta);
+            if (m) m.setBrightness(m.percentage + delta);
         }
         function setFocused(value: int): void {
             const m = Brightness.focused();
-            if (m)
-                m.setBrightness(value);
+            if (m) m.setBrightness(value);
         }
     }
 }

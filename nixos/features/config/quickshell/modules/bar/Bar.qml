@@ -7,6 +7,7 @@ import Quickshell.Wayland
 import Quickshell.Hyprland
 import "../../theme"
 import "../../config"
+import "../../config/IslandShape.js" as IslandShape
 import "../../services"
 import "../../components"
 import "../launcher"
@@ -22,10 +23,10 @@ import "../calendar"
 // The notch (one per screen): a "dynamic island" that floats below the top edge
 // (small gap above and below, all corners rounded, subtle shadow, the only bit of
 // depth we let in). Collapsed it's the clock with the workspace capsules beside it (the
-// group stays centred).
+// group stays centered).
 // Hover or click-to-pin springs it open to a media player (left), clock + date
 // (center), and a control-center pill (right). Every size/radius/motion comes
-// from Theme tokens. Modelled on notch-bar.html.
+// from Theme tokens. Modeled on notch-bar.html.
 PanelWindow {
     id: bar
 
@@ -39,11 +40,9 @@ PanelWindow {
     // on top of the reserved edge, so subtract it or the two stack and the window
     // sits too far down. The wallpaper ignores this (fills the screen → no band).
     exclusionMode: ExclusionMode.Normal
-    // game bar reserves its full height at the very top (no gap); otherwise reserve the
-    // floating-island strip (gap above and below the collapsed island).
+    // reserve the floating-island strip (gap above and below the collapsed island).
     // notch: no gap above (flush), so reserve just the notch height + the below gap.
-    exclusiveZone: barForm ? gameBarH
-                 : notchMode ? Math.max(0, topGap + collapsedH - gapsOut)
+    exclusiveZone: notchMode ? Math.max(0, topGap + collapsedH - gapsOut)
                  : Math.max(0, topGap * 2 + collapsedH - gapsOut)
     // Full-height ALWAYS: transparent and click-through via the mask except for the
     // island. Resizing the window on open (116 → full) is what gave us the morph flash,
@@ -58,25 +57,46 @@ PanelWindow {
     WlrLayershell.keyboardFocus: morphWanted ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
     // input mask: the morph backdrop (click-outside) when a panel's open, else the bar
-    // itself. In Game Mode a tall transient projects below the bar, so union in the
-    // transientHost too, or clicks on the overflowing part fall through to the window
-    // behind it.
+    // itself.
     mask: Region {
-        item: morphWanted ? backdrop : notch
+        // the clicked-open island takes the backdrop too, so a click anywhere else closes it
+        item: (morphWanted || pinned) ? backdrop : notch
         Region { item: (!bar.morphWanted && transientHost.shown) ? transientHost : null }
     }
 
     property bool pinned: false
-    readonly property bool expanded: hover.hovered || pinned || GlobalState.islandHold
+    // Hover OPENS the island; leaving closes it again. A click PINS it open, and a pinned
+    // island stays until it is clicked again or a click lands anywhere else.
+    readonly property bool expanded: hover.hovered || pinned || GlobalState.islandHold || returnHold || lockHold
+    // held open for the moment between a lock and the lock screen covering it (see the
+    // LockState connections below)
+    property bool lockHold: false
     readonly property bool playing: Media.player?.isPlaying ?? false
 
     // When a panel closes with the cursor still over its (tall) area, the hover handler
     // would immediately report hovered → the island would flash its expanded/hover state
     // before shrinking below the cursor. Suppress hover for the collapse animation so it
-    // drops straight to the collapsed notch/island instead; a fresh hover afterwards works.
+    // drops straight to the collapsed notch/island instead; a fresh hover afterward works.
     property bool closeGuard: false
     Timer { id: closeGuardTimer; interval: Theme.dur(Theme.dSpring) + 80; onTriggered: bar.closeGuard = false }
-    onMorphWantedChanged: if (!morphWanted) { closeGuard = true; closeGuardTimer.restart(); }
+    // A panel can ask to hand back to the EXPANDED island instead of closing to the pill
+    // (the calendar's header does). Then there is no close guard: the island is held
+    // open so the panel morphs straight into it, and the hold lets go as soon as the
+    // pointer is found over the island (hover takes over) or after a moment if it never is.
+    property bool returnHold: false
+    // long enough for the panel to come down into the island (one spring) plus a beat to
+    // see it; then hover decides. `returnLinger` is that beat.
+    readonly property int returnLinger: 350
+    Timer { id: returnHoldTimer; interval: Theme.dSpring + bar.returnLinger; onTriggered: bar.returnHold = false }
+    onMorphWantedChanged: {
+        if (!morphWanted) {
+            if (GlobalState.returnToIsland && onFocusedMon) {
+                GlobalState.returnToIsland = false;
+                returnHold = true; returnHoldTimer.restart();
+            } else { closeGuard = true; closeGuardTimer.restart(); }
+        }
+        else { pinned = false; returnHold = false; }    // a panel taking the island lets go of the pin
+    }
 
     // launcher state: the island ITSELF morphs into the launcher, no extra layer
     readonly property bool onFocusedMon: (Hyprland.focusedMonitor?.name ?? "") === (modelData?.name ?? "x")
@@ -100,18 +120,10 @@ PanelWindow {
     // a transient notification morphs the island to show it (auto-dismiss), but only
     // when idle (nothing else up: launcher/CC/OSD) and on the focused monitor.
     readonly property bool notifWanted: !morphWanted && !osdWanted && onFocusedMon && Notifications.showing !== null
-    // Game Mode flattens the floating island into a full-width thin TOP BAR (squared,
-    // edge-anchored, no gap) with a centred media | clock | cc cluster. It STAYS a bar
-    // through everything, no morph-back flash. An OSD / notification / mode indicator
-    // shows centred IN the bar (the cluster yields to it, the bar never shrinks back to
-    // an island), and the morph panels (launcher, CC, pickers, settings, power, polkit)
-    // float BELOW the bar via morphHost instead of expanding it. So barForm tracks Game
-    // Mode alone; the osd/notif/morph states layer on top of it.
-    readonly property bool barForm: GameMode.enabled
     // Notch mode: instead of the floating island, the bar hangs flush from the top edge
     // with SQUARE top corners and a ROUNDED bottom (a hardware-notch look). Toggled from
-    // settings (Config.notchMode). Game Mode's full-width bar still wins over it.
-    readonly property bool notchMode: Config.notchMode && !barForm
+    // settings (Config.notchMode).
+    readonly property bool notchMode: Config.notchMode
 
     // ── shape morph clocks ────────────────────────────────────────────────────────────────
     // Switching island↔notch used to hard-swap two different fills (a rounded Rectangle and
@@ -120,20 +132,9 @@ PanelWindow {
     // driven by these. Everything positional reads them too, so the whole switch runs off a
     // single clock and nothing steps.
     property real notchT: notchMode ? 1 : 0        // 0 = island, 1 = notch
-    Behavior on notchT { enabled: bar.morphAnim; NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } }
-    // Entering Game Mode is INSTANT: it's the "give me frames" switch, so the bar just appears
-    // (Theme.dur() is already 0 by then anyway) and this latch drops the morph Behaviors so
-    // nothing animates on the way in. LEAVING is not latched — game mode is off, so the shell
-    // is back to normal immediately, shadows and all, and the bar animates down to the island
-    // the way every other morph does.
-    property bool morphAnim: true
-    onBarFormChanged: if (barForm) { morphAnim = false; morphAnimTimer.restart(); }
-    Timer { id: morphAnimTimer; interval: 90; onTriggered: bar.morphAnim = true }
-    property real barT: barForm ? 1 : 0            // 0 = island/notch, 1 = game bar
-    Behavior on barT { enabled: bar.morphAnim; NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } }
-    // how "flush to the top edge" we are; both the notch and the game bar sit flush. Derived,
-    // so it's already continuous — giving it its own Behavior would just chase a moving target.
-    readonly property real flushT: Math.max(barT, notchT)
+    Behavior on notchT { NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } }
+    // how "flush to the top edge" we are. Derived, so it's already continuous.
+    readonly property real flushT: notchT
 
     // notch bottom radius (clamped to fit the current height) and the effective flare
     // (concave top-corner radius), clamped so the arcs always fit no matter the state.
@@ -144,47 +145,22 @@ PanelWindow {
     // TWO-PHASE morph, so the outline is well defined at every frame instead of trying to be a
     // rounded top and a flared top at once: for t<0.5 the top corners un-round, for t>0.5 the
     // flares grow out. Midpoint is a plain square-top / round-bottom slab, which reads fine.
-    readonly property real notchFlareEff: notchFlareRaw * Math.max(0, 2 * notchT - 1)
-    readonly property real notchTopR: notch.rad * Math.max(0, 1 - 2 * notchT)
+    // The OUTLINE reads the clock held to 0..1 (`notchK`), not the clock itself. notchT
+    // rides the bouncy spring and rings a little past both ends. Past 0 that made the
+    // top radius a hair bigger than the pill is tall can hold (17.01 + 17 into a height of
+    // 34): the side of the outline became a tiny stroke running backwards, and on the one
+    // frame where that stroke was almost nothing the renderer lost the shape and drew a
+    // hollow, torn island. That was the flicker on switching notch mode off. The position
+    // (the gap above the island) still follows the real clock, so the bounce is still
+    // there; only the shape stops short of an outline that cannot exist. The top radius
+    // is also held to the room the bottom radius leaves, whatever else changes.
+    readonly property real notchK: Math.max(0, Math.min(1, notchT))
+    readonly property real notchFlareEff: notchFlareRaw * Math.max(0, 2 * notchK - 1)
+    readonly property real notchTopR: Math.max(0, Math.min(notch.rad * Math.max(0, 1 - 2 * notchK), notch.height + 4 * notchK - notchBR))
 
-    // SVG outline covering BOTH forms: rounded-top island (fr = 0, tr > 0) through to the
-    // flared notch (fr > 0, tr = 0), with a rounded bottom either way. Local coords; the body
-    // sits at x∈[fr, W-fr] and the flares stick out `fr` past each side at the top edge.
-    // Radii near zero degrade to straight lines (a zero-radius SVG arc is undefined).
-    function notchPath(bw, h, tr, br, fr) {
-        var W = bw + 2 * fr;
-        var L = fr, R = W - fr;
-        var eps = 0.01;
-        var p;
-        // top-left: flare out, round in, or a hard corner
-        if (fr > eps)      p = "M 0,0 A " + fr + "," + fr + " 0 0 1 " + L + "," + fr;
-        else if (tr > eps) p = "M " + L + "," + tr;
-        else               p = "M " + L + ",0";
-        // left side down, across the bottom, back up the right
-        if (br > eps) {
-            p += " L " + L + "," + (h - br);
-            p += " A " + br + "," + br + " 0 0 0 " + (L + br) + "," + h;
-            p += " L " + (R - br) + "," + h;
-            p += " A " + br + "," + br + " 0 0 0 " + R + "," + (h - br);
-        } else {
-            p += " L " + L + "," + h + " L " + R + "," + h;
-        }
-        // top-right, mirroring the top-left
-        if (fr > eps) {
-            p += " L " + R + "," + fr;
-            p += " A " + fr + "," + fr + " 0 0 1 " + W + ",0";
-        } else if (tr > eps) {
-            p += " L " + R + "," + tr;
-            p += " A " + tr + "," + tr + " 0 0 0 " + (R - tr) + ",0";
-            p += " L " + (L + tr) + ",0";
-            p += " A " + tr + "," + tr + " 0 0 0 " + L + "," + tr;
-        } else {
-            p += " L " + R + ",0";
-        }
-        return p + " Z";
-    }
-    readonly property int gameBarH: Config.gameBarHeight
-    readonly property int gameClusterGap: Config.gameClusterGap // gap between each card and the clock in bar form
+    // The outline covering BOTH forms, rounded-top island through to the flared notch. It
+    // lives in config/IslandShape.js so the lock screen's island is drawn from the same one.
+    function notchPath(bw, h, tr, br, fr) { return IslandShape.notchPath(bw, h, tr, br, fr); }
 
     readonly property int topGap: Config.islandGap  // gap above the island (and below it too, via exclusiveZone)
     readonly property int gapsOut: Config.hyprGapsOut // must match Hyprland general:gaps_out (top); subtract it or it stacks
@@ -195,52 +171,233 @@ PanelWindow {
     // island's width animation every frame, so the island hung near its open width until
     // the wrappers settled and only then dropped (logged: 688 -> 568 in the first 200ms
     // while the target climbed 90 -> 252, then 16px a frame). One fixed target, one motion.
+    // what the collapsed pill shows beside the time
     readonly property bool dotsOn: Config.clockDots && ws.count > 0
     readonly property bool statusOn: Config.clockStatus
-    readonly property real restRowW: timeText.width
-        + (dotsOn ? ws.restW + wsWrap.pad * 2 : 0)
-        + (statusOn ? st.restW + stWrap.pad : 0)
-        + ((dotsOn || statusOn) ? Theme.s5 - (dotsOn ? wsWrap.pad : 0) : 0) * ((dotsOn ? 1 : 0) + (statusOn ? 1 : 0))
-    readonly property int collapsedW: Math.max(Config.islandCollapsedWidth, Math.round(restRowW) + 2 * Theme.s3 + Theme.s4)
+    // The companions' rooms either side of the time. When BOTH are in they take the same
+    // room, the wider one's, so the pill is symmetric about the time and the time holds
+    // the island's center line as they arrive together (both toggled on in Settings);
+    // before, the centered row shifted it by half the difference of the two rooms. A lone
+    // companion takes only its own room: no mirrored air on the empty side.
+    readonly property real restRoomL: dotsOn ? (statusOn ? Math.max(ws.restW, st.restW) : ws.restW) + wsWrap.pad : 0
+    readonly property real restRoomR: statusOn ? (dotsOn ? Math.max(ws.restW, st.restW) : st.restW) + wsWrap.pad : 0
+    readonly property real restRowW: timeText.width + (dotsOn ? restRoomL + Theme.s5 : 0) + (statusOn ? restRoomR + Theme.s5 : 0)
+    // EVEN widths, always: the island is centered on the screen, so an odd width puts its
+    // edges on half pixels and the text inside snaps a pixel sideways between one settled
+    // width and the next (the clock moved 1px between two settled pill widths)
+    readonly property int collapsedW: 2 * Math.ceil(Math.max(Config.islandCollapsedWidth, Math.round(restRowW) + 2 * Theme.s3 + Theme.s4) / 2)
     readonly property int collapsedH: Math.max(34, Config.barHeight + 4)
+    // The lock screen carries its own copy of the island and starts it on this exact pill,
+    // so it is told the pill's size; while that copy is up this one is not drawn, so
+    // there is only ever one island on the screen (see LockContent's `isle`).
+    readonly property var lockRest: ({ w: collapsedW, h: collapsedH })
+    onLockRestChanged: LockState.setRest(modelData?.name ?? "", lockRest)
+    readonly property bool lockCovered: LockState.locked && !LockState.unlocking && LockState.covered[modelData?.name ?? ""] === true
+    Connections {
+        target: LockState
+        // nothing may be open under the lock: when it lifts, the island the lock screen
+        // hands back to has to be the resting pill
+        // Locked with the island OPEN (the pointer on it, or pinned). The lock screen
+        // starts its own island on the resting pill, so the open island used to be
+        // swapped for a small pill in one frame. Now the lock screen starts as this
+        // island, as it is this instant: it is told the island's size, where the big
+        // time is and how big, and where the contents sit, and it gets a picture of the
+        // contents. From there the lock screen plays it: the big time flies to the
+        // middle, the rest fades and the island closes around the padlock. This island
+        // holds still until the lock screen's copy is over it (`lockHold`), then closes
+        // unseen, so what the unlock hands back to is the pill.
+        // (Here and not in onLockedChanged: by then the lock has switched the hover off
+        // and a hovered island no longer knows it was open.)
+        // Locked with a PANEL open (launcher, control center, a switcher, the calendar):
+        // the same hand-over. The panels used to be closed the instant the lock engaged,
+        // so the island was springing shut under a lock screen that had already drawn
+        // its small pill on top of it, and the panel then vanished in one frame. Now the
+        // lock screen starts as the panel's island with a picture of the panel in it,
+        // fades that and closes around the padlock; the panel itself stays as it is
+        // until the lock screen's copy is over it, then closes unseen (onCoveredChanged).
+        // (Not the power menu, which hands itself over, and not the auth prompt, which
+        // the lock does not close.)
+        function onAboutToLock() {
+            if (LockState.pillScreen !== "") return;
+            const name = bar.modelData?.name ?? "";
+            if (bar.morphWanted) {
+                if (bar.polkitWanted || bar.logoutWanted) return;
+                LockState.pillKind = "panel";
+                const from = { w: notch.width, h: notch.height, gx: 0, gy: 0, gw: notch.width, gh: notch.height };
+                // the control center has a time of its own, top left: that is the one
+                // that becomes the lock screen's clock (as the open island's big time
+                // does), so the lock screen is told where it is and how big
+                if (bar.ccWanted && controlCenter.view === "main" && !bar.clockFlying) {
+                    const c = controlCenter.clockCenter();
+                    from.tx = c.x; from.ty = c.y; from.ts = controlCenter.clockPx / Theme.fsClock;
+                }
+                LockState.pillFrom = from;
+                LockState.pillScreen = name;
+                morphHost.grabToImage(function(shot) {
+                    if (LockState.locked && LockState.pillKind === "panel" && LockState.pillScreen === name) LockState.pillShot = shot;
+                });
+                return;
+            }
+            if (!bar.expanded) return;
+            const c = timeText.mapToItem(null, timeText.width / 2, timeText.height / 2);
+            const g = barRow.mapToItem(notch, 0, 0);
+            LockState.pillKind = "island";
+            LockState.pillFrom = { w: notch.width, h: notch.height,
+                                   tx: c.x, ty: c.y, ts: timeText.scale,
+                                   gx: g.x, gy: g.y, gw: barRow.width, gh: barRow.height };
+            LockState.pillScreen = name;
+            bar.lockHold = true;
+            barRow.grabToImage(function(shot) {
+                if (LockState.locked && LockState.pillKind === "island" && LockState.pillScreen === name) LockState.pillShot = shot;
+            });
+        }
+        function onLockedChanged() {
+            if (!LockState.locked) { bar.lockHold = false; return; }
+            bar.pinned = false;
+            bar.returnHold = false;
+            // a panel that is being handed over stays until the lock screen's island is
+            // over it (below)
+            if (LockState.pillKind !== "panel") bar.closePanels();
+            // the power menu that just morphed into the lock's pill stays as it is until
+            // the lock screen's own island is over it (below): closing it now would show
+            // the clock pill for the frame or two before that
+            if (LockState.pillScreen === "") GlobalState.logoutOpen = false;
+        }
+        function onCoveredChanged() {
+            if (LockState.pillScreen !== "" && bar.lockCovered) GlobalState.logoutOpen = false;
+            if (LockState.pillKind === "panel" && LockState.covered[LockState.pillScreen] === true) bar.closePanels();
+            if (bar.lockCovered) bar.lockHold = false;
+        }
+        function onUnlockingChanged() { if (LockState.unlocking) { GlobalState.logoutOpen = false; bar.closePanels(); } }
+    }
+    function closePanels() {
+        GlobalState.launcherOpen = false;
+        GlobalState.controlCenterOpen = false;
+        GlobalState.wallpaperPickerOpen = false;
+        GlobalState.themeSwitcherOpen = false;
+        GlobalState.calendarOpen = false;
+    }
     // The expanded island is the pill, grown: the workspace capsules on the left and the
     // status glyphs on the right, both larger and with air around them, the clock with the
     // big time in the middle with the media card under it while something plays. Form
     // over function: nothing that is not already in the pill's vocabulary plus the one
     // card. The sides size to their content and take the same width so the clock sits
-    // dead centre. With no player the island is the configured height with the time
-    // centred; with one it grows to hold the card and the time lifts to the top. Each
+    // dead center. With no player the island is the configured height with the time
+    // centered; with one it grows to hold the card and the time lifts to the top. Each
     // part has its own Settings toggle.
     readonly property bool showWs: Config.islandWorkspaces && ws.count > 0
-    readonly property bool showLedger: Config.islandStatus
-    readonly property bool showNow: Config.islandMedia && Media.hasPlayer
-    readonly property int sideW: Math.ceil(Math.max(ws.openW + 2 * wsBigPad, st.openW, 132)) + Theme.s3   // 132: room for an app name
+    // the card is always there when enabled; with no player it says so
+    readonly property bool showNow: Config.islandMedia
     readonly property int wsBigPad: 8          // room for the active capsule's scale and glow
-    readonly property int cardW: 300
-    readonly property int cardH: 58
-    readonly property int centreW: Math.max(Math.ceil(timeText.width * (Theme.fsClockBig / Theme.fsClock)) + 2 * Theme.s4, showNow ? cardW + 2 * Theme.s3 : 0)
-    // the vertical plan with the card: the time's centre from the island's top, the card
-    // centred in what is left under it
+    // The media block sits to the LEFT of the time and date, on the same line: a square
+    // of album art with the title and the artist beside it. `cardH` is the art's side,
+    // `mediaTextW` the fixed room for the two lines of text (fixed, so a new song's
+    // longer title cannot push the clock sideways), `mediaGap` the air between the block
+    // and the clock.
+    readonly property int cardH: 36
+    readonly property int mediaTextW: 170
+    readonly property int cardW: cardH + 12 + mediaTextW
+    readonly property int mediaGap: 28
+    // With the media block on, the island is two groups: the block against the left edge
+    // and the clock against the right, both with their INK inset `wsBigPad` (the clock
+    // button's own side padding hangs past that). The natural width leaves `mediaGap`
+    // between them; a larger Settings min width only widens that gap, never the edges.
+    // The clock is a right-aligned STACK in the open island: the hero time and the
+    // workspace dots under it. (The date used to sit between the two; it is gone.)
+    // `heroW` is the big time's settled width, `clockFullW` the stack's box (the time
+    // plus the button's padding).
+    // THE HERO CLOCK layout: a very large time against the LEFT edge with the full date
+    // under it, and a small right column: the song (title and artist right-aligned, the
+    // art at the end), a hairline, and the workspace dots.
+    // `heroPx` is the big time's size, `colW` the right column's width, `rowOff` how far
+    // its two rows sit above and below the island's center line.
+    readonly property int heroPx: 40
+    readonly property int colW: 250
+    readonly property int rowOff: 18
+    // The song row is taller than the dots' row (the art against a line of dots), so
+    // two rows set the same distance from the island's center line leave the column
+    // sitting high: more air under it than over it. The whole column drops by a quarter
+    // of that difference, which puts the art's top and the glyphs' bottom the same
+    // distance from the island's edges.
+    readonly property int colDrop: Math.round((cardH - 9) / 4)
+    readonly property int dateCap: Math.round(Theme.fsBody * 0.72)
+    readonly property int heroDateGap: 14
+    readonly property real dateY: timeLift + heroCap / 2 + heroDateGap + dateCap / 2
+    readonly property real heroW: timeText.width * (heroPx / Theme.fsClock)
+    readonly property int clockFullW: Math.ceil(Math.max(heroW, heroDate.implicitWidth)) + 2 * Theme.s4
+    readonly property int centerW: clockFullW + mediaGap + colW
+    // the stack's vertical plan, in ink heights, centered on the island's center line:
+    // time, `heroDotsGap`, dots
+    readonly property int heroCap: Math.round(heroPx * 0.72)
+    readonly property int heroDotsGap: 17
+    readonly property real stackH: heroCap + heroDateGap + dateCap
+    // the vertical plan with the card: the time's center from the island's top, the card
+    // centered in what is left under it
     readonly property int timeY: 36
     readonly property int timeBottom: timeY + 22
     readonly property int expandedContentW:
           2 * (Theme.s3 + Config.islandPadding)         // barRow left+right insets at full expand
-        + (showWs ? sideW + Theme.s4 : 0)
-        + (showLedger ? sideW + Theme.s4 : 0)
-        + centreW
-    readonly property int expandedW: Math.max(Config.islandMinWidth, expandedContentW)
+        + centerW
+    readonly property int expandedW: 2 * Math.ceil(Math.max(Config.islandMinWidth, expandedContentW) / 2)
     readonly property int cardGap: 5          // between the time and the card
     // 26 under the card = the air above the time's cap height (timeY minus half a cap), so
-    // the time-plus-card block sits centred in the island
-    readonly property int expandedH: showNow ? Math.max(Config.islandExpandedHeight, timeBottom + cardGap + cardH + 26) : Config.islandExpandedHeight
-    // the time's lift off the island's centre line, 0 without the card
-    readonly property real timeLift: showNow ? timeY - expandedH / 2 : 0
+    // the time-plus-card block sits centered in the island
+    readonly property int expandedH: Math.max(Config.islandExpandedHeight, 132)
+    // WHEN THE OPEN ISLAND'S CONTENTS SHOW. Not on a timer: on how far open the island
+    // actually is. `openP` is the island's live height between the pill (0) and the open
+    // island (1). The date, the song and the hairline are invisible until it is
+    // `openFadeFrom` of the way open and reach full strength as it finishes. Opening,
+    // they come in late, into room that already exists (they used to start fading in the
+    // moment the pointer touched the pill). Closing, the same rule runs backwards: they
+    // are gone while the island is still mostly open, so nothing is left to be cut off
+    // by its edge on the way down to the pill.
+    readonly property real openFadeFrom: 0.6
+    readonly property real openP: Math.max(0, Math.min(1, (notch.height - collapsedH) / Math.max(1, expandedH - collapsedH)))
+    // ...and they are not shown in something TALLER than the open island either. A panel
+    // shrinking back into the island (the control center, after its clock is pressed) is
+    // "fully open" by height long before it is the island, and the song and the date came
+    // up floating in the middle of it, over the panel's own fading content. `tallP` is how
+    // much taller than the open island it still is; they wait until it is within
+    // `openFadeTall` of the island's height (a few percent of slack, so the spring's own
+    // overshoot on a plain open does not dim them).
+    readonly property real openFadeTall: 0.25
+    readonly property real tallP: Math.max(0, (notch.height - expandedH) / Math.max(1, expandedH) - 0.06)
+    // (full strength from `openFadeFull`, not from 1: the island's spring settles a few
+    // pixels short and back, and at exactly 1 the contents dimmed to 86% and came back
+    // on every open)
+    readonly property real openFadeFull: 0.92
+    readonly property real openFade: Math.max(0, Math.min(1, (openP - openFadeFrom) / (openFadeFull - openFadeFrom)))
+                                   * Math.max(0, Math.min(1, 1 - tallP / openFadeTall))
+                                   * openK
+    // ...and only when the island they are in IS the open island, or one on its way to
+    // or from the pill. The rule above is all height, and a panel opening from the pill
+    // or closing to it passes through the open island's height on the way: the song,
+    // the date, the hairline and the dots showed at full strength in the middle of
+    // every launcher, control center and switcher morph, most plainly on the close.
+    // `openLive` remembers which island this is: set when the island opens for itself,
+    // dropped the moment a panel (or an OSD, or a notification) takes it, and not set
+    // again until the island next opens for itself. Dropping it fades on the row's own
+    // pace (so an open island handing over to a panel goes as one); setting it is at
+    // once, because the height rule is what brings the contents in.
+    property bool openLive: false
+    readonly property bool rowYielded: osdWanted || notifWanted || morphWanted
+    function openLiveSync() { if (rowYielded) openLive = false; else if (expanded) openLive = true; }
+    onRowYieldedChanged: openLiveSync()
+    onExpandedChanged: openLiveSync()
+    property real openK: openLive ? 1 : 0
+    Behavior on openK { enabled: !bar.openLive; NumberAnimation { duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier } }
+    // the island has come down to its open size (a few pixels of slack for the spring)
+    readonly property bool settledOpen: notch.height <= expandedH + 4
+    // the time's center against the island's center line: lifted so the whole stack
+    // (time, dots) sits centered as a group
+    readonly property real timeLift: (heroCap - stackH) / 2
     readonly property int launcherW: Config.launcherWidth
     readonly property int calendarW: Config.calendarWidth       // the calendar's a compact morph
     readonly property int wallpaperW: Config.wallpaperPickerWidth // wallpaper picker wants room for big previews
-    readonly property int themeW: Config.themeSwitcherWidth     // landscape strip of theme previews, wants width not height
+    readonly property int themeW: themeContent.bookW            // the color book: as wide as the setting, up to its own limit
     readonly property int polkitW: 460                          // the auth prompt: one column, no room needed for a grid
-    readonly property int morphW: polkitWanted ? polkitW : calendarWanted ? calendarW : wallpaperWanted ? wallpaperW : themeWanted ? themeW : launcherW
+    readonly property int ccW: Config.ccPanelW
+    readonly property int morphW: polkitWanted ? polkitW : calendarWanted ? calendarW : wallpaperWanted ? wallpaperW : themeWanted ? themeW : ccWanted ? ccW : logoutWanted ? logoutContent.islandW : launcherW
     readonly property int notifW: Config.notificationWidth
     readonly property int osdW: Config.osdWidth
 
@@ -248,8 +405,10 @@ PanelWindow {
     MouseArea {
         id: backdrop
         anchors.fill: parent
-        enabled: bar.morphWanted
+        enabled: bar.morphWanted || bar.pinned
         onClicked: {
+            // the clicked-open island: a click anywhere away from it lets go of the pin
+            if (!bar.morphWanted) { bar.pinned = false; return; }
             // polkit: click-outside CANCELS the auth request (fail closed), never a quiet close
             if (bar.polkitWanted) { if (Polkit.flow) Polkit.flow.cancelAuthenticationRequest(); return; }
             GlobalState.launcherOpen = false;
@@ -264,24 +423,42 @@ PanelWindow {
     Item {
         id: notch
         anchors.top: parent.top
-        // continuous: closes to 0 as it goes flush (notch or game bar). No Behavior here —
+        // continuous: closes to 0 as it goes flush (notch). No Behavior here —
         // flushT is already animating, so one would just chase a per-frame target and stall.
         anchors.topMargin: bar.topGap * (1 - bar.flushT)
-        anchors.horizontalCenter: parent.horizontalCenter
+        // centered on a WHOLE pixel. horizontalCenter put x on fractions while the width
+        // springs, and the layered fill (a texture, sampled unsmoothed) snapped a pixel
+        // sideways each time x crossed a half: the island shimmied left and right as it
+        // settled. The width stays fractional; only the right edge's anti-aliasing moves.
+        x: Math.round((parent.width - width) / 2)
 
-        // Game Mode: ALWAYS a full-width bar (osd/notif show centred inside it; morph
-        // panels float below via morphHost, neither one resizes the bar horizontally).
-        width: bar.barForm ? (modelData?.width ?? bar.expandedW)
-             : bar.morphWanted ? bar.morphW
+        // liveW is what the spring drives; what is RENDERED is it rounded to an EVEN
+        // integer, so the island's x is a whole pixel, its center exact, and the spring's
+        // last sub-pixel ringing lands as settled instead of shimmying the edges by a
+        // pixel either way
+        readonly property real targetW: bar.morphWanted ? bar.morphW
              : (bar.notifWanted || bar.osdWanted) ? transientHost.contentW
              : bar.expanded ? bar.expandedW : bar.collapsedW
-        // Game Mode height: ALWAYS gameBarH, the bar never grows. A tall transient (a
-        // notification) overflows DOWNWARD as a rounded-bottom projection (transientHost)
-        // instead of stretching the whole bar. Normal mode: the island sizes to content.
-        height: bar.barForm ? bar.gameBarH
-              : bar.morphWanted ? morphHost.contentHeight
+        property real liveW: targetW
+        // within 2px of the target the spring's last ring is only ever a late 2px tick
+        // after the eye has seen the island settle; render the target itself from there
+        width: Math.abs(liveW - targetW) < 2 ? 2 * Math.round(targetW / 2) : 2 * Math.round(liveW / 2)
+        // the island sizes to content
+        readonly property real targetH: bar.morphWanted ? morphHost.contentHeight
               : (bar.notifWanted || bar.osdWanted) ? transientHost.contentH
               : bar.expanded ? bar.expandedH : bar.collapsedH
+        property real liveH: targetH
+        // The spring closes a little past the target and comes back, and how far past
+        // grows with how far it had to travel. From most panels that is a few pixels and
+        // reads as a soft landing. From the control center, the tallest thing the island
+        // becomes, it was twice that: the bottom edge came up to within 2px of the time
+        // before it let go. So the part of a close that goes PAST the target is scaled
+        // down for a long trip, to what a trip of `underRef` gives. Nothing else changes:
+        // shorter trips, and the way down to the target, are the spring as it is.
+        readonly property real underRef: 300
+        property real underK: 1
+        onTargetHChanged: { const trip = height - targetH; underK = trip > underRef ? underRef / trip : 1; }
+        height: liveH >= targetH ? liveH : targetH - (targetH - liveH) * underK
         // Corner radius, DERIVED from the live (already-animated) height instead of stepped on
         // state. Stepping it snapped the corners to the collapsed radius the INSTANT you hovered
         // off (or closed a panel) while the island was still at full height, so they flashed
@@ -300,13 +477,12 @@ PanelWindow {
         // Now everything from ~62px up is exactly rIslandOpen, and the only surfaces below it
         // are ones physically too short to fit that corner (height/2 caps them).
         readonly property real radSat: 2 * Theme.rIslandOpen
-        readonly property real rad: bar.barForm ? 0
-              : Math.min(width / 2, height / 2,
+        readonly property real rad: Math.min(width / 2, height / 2,
                     Theme.rIsland + (Theme.rIslandOpen - Theme.rIsland)
                       * Math.max(0, Math.min(1, (height - bar.collapsedH)
                                                 / Math.max(1, radSat - bar.collapsedH))))
 
-        Behavior on width  { enabled: bar.morphAnim; NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } }
+        Behavior on liveW  { NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } }
         // Width and height animate on the SAME always-on Behavior so a morph is uniform (both
         // axes together, never one then the other). The island height is the ONE spring for
         // content changes too: content resizes instantly, contentHeight steps, this springs
@@ -314,21 +490,23 @@ PanelWindow {
         // The one exception: while a list inside the control center folds on ITS spring
         // (`controlCenter.folding`) this stands aside and tracks the content frame by frame,
         // so that fold is still the only spring and the island moves in lockstep with it.
-        Behavior on height { enabled: bar.morphAnim && !controlCenter.folding; NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } }
+        Behavior on liveH { enabled: !controlCenter.folding; NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } }
+
+        visible: !bar.lockCovered
 
         // drop-in entrance
         opacity: 0
         transform: Translate { id: dropT; y: -22 }
-        Component.onCompleted: dropAnim.start()
+        Component.onCompleted: { dropAnim.start(); LockState.setRest(bar.modelData?.name ?? "", bar.lockRest); }
         ParallelAnimation {
             id: dropAnim
             NumberAnimation { target: notch; property: "opacity"; from: 0; to: 1; duration: Theme.dur(Theme.dEnter); easing.type: Easing.OutCubic }
             NumberAnimation { target: dropT; property: "y"; from: -22; to: 0; duration: Theme.dur(Theme.dEnter); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier }
         }
 
-        // THE fill — one shape for every form. Island (rounded top + gap above), notch
-        // (flush, square-ish top flaring out at the corners), and the game bar all come out
-        // of the same outline, interpolated by bar.notchT / bar.barT. There's no second
+        // THE fill — one shape for every form. Island (rounded top + gap above) and notch
+        // (flush, square-ish top flaring out at the corners) both come out of the same
+        // outline, interpolated by bar.notchT. There's no second
         // surface to swap to, so switching modes can't pop: the corners un-round, the flares
         // grow, and the top margin closes on one clock.
         //
@@ -337,10 +515,10 @@ PanelWindow {
         // floating island, which needs its gap back.
         Shape {
             id: notchFill
-            readonly property real over: 4 * bar.notchT
+            readonly property real over: 4 * bar.notchK
             anchors.top: parent.top
             anchors.topMargin: -over
-            anchors.horizontalCenter: parent.horizontalCenter
+            x: Math.round((parent.width - width) / 2)    // whole pixel, as the notch (see there)
             width: notch.width + 2 * bar.notchFlareEff
             height: notch.height + over
             antialiasing: true
@@ -359,7 +537,7 @@ PanelWindow {
                 // hairline on the floating island only: flush against the screen edge it'd
                 // read as a 1px strip holding the bar off the top. Fades out as it goes flush.
                 strokeColor: Theme.hairline
-                strokeWidth: (1 - bar.flushT)
+                strokeWidth: (1 - bar.notchK)
                 PathSvg {
                     path: bar.notchPath(notch.width, notch.height + notchFill.over,
                                         bar.notchTopR, bar.notchBR, bar.notchFlareEff)
@@ -374,7 +552,7 @@ PanelWindow {
         MouseArea {
             id: pinArea
             anchors.fill: parent
-            enabled: !bar.morphWanted && !bar.notifWanted && !bar.osdWanted && !bar.barForm
+            enabled: !bar.morphWanted && !bar.notifWanted && !bar.osdWanted
             onClicked: bar.pinned = !bar.pinned
         }
 
@@ -385,7 +563,7 @@ PanelWindow {
             // extra breathing room inside the EXPANDED island (7px on every side, on top of
             // the base s3 side inset). Animates via `pad` so the content eases inward as the
             // island opens instead of the margins jumping.
-            property real pad: (bar.expanded && !bar.barForm) ? Config.islandPadding : 0
+            property real pad: bar.expanded ? Config.islandPadding : 0
             Behavior on pad { NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } }
             anchors.leftMargin: Theme.s3 + pad
             anchors.rightMargin: Theme.s3 + pad
@@ -397,316 +575,21 @@ PanelWindow {
             // it showed under the pill for a few frames of every collapse
             clip: true
             // hidden when an OSD/notification takes the bar, or when a panel morphs the
-            // island in place (normal mode). In Game Mode the panels float BELOW, so the
-            // bar cluster STAYS visible behind them.
-            readonly property bool yielded: bar.osdWanted || bar.notifWanted || (bar.morphWanted && !bar.barForm)
+            // island in place
+            readonly property bool yielded: bar.osdWanted || bar.notifWanted || bar.morphWanted
             opacity: yielded ? 0 : 1
             enabled: !yielded
             Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier } }
 
-            // game-bar spacers: fill ONLY in bar form, centring the media|clock|cc cluster
-            Item { Layout.fillWidth: bar.barForm }
-
-            // LEFT COLUMN (expanded island only): the workspace capsules
-            Item {
-                id: wsZone
-                readonly property bool act: bar.expanded && !bar.barForm && bar.showWs
-                property real zw: act ? bar.sideW + Theme.s4 : 0
-                Behavior on zw { NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } }
-                Layout.preferredWidth: Math.max(0, zw)
-                Layout.fillHeight: true
-                clip: true
-                opacity: act ? 1 : 0
-                Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier } }
-                // the focused app over the pill's capsules a size up, centred as a group
-                Column {
-                    id: wsCol
-                    anchors.left: parent.left
-                    anchors.leftMargin: bar.wsBigPad
-                    anchors.verticalCenter: parent.verticalCenter
-                    spacing: 10
-                    IslandApp {
-                        present: wsZone.act
-                        maxW: bar.sideW - bar.wsBigPad
-                    }
-                    // room for the capsules' open home; the capsules are `ws` in the clock item
-                    Item { id: wsSlot; width: ws.openW; height: ws.openCapH }
-                }
-            }
-
-            // LEFT: media (game bar only)
-            Item {
-                id: leftZone
-                // GAME BAR: the island's tall card (60px art + four stacked lines) is way taller
-                // than gameBarH, so it used to overflow — art clipped top and bottom, transport
-                // cut off below the edge entirely. In bar form the art shrinks to fit the bar and
-                // the transport moves INLINE beside the text instead of under it, so the whole
-                // thing is one short row.
-                readonly property real artSize: bar.barForm
-                    ? Math.max(16, Math.min(Config.mediaArtSize, bar.gameBarH - Theme.s2 * 2))
-                    : Config.mediaArtSize
-                // wide enough for the art + gap + the song-name column (settings-controlled),
-                // plus the inline transport in bar form. Slack so text never touches the edge.
-                // GAME BAR ONLY now: the expanded island carries no player and this zone
-                // stays shut there.
-                property real zw: bar.barForm ? (artSize + Theme.s3 + Config.mediaTitleWidth + Theme.s3) : 0
-                // clamped: the spring UNDERSHOOTS past 0 on the way closed (that's the bounce,
-                // by design), and a negative preferredWidth makes the layout hand the leftover
-                // out differently for a few frames — which used to shove the clock sideways.
-                Layout.preferredWidth: Math.max(0, zw)
-                Layout.fillHeight: true
-                clip: true
-                opacity: bar.barForm ? 1 : 0
-                Behavior on zw { NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } }
-                Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier } }
-
-                // one transport button: a plain tinted glyph, no background chrome. Dims when
-                // the action isn't available; tints to accent on hover.
-                component MediaBtn: Item {
-                    id: mb
-                    property string glyph
-                    property bool can: true
-                    property int gsize: 18
-                    signal act()
-                    implicitWidth: 20; implicitHeight: 24
-                    Icon {
-                        anchors.centerIn: parent
-                        name: mb.glyph
-                        size: mb.gsize
-                        color: !mb.can ? Theme.inkFaint : mbMa.containsMouse ? Theme.accent : Theme.inkPrimary
-                    }
-                    MouseArea {
-                        id: mbMa
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        enabled: mb.can
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: mb.act()
-                    }
-                }
-
-                // prev / play-pause / next. One definition, placed two ways: stacked under the
-                // text in the island, inline beside it in the game bar (which has no vertical room).
-                component TransportRow: Row {
-                    spacing: Theme.s3
-                    MediaBtn {
-                        glyph: "prev"
-                        can: Media.player?.canGoPrevious ?? false
-                        onAct: Media.player?.previous()
-                    }
-                    MediaBtn {
-                        glyph: bar.playing ? "pause" : "play"
-                        gsize: 22
-                        can: Media.player?.canTogglePlaying ?? (Media.hasPlayer)
-                        onAct: Media.player?.togglePlaying()
-                    }
-                    MediaBtn {
-                        glyph: "next"
-                        can: Media.player?.canGoNext ?? false
-                        onAct: Media.player?.next()
-                    }
-                }
-
-                RowLayout {
-                    id: mediaRow
-                    anchors.left: parent.left
-                    anchors.verticalCenter: parent.verticalCenter
-                    // Width is pinned to the zone, NOT left implicit. Implicitly sized, the row
-                    // grew to the song title's natural (unelided) width and overflowed leftZone,
-                    // which clipped it mid-word — that's why the "…" never appeared. Bounded here,
-                    // the text column can only ever get the room that's actually on screen.
-                    width: leftZone.width
-                    spacing: Theme.s3
-                    transform: Translate { id: mediaT; y: 0 }
-
-                    // album art: big rounded square (matches the inspo media card), masked
-                    // and crossfaded on track change
-                    Item {
-                        Layout.alignment: Qt.AlignVCenter
-                        Layout.preferredWidth: leftZone.artSize   // RowLayout sizes off Layout.*/implicit, not width
-                        Layout.preferredHeight: leftZone.artSize
-                        implicitWidth: leftZone.artSize; implicitHeight: leftZone.artSize
-
-                        Rectangle {
-                            id: artPlaceholder
-                            anchors.fill: parent
-                            radius: Math.min(Theme.rMd, leftZone.artSize * 0.28)   // match artMask
-                            color: Theme.surfaceOverlay
-                            opacity: artImg.ready ? 0 : 1     // crossfades with the art on change
-                            Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier } }
-                            Icon {
-                                anchors.centerIn: parent
-                                name: "music"
-                                color: Theme.accent
-                            }
-                        }
-                        Image {
-                            id: artImg
-                            readonly property bool ready: status === Image.Ready && source.toString() !== ""
-                            anchors.fill: parent
-                            source: Media.player?.trackArtUrl ?? ""
-                            fillMode: Image.PreserveAspectCrop
-                            asynchronous: true
-                            cache: true
-                            visible: false
-                            layer.enabled: true      // art masking, not a shadow — always on
-                        }
-                        Rectangle {
-                            id: artMask
-                            anchors.fill: parent
-                            // proportional, so the shrunken game-bar art stays a rounded SQUARE
-                            // instead of collapsing into a circle at ~34px
-                            radius: Math.min(Theme.rMd, leftZone.artSize * 0.28)
-                            visible: false
-                            layer.enabled: true      // art masking, not a shadow — always on
-                        }
-                        MultiEffect {
-                            anchors.fill: parent
-                            source: artImg
-                            maskEnabled: true
-                            maskSource: artMask
-                            maskThresholdMin: 0.5
-                            maskSpreadAtMin: 1.0
-                            opacity: artImg.ready ? 1 : 0     // fade the new art in (was an abrupt pop)
-                            visible: opacity > 0
-                            Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier } }
-                        }
-                    }
-
-                    // title / album / artist / transport, stacked (matches the inspo card). Plain
-                    // Column with an EXPLICIT width on every line (not a ColumnLayout + fillWidth):
-                    // a Text only elides once its width is really set, and the layout-driven width
-                    // was leaving them at natural size, so long names just got clipped by the zone
-                    // mask. Single line each, NO wrapping — too long simply elides with a "…".
-                    Column {
-                        id: metaCol
-                        Layout.alignment: Qt.AlignVCenter
-                        // Line width = the configured song-name width, but NEVER wider than the
-                        // room the zone actually has. Set mediaTitleWidth too high and the row no
-                        // longer fits the island, so the layout squeezes leftZone below its
-                        // preferred width — the texts still believed they were the full configured
-                        // width, so elide never triggered and leftZone's clip just chopped them
-                        // mid-word with no "…". Clamping to the real width makes elide fire at any
-                        // setting; the config now reads as a maximum.
-                        readonly property real lineW: width
-                        Layout.fillWidth: true
-                        Layout.maximumWidth: Config.mediaTitleWidth
-                        spacing: 1
-
-                        // title
-                        StyledText {
-                            id: titleText
-                            width: metaCol.lineW
-                            text: Media.player?.trackTitle ?? "Nothing playing"
-                            font.weight: Theme.wSemiBold
-                            font.pixelSize: Theme.fsBody
-                            color: Theme.inkPrimary
-                            elide: Text.ElideRight
-                        }
-                        // album
-                        StyledText {
-                            width: metaCol.lineW
-                            visible: Config.mediaShowAlbum && text !== "" && !bar.barForm
-                            text: Media.player?.trackAlbum ?? ""
-                            font.pixelSize: Theme.fsCaption
-                            color: Theme.inkDim
-                            elide: Text.ElideRight
-                        }
-                        // artist
-                        StyledText {
-                            width: metaCol.lineW
-                            visible: Config.mediaShowArtist && text !== ""
-                            text: Media.player?.trackArtist ?? ""
-                            font.pixelSize: Theme.fsCaption
-                            color: Theme.inkFaint
-                            elide: Text.ElideRight
-                        }
-                        // transport, stacked under the text. ISLAND ONLY: the game bar has no
-                        // vertical room for it and shows just art + title/artist.
-                        Item {
-                            visible: Config.mediaShowTransport && !bar.barForm
-                            width: metaCol.lineW
-                            height: visible ? stackedTransport.height + 4 : 0   // the 4 is the gap above the row
-                            TransportRow { id: stackedTransport; anchors.bottom: parent.bottom }
-                        }
-                    }
-
-                }
-
-                // Scroll over the MEDIA (left side only) to switch tracks: down → next,
-                // up → prev (switches songs, doesn't seek). Scoped to leftZone so scrolling
-                // the clock does nothing. MouseArea.onWheel, 'cause WheelHandler doesn't get
-                // wheel on this layer surface; NoButton so it never eats clicks.
-                MouseArea {
-                    anchors.fill: parent
-                    acceptedButtons: Qt.NoButton
-                    onWheel: (wheel) => {
-                        const dy = wheel.angleDelta.y !== 0 ? wheel.angleDelta.y : wheel.pixelDelta.y;
-                        if (Config.mediaScrollSwitch && bar.expanded && dy !== 0) leftZone.switchTrack(dy < 0 ? -1 : 1);
-                    }
-                }
-
-                property int slideDir: -1   // -1 = next (media enters from below), +1 = prev (from above)
-                property bool scrollSwitch: false   // a scroll knows the direction; app-initiated changes don't
-                function switchTrack(dir) {
-                    const p = Media.player;
-                    if (!p || mediaCooldown.running) return;
-                    if (dir < 0 ? !p.canGoNext : !p.canGoPrevious) return;
-                    leftZone.slideDir = dir;
-                    leftZone.scrollSwitch = true;
-                    if (dir < 0) p.next(); else p.previous();
-                    mediaCooldown.restart();
-                }
-                Timer { id: mediaCooldown; interval: 300 }
-
-                // Animate EVERY track change (scroll OR app-initiated): the whole media row
-                // (art + title/artist) slides in from slideDir. NEXT enters from below (moves
-                // up), PREV enters from above (moves down), opposite so they read distinctly.
-                property string curTitle: Media.player?.trackTitle ?? ""
-                onCurTitleChanged: {
-                    // scroll → directional slide (we know next vs prev); app-initiated change
-                    // → neutral crossfade, 'cause MPRIS can't report direction so don't fake one.
-                    if (leftZone.scrollSwitch) mediaSlideIn.restart();
-                    else mediaCrossfade.restart();
-                    leftZone.scrollSwitch = false;
-                }
-                // SCROLL switch: directional slide. NEXT enters from below (moves up), PREV
-                // from above (moves down). Starts partly visible so the direction reads.
-                SequentialAnimation {
-                    id: mediaSlideIn
-                    readonly property int dist: 20
-                    PropertyAction { target: mediaT; property: "y"; value: -leftZone.slideDir * mediaSlideIn.dist }
-                    PropertyAction { target: mediaRow; property: "opacity"; value: 0.4 }
-                    ParallelAnimation {
-                        NumberAnimation { target: mediaT; property: "y"; to: 0; duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier }
-                        NumberAnimation { target: mediaRow; property: "opacity"; to: 1; duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier }
-                    }
-                }
-                // APP-initiated change: a plain crossfade, no slide so no direction's implied.
-                SequentialAnimation {
-                    id: mediaCrossfade
-                    PropertyAction { target: mediaT; property: "y"; value: 0 }
-                    PropertyAction { target: mediaRow; property: "opacity"; value: 0 }
-                    NumberAnimation { target: mediaRow; property: "opacity"; to: 1; duration: Theme.dur(Theme.dBase); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier }
-                }
-            }
-
-            // inner gap (bar form only): separates media from the clock so the cards sit
-            // further out while the cluster stays centred (paired with the right one below).
-            Item { Layout.preferredWidth: bar.barForm ? bar.gameClusterGap : 0 }
-
-            // CENTER: clock. Fills the middle (island); in bar form it's natural-width so
-            // the outer fill-spacers centre the cluster and the inner gaps spread it out.
+            // CENTER: clock. Fills the middle.
             Item {
                 id: clock
-                // the date beside the time in the open island: 0 = time alone, centred;
-                // 1 = time slid left, date in on its right
-                property real dateT: (bar.expanded && !bar.barForm) ? 1 : 0
-                Behavior on dateT { NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } }
-                readonly property real dateGap: 10
-                readonly property real dateRoom: (bar.expanded && !bar.barForm) ? dateGap + dateText.implicitWidth : 0   // the settled target, for the box
-                Layout.fillWidth: !bar.barForm
-                Layout.preferredWidth: bar.barForm ? timeRow.width : 0
+                // the media block's room to the left of the clock: 0 = none (pill, or the
+                // card switched off), 1 = the clock has moved right by half the block so
+                // the two sit centered as one group
+                property real mediaT: bar.expanded ? 1 : 0
+                Behavior on mediaT { NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } }
+                Layout.fillWidth: true
                 Layout.fillHeight: true
 
                 // subtle "button" affordance behind the time/date: a faint fill shows on
@@ -715,9 +598,9 @@ PanelWindow {
                 // bar); collapsed, clicks fall through to the pin toggle.
                 Rectangle {
                     id: clockBtn
-                    readonly property real sf: (bar.expanded && !bar.barForm) ? (Theme.fsClockBig / Theme.fsClock) : 1
+                    readonly property real sf: bar.expanded ? (bar.heroPx / Theme.fsClock) : 1
                     // The clock sits in the MIDDLE of what the side columns leave, which is the
-                    // island's centre when both are on. Pure binding, NO Behavior on x: the
+                    // island's center when both are on. Pure binding, NO Behavior on x: the
                     // zones' widths already animate, so the slide is smooth, and a Behavior
                     // would chase a target that moves every frame and visibly stall.
                     //
@@ -726,21 +609,26 @@ PanelWindow {
                     // steps — that was the clock snapping sideways at the end of a collapse. The
                     // middle of the free span is (barRow.width + left - right) / 2 in barRow
                     // coordinates, all continuous values, and clock.x only converts it back.
-                    x: bar.barForm ? (clock.width - width) / 2
-                                   : (barRow.width + Math.max(0, wsZone.zw) - Math.max(0, ledgerZone.zw)) / 2
-                                     - clock.x - width / 2
+                    // mediaT 0: centered. mediaT 1: against the right edge, the ink at
+                    // the media block's inset.
+                    x: (barRow.width - width) / 2 * (1 - clock.mediaT)
+                       - clock.mediaT * (Theme.s4 - bar.wsBigPad) - clock.x
                     anchors.verticalCenter: parent.verticalCenter
-                    anchors.verticalCenterOffset: (bar.expanded && !bar.barForm) ? bar.timeLift : 0
+                    // open: the box around the time (NOT the dots: the press area fills
+                    // this box and would take their clicks)
+                    readonly property real topY: bar.timeLift - bar.heroCap / 2 - Theme.s2 - 2
+                    readonly property real botY: bar.dateY + bar.dateCap / 2 + Theme.s2 + 2
+                    anchors.verticalCenterOffset: bar.expanded ? (topY + botY) / 2 : 0
                     // sized from the TIME alone, never from timeRow.width: on an expand the
                     // capsule and glyph wrappers are still folding away inside that row for
                     // the length of the spring, and a width that followed it retargeted every
                     // frame, so the hover box sat wide for a beat and shrank late (the stall
                     // in patterns.md #64). One target: the big time plus a rectangle's worth
                     // of padding, more at the sides than above and below.
-                    width: timeText.width * sf + clock.dateRoom + 2 * Theme.s4
-                    height: Math.round(clockFm.height * sf) + 2 * Theme.s2
+                    width: (bar.expanded ? Math.max(bar.heroW, heroDate.implicitWidth) : timeText.width) + 2 * Theme.s4
+                    height: bar.expanded ? Math.round(botY - topY) : Math.round(clockFm.height) + 2 * Theme.s2
                     radius: Theme.rMd
-                    visible: bar.expanded || bar.barForm
+                    visible: bar.expanded
                     color: clockMa.containsMouse ? Theme.fillLow : "transparent"
                     Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
                     Behavior on width { NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } }
@@ -748,23 +636,48 @@ PanelWindow {
 
                 Row {
                     id: timeRow
-                    // centred on the clock button; lifted to the top while the media card sits
-                    // under it, on the island's centre line otherwise. The lift animates as a
+                    // centered on the clock button; lifted to the top while the media card sits
+                    // under it, on the island's center line otherwise. The lift animates as a
                     // number (not the font) so it stays smooth.
-                    property real shift: (bar.expanded && !bar.barForm) ? bar.timeLift : 0
+                    property real shift: bar.expanded ? bar.timeLift : 0
                     Behavior on shift { NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } }
                     // the capsule wrapper's left glow margin is dead space; pull the row back
-                    // by exactly half of it so the content BOX sits centred (measured 25.6 /
+                    // by exactly half of it so the content BOX sits centered (measured 25.6 /
                     // 21.6 before). What remains is glyph side-bearing: the time's last digit
                     // changes every minute (a 0 reaches further right than a 1), so the ink
-                    // margin wobbles by up to a pixel on its own. Centring on the box keeps the
-                    // pill still; centring on the ink would nudge it every minute.
-                    x: clockBtn.x + (clockBtn.width - width) / 2 - (wsWrap.act ? wsWrap.pad / 2 : 0)
-                       - clock.dateT * (clock.dateGap + dateText.implicitWidth) / 2   // slides left to make room for the date
+                    // margin wobbles by up to a pixel on its own. Centering on the box keeps the
+                    // pill still; centering on the ink would nudge it every minute.
+                    // (open: the time's left ink on the box's inset, not centered in it,
+                    // so it lines up with the date under it)
+                    readonly property real raw: clockBtn.x + (clockBtn.width - width) / 2
+                       - clock.mediaT * (clockBtn.width - 2 * Theme.s4 - bar.heroW) / 2
+                    // snapped to a whole pixel of the SCREEN, not of the row. While the island
+                    // resizes its left edge passes through fractions and the layout's integer
+                    // x steps under it, so the time, placed by fractions of both, re-snapped a
+                    // pixel sideways from frame to frame; rounding its screen position holds
+                    // it still while the edges move
+                    readonly property real screenL: notch.x + barRow.anchors.leftMargin + clock.x
+                    // ... and off the SCREEN'S center, which never moves, not off notch.x:
+                    // the island is always centered, and its x is rounded to the pixel, so
+                    // placing the time from its left edge would let that rounding flip the
+                    // time's own snap while the width passes through fractions. From the
+                    // center the width cancels and the time's pixel is a constant.
+                    readonly property real screenC: notch.parent.width / 2 - notch.width / 2 + barRow.anchors.leftMargin + clock.x
+                    // and it is the TIME that lands on the pixel, not the row: the time sits
+                    // at the row's left plus the capsule wrapper's width, which is mid-spring
+                    // while the companions arrive, so snapping the row left the digits
+                    // drifting through fractions and re-snapping a pixel either way. (The
+                    // 0.001 keeps a value that happens to sit on a half from flipping on
+                    // float noise.)
+                    x: Math.round(screenC + raw + timeText.x + 0.001) - timeText.x - screenL
                     anchors.verticalCenter: parent.verticalCenter
                     anchors.verticalCenterOffset: shift
-                    spacing: (wsWrap.act || stWrap.act) ? Theme.s5 - (wsWrap.act ? wsWrap.pad : 0) : 0
-                    Behavior on spacing { NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } }
+                    // NO row spacing: the gap from the time to each companion lives inside
+                    // that companion's wrapper, so it folds away with the room on the same
+                    // spring. A Row drops a spacing the instant an item's width reaches 0
+                    // (and the spring crosses 0 more than once), which snapped the time by a
+                    // whole gap at the end of every collapse, after it had already settled.
+                    spacing: 0
 
                     // workspace dots, left of everything, collapsed only (the dial takes the
                     // expanded island). Reveal: width to 0 on the spring,
@@ -774,10 +687,10 @@ PanelWindow {
                     // place in the row and gives it back on the spring as the island opens.
                     Item {
                         id: wsWrap
-                        readonly property bool act: Config.clockDots && !bar.expanded && !bar.barForm && ws.count > 0
-                        // a margin each side for the active capsule's scale and glow
+                        readonly property bool act: bar.dotsOn && !bar.expanded
+                        // an outer margin for the active capsule's scale and glow
                         readonly property int pad: 6
-                        width: act ? ws.restW + pad * 2 : 0
+                        width: act ? bar.restRoomL + Theme.s5 : 0    // the gap to the time rides inside
                         height: 1
                         Behavior on width { NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } }
                     }
@@ -802,14 +715,18 @@ PanelWindow {
                     // roll itself nothing resizes, so there's still no per-frame churn.
                     Row {
                         id: timeText
+                        // hidden the moment its flying copy takes off for the control center
+                        opacity: bar.clockFlying ? 0 : 1
                         anchors.verticalCenter: parent.verticalCenter
                         spacing: 0
                         transformOrigin: Item.Center
-                        scale: (bar.expanded && !bar.barForm) ? (Theme.fsClockBig / Theme.fsClock) : 1.0
-                        // optical centre: the digits' cap height sits below the text box's
-                        // middle (measured 1.6px low against the notch's centre line, which
-                        // the flat top edge makes easy to see), so the glyphs ride up a touch
-                        transform: Translate { y: -1.5 }
+                        scale: bar.expanded ? (bar.heroPx / Theme.fsClock) : 1.0
+                        // optical center: the digits' cap height sits below the text box's
+                        // middle (measured 1.6px low against the notch's center line, which
+                        // the flat top edge makes easy to see), so the glyphs ride up a touch.
+                        // NOTCH ONLY: in the floating island the same lift measured 1.6px HIGH
+                        // (every element, uniformly), so it fades out with notchT
+                        transform: Translate { y: -1.5 * bar.notchT }
                         Behavior on scale { NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } }
 
                         readonly property string timeStr: Qt.formatDateTime(sysclock.date, (Config.clock24h ? "HH:mm" : "h:mm") + (Config.clockSeconds ? ":ss" : "") + (Config.clock24h ? "" : " AP"))
@@ -869,7 +786,7 @@ PanelWindow {
                                     // incoming: rises from below into place
                                     NumberAnimation { target: curT; property: "y"; from: cell.height * 0.6; to: 0; duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier }
                                     NumberAnimation { target: curT; property: "opacity"; from: 0; to: 1; duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier }
-                                    // outgoing: keeps travelling up and out
+                                    // outgoing: keeps traveling up and out
                                     NumberAnimation { target: outT; property: "y"; from: 0; to: -cell.height * 0.6; duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier }
                                     NumberAnimation { target: outT; property: "opacity"; from: 1; to: 0; duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier }
                                 }
@@ -882,102 +799,105 @@ PanelWindow {
                     // one set with two homes.
                     Item {
                         id: stWrap
-                        readonly property bool act: Config.clockStatus && !bar.expanded && !bar.barForm
-                        // the same dead margin the workspace wrapper carries on its clock side,
-                        // so the gap from the time to each side's ink is identical
-                        readonly property int pad: wsWrap.pad
-                        width: act ? st.restW + pad : 0
+                        readonly property bool act: bar.statusOn && !bar.expanded
+                        width: act ? bar.restRoomR + Theme.s5 : 0    // the gap to the time rides inside
                         height: 1
                         Behavior on width { NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } }
                     }
                 }
 
-                // The date, right of the time, open island only: "Tue, Sep 21" in a quiet gray.
-                // It slides in from where the time's centre was and fades up while the time
-                // slides left; both ride dateT, so they are one motion.
-                StyledText {
-                    id: dateText
-                    // from the TIME's own right edge (it scales about its centre), not the
-                    // row's: while the capsule and glyph room re-grows on a close the time is
-                    // no longer the row's centre, and the date rode into it
-                    // and from the time's LIVE scale (timeText.scale animates on the spring)
-                    // rather than clockBtn.sf, which steps the moment the state flips and
-                    // put the slot 9px into the digits for the first frames of a close
-                    readonly property real slot: timeRow.x + timeText.x + timeText.width / 2 + timeText.width * timeText.scale / 2 + clock.dateGap
-                    x: slot - (1 - clock.dateT) * 20
-                    anchors.verticalCenter: parent.verticalCenter
-                    // centred on the digits' ink, not their baseline (measured against the
-                    // time's ink centre: +3 sat 5px low, 0 1px low, -2 1px high)
-                    anchors.verticalCenterOffset: timeRow.shift - 1
-                    text: Qt.formatDateTime(sysclock.date, "ddd, MMM d")
-                    font.pixelSize: Theme.fsBody
-                    font.weight: Theme.wMedium
-                    color: Theme.inkDim
-                    // gone by a third of the way: it slides back under the time on a close,
-                    // and fading on the same clock as the slide left it legible over the digits
-                    opacity: Math.max(0, Math.min(1, (clock.dateT - 0.35) / 0.65))
-                    visible: opacity > 0.01
-                }
-
-                // The media card, under the time, centred in what the island has below it.
-                // Expanded only; the game bar keeps its inline card on the left.
+                // The media block, against the island's left edge, on its center line.
                 IslandMedia {
                     id: mediaCard
-                    x: clockBtn.x + (clockBtn.width - width) / 2
+                    x: clock.width - bar.wsBigPad - width      // the right column's top row
                     anchors.verticalCenter: parent.verticalCenter
-                    anchors.verticalCenterOffset: bar.timeBottom + bar.cardGap + bar.cardH / 2 - bar.expandedH / 2
+                    anchors.verticalCenterOffset: -bar.rowOff + bar.colDrop
+                    mirrored: true
                     cardW: bar.cardW
                     cardH: bar.cardH
-                    live: bar.expanded && !bar.barForm && bar.showNow
-                    opacity: live ? 1 : 0
+                    live: bar.expanded && bar.showNow
+                    opacity: bar.showNow ? bar.openFade : 0
                     visible: Config.islandMedia && opacity > 0.01
-                    Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier } }
                 }
 
                 // THE workspace capsules, one set with two homes (IslandDots): at rest in
-                // the pill's row, where the wsWrap spacer holds their room, open in the left
-                // column, where the wsSlot holds it. Both homes are handed over in THIS
-                // item's coordinates from the spacers' live positions, so each capsule glides
-                // from the centre to the left and back as the island morphs, one after
-                // another, instead of one set vanishing and another appearing.
+                // the pill's row, where the wsWrap spacer holds their room, open in a row
+                // under the time and date, centered on the clock button. Both homes are
+                // handed over in THIS item's coordinates. With the pill's capsules on they
+                // glide from beside the time to under it and back; with them off (no rest
+                // home to come from) they pop in from just below their place, one after
+                // another.
                 IslandDots {
                     id: ws
                     screen: bar.modelData
                     anchors.fill: parent
-                    open: bar.expanded && !bar.barForm
-                    restOn: Config.clockDots && !bar.barForm
+                    // With no dots in the pill there is nowhere for them to travel from, and
+                    // their own entrance (each one popping up in turn, on its own spring)
+                    // ran on a different clock from the rest of the open island: on a close
+                    // they were still plainly there when the song and the date had gone.
+                    // So in that case they simply live at their open place and fade with
+                    // the island's contents (bar.openFade), exactly as the song does. With
+                    // dots in the pill they still glide between the two homes.
+                    open: bar.expanded || !bar.dotsOn
+                    opacity: bar.dotsOn ? 1 : bar.openFade
+                    visible: opacity > 0.01
+                    restOn: bar.dotsOn
                     openOn: bar.showWs
                     // the rest row ends one row-gap left of the TIME's visible left edge (its
                     // live scale included), not at the wsWrap spacer: the spacer folds to 0
-                    // as the island opens and the row recentres, which slid the capsules
+                    // as the island opens and the row recenters, which slid the capsules
                     // still waiting their turn under the growing digits. With the pill at
                     // rest this is exactly wsWrap.x + pad.
                     restX: timeRow.x + timeText.x + timeText.width / 2 - timeText.width * timeText.scale / 2 - Theme.s5 - ws.restW
-                    restY: timeRow.y + timeRow.height / 2
-                    openX: wsZone.x - clock.x + wsCol.x + wsSlot.x
-                    openY: wsZone.y - clock.y + wsCol.y + wsSlot.y + wsSlot.height / 2
-                    openCapW: 9; openCapH: 17; openGap: 7
+                    restY: timeRow.y + timeRow.height / 2 - 1.5 * bar.notchT   // the digits' optical lift, shared
+                    // the right column's bottom row: the dots, then the status glyphs
+                    openX: clock.width - bar.wsBigPad - ws.openW
+                    openY: clock.height / 2 + bar.rowOff + bar.colDrop
+                    restCapW: 7; restCapH: 7; restGap: 5
+                    openCapW: 9; openCapH: 9; openGap: 7
                 }
 
-                // THE status glyphs, the same arrangement mirrored: one set with two homes,
-                // at rest right of the time where the stWrap spacer holds their room, open
-                // in the right column where stSlot holds it. Battery first on the way out,
-                // the bars behind it tallest first, retracting from the far end on the way
-                // home.
+                // THE status glyphs: the pill's companions right of the time, where the
+                // stWrap spacer holds their room. They have no home in the open island any
+                // more (the right column is gone): they fade out in place as it opens.
                 IslandStatus {
                     id: st
                     anchors.fill: parent
-                    open: bar.expanded && !bar.barForm
-                    restOn: Config.clockStatus && !bar.barForm
-                    openOn: bar.showLedger
+                    open: bar.expanded
+                    restOn: bar.statusOn
+                    openOn: false      // no battery or signal in the open island
                     // the rest row starts one row-gap right of the TIME's visible right edge
                     // (its live scale included), the capsules' rule mirrored; with the pill
                     // at rest this is exactly stWrap.x + pad
-                    restX: timeRow.x + timeText.x + timeText.width / 2 + timeText.width * timeText.scale / 2 + Theme.s5 + (bar.dotsOn ? 0 : wsWrap.pad)
-                    restY: timeRow.y + timeRow.height / 2
-                    openX: ledgerZone.x - clock.x + ledgerCol.x + stSlot.x
-                    openY: ledgerZone.y - clock.y + ledgerCol.y + stSlot.y + stSlot.height / 2
-                    openCapH: 17; openBarW: 4; openGap: 10; openBattW: 36; openBattH: 17
+                    restX: timeRow.x + timeText.x + timeText.width / 2 + timeText.width * timeText.scale / 2 + Theme.s5
+                    restY: timeRow.y + timeRow.height / 2 - 1.5 * bar.notchT   // the digits' optical lift, shared
+                    openX: restX
+                    openY: restY
+                }
+
+                // The full date, under the hero time, its left edge on the time's. Open
+                // island only; it fades up with the island.
+                StyledText {
+                    id: heroDate
+                    x: clockBtn.x + Theme.s4 + 2
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.verticalCenterOffset: bar.dateY
+                    text: Qt.formatDateTime(sysclock.date, "dddd, MMMM d")
+                    font.pixelSize: Theme.fsBody
+                    color: Theme.inkDim
+                    opacity: bar.openFade
+                    visible: opacity > 0.01
+                }
+                // the hairline between the right column's two rows
+                Rectangle {
+                    x: clock.width - bar.wsBigPad - width
+                    anchors.verticalCenter: parent.verticalCenter
+                    // midway between the art's bottom edge and the dots' top
+                    anchors.verticalCenterOffset: bar.colDrop + (bar.cardH - ws.openCapH) / 4
+                    width: bar.colW; height: 1
+                    color: Theme.hairline
+                    opacity: bar.openFade
+                    visible: opacity > 0.01
                 }
 
                 // press target: opens the calendar. Sits on top of the text so it grabs the
@@ -985,56 +905,40 @@ PanelWindow {
                 MouseArea {
                     id: clockMa
                     anchors.fill: clockBtn
-                    enabled: bar.expanded || bar.barForm
+                    enabled: bar.expanded
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: GlobalState.toggleCalendar()
+                    // the big time opens the control center, and travels there: see flyClock
+                    onClicked: GlobalState.controlCenterOpen = true
                 }
             }
-
-            // RIGHT COLUMN (expanded island only): the status glyphs
-            Item {
-                id: ledgerZone
-                readonly property bool act: bar.expanded && !bar.barForm && bar.showLedger
-                property real zw: act ? bar.sideW + Theme.s4 : 0
-                Behavior on zw { NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } }
-                Layout.preferredWidth: Math.max(0, zw)
-                Layout.fillHeight: true
-                clip: true
-                opacity: act ? 1 : 0
-                Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier } }
-                // the inbox over the pill's glyphs a size up, right-aligned as a group: the
-                // mirror of the app over the capsules on the left
-                Column {
-                    id: ledgerCol
-                    anchors.right: parent.right
-                    anchors.rightMargin: bar.wsBigPad
-                    anchors.verticalCenter: parent.verticalCenter
-                    spacing: 10
-                    IslandInbox {
-                        present: ledgerZone.act
-                        maxW: bar.sideW - bar.wsBigPad
-                        anchors.right: parent.right
-                    }
-                    // room for the glyphs' open home; the glyphs are `st` in the clock item
-                    Item { id: stSlot; width: st.openW; height: st.openCapH; anchors.right: parent.right }
-                }
-            }
-
-            // game-bar trailing spacer (fills only in bar form): pairs with the leading
-            // one to keep the media | clock cluster centred on the full-width bar.
-            Item { Layout.fillWidth: bar.barForm }
         }
 
-        HoverHandler { id: hover; enabled: !bar.morphWanted && !bar.notifWanted && !bar.osdWanted && !bar.barForm && !bar.closeGuard }
+        // the clicked-open island stays open until it is clicked again or a click lands
+        // anywhere else (the backdrop); leaving it with the pointer does nothing. On the
+        // notch itself, an ancestor of everything inside, so the inner mouse areas keep
+        // their hover (a HoverHandler on a topmost child took the hover first and the
+        // clock's MouseArea underneath never saw its leave).
+        HoverHandler {
+            id: hover
+            // (not under the lock: the pointer may still be resting where the island is,
+            // and it would keep the island open under the lock screen)
+            enabled: !bar.morphWanted && !bar.notifWanted && !bar.osdWanted && !bar.closeGuard && !LockState.locked
+            // Hover takes the island over from the return hold, but only once the panel
+            // has finished shrinking into the open island. A control center on its way
+            // back is much taller than the island: a pointer resting below the island's
+            // place was "over the island" while the panel was still tall, which let go
+            // of the hold, and then the panel's edge shrank past it, which read as the
+            // pointer leaving. The island opened and collapsed in one go. While the
+            // panel is still coming down the hold stays; it lets go by itself after its
+            // moment (returnHoldTimer).
+            onHoveredChanged: if (hovered && bar.settledOpen) bar.returnHold = false
+        }
     }
 
-    // transient host: OSD + notification + mode indicator. NORMAL mode: coincides with
-    // the notch (rides notch.fill), so the island morphs to the content like before. GAME
-    // mode: the notch stays a gameBarH bar, so this sits centred IN it; if the content is
-    // TALLER than the bar it does NOT stretch the bar, it overflows DOWNWARD as a
-    // rounded-bottom projection (squared top so it merges into the bar, like a tab
-    // hanging off it). Single instances; the notch references these ids for normal sizing.
+    // transient host: OSD + notification + mode indicator. Coincides with the notch (rides
+    // notch.fill), so the island morphs to the content. Single instances; the notch
+    // references these ids for sizing.
     Item {
         id: transientHost
         readonly property bool shown: bar.notifWanted || bar.osdWanted
@@ -1044,50 +948,17 @@ PanelWindow {
         readonly property int contentW: bar.notifWanted ? bar.notifW
               : bar.osdWanted ? (OsdState.kind === "mode" ? (osdIsland.modeWidth + Theme.s5 * 2) : bar.osdW)
               : bar.collapsedW
-        // game mode + content taller than the bar → it projects below the bar
-        readonly property bool overflow: bar.barForm && contentH > bar.gameBarH
-
         anchors.top: parent.top
         anchors.topMargin: bar.topGap * (1 - bar.flushT)   // rides the same clock as the notch
         anchors.horizontalCenter: parent.horizontalCenter
-        // NORMAL mode: clip the (fixed-width, centred) content to the notch while it grows
-        // from collapsed → full, or the icon/%/label hang outside the pill onto the
-        // wallpaper for a frame before the background catches up. The content gets revealed
-        // as the pill expands instead. GAME mode: don't clip, 'cause the bar's already full
-        // width (no overflow) and clipping would cut the projection's drop shadow.
-        clip: !bar.barForm
-        // game: own footprint, growing DOWN past the bar for tall content. normal: ride
-        // the notch exactly (the island is the animated surface; this just follows it).
-        width: bar.barForm ? contentW : notch.width
-        height: bar.barForm ? Math.max(bar.gameBarH, contentH) : notch.height
-        Behavior on width  { enabled: bar.barForm; NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } }
-        Behavior on height { enabled: bar.barForm; NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } }
-
-        // the projection background: drawn ONLY in Game Mode when the content overflows
-        // the bar. Squared top (flush with / merging into the bar), rounded bottom so it
-        // reads as a tab projecting out of the bar.
-        Rectangle {
-            id: projFill
-            anchors.fill: parent
-            topLeftRadius: 0
-            topRightRadius: 0
-            bottomLeftRadius: Theme.rIslandOpen
-            bottomRightRadius: Theme.rIslandOpen
-            color: Theme.base   // island body: solid black, like the notch fill
-            antialiasing: true
-            visible: transientHost.overflow
-            opacity: transientHost.shown ? 1 : 0
-            Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier } }
-            layer.enabled: Theme.shadows
-            layer.effect: MultiEffect {
-                shadowEnabled: true
-                shadowColor: Theme.shadow
-                shadowBlur: Theme.shadowBlur
-                shadowVerticalOffset: Theme.shadowY
-                blurMax: Theme.shadowBlurMax
-                autoPaddingEnabled: true
-            }
-        }
+        // clip the (fixed-width, centered) content to the notch while it grows from
+        // collapsed → full, or the icon/%/label hang outside the pill onto the wallpaper
+        // for a frame before the background catches up. The content gets revealed as the
+        // pill expands instead.
+        clip: true
+        // ride the notch exactly (the island is the animated surface; this just follows it)
+        width: notch.width
+        height: notch.height
 
         NotificationIsland {
             id: notifIsland
@@ -1111,17 +982,129 @@ PanelWindow {
     }
 
     // morph panels host (launcher / control center / pickers / settings / power /
-    // polkit). NORMAL mode: it coincides with the notch exactly (same centre, width,
-    // height, top margin), so a panel reads as the island morphing IN PLACE: the
-    // notch.fill is its background and morphFill stays hidden. GAME mode: the notch
-    // stays a top bar, so this detaches and FLOATS just below it with its own fill +
-    // shadow. Single instances live here (no per-mode duplication of stateful panels).
+    // polkit). It coincides with the notch exactly (same center, width, height, top
+    // margin), so a panel reads as the island morphing IN PLACE: the notch.fill is its
+    // background. Single instances live here.
+    // ── THE CLOCK'S FLIGHT BETWEEN THE ISLAND AND THE CONTROL CENTER ──
+    // Pressing the big time in the open island opens the control center, and the time goes
+    // with it: one copy leaves the island's clock at that size, shrinks, and lands on the
+    // control center's top-left clock. Pressing that clock is the same trip backwards,
+    // into the open island. While the copy is in the air the island's own time and the
+    // control center's are both hidden, so there is one time on screen, moving.
+    //
+    // `flyT` is where it is: 0 = on the island's time, 1 = on the control center's. Every
+    // frame it is placed BETWEEN THE TWO REAL CLOCKS AS THEY ARE RIGHT NOW (flyUpdate),
+    // not between two points written down at the press. Both of them ride the island's
+    // edge as it resizes, so the copy does too. (Aimed from a fixed starting point it
+    // lagged behind the shrinking island and hung outside its edge for a moment.)
+    // No bounce: scaled text on a ringing spring shudders at the end (patterns.md #55).
+    property bool clockFlying: false
+    property real flyT: 0
+    property point flySpot: Qt.point(0, 0)      // the target clock's box inside the panel
+    function flyUpdate() {
+        const h = timeText.mapToItem(flyClock.parent, 0, 0);
+        const cx = morphHost.x + Theme.s4 + flySpot.x, cy = morphHost.y + Theme.s4 + flySpot.y;
+        const s1 = controlCenter.clockPx / Theme.fsClock;
+        // Sideways it follows the island's live time (which rides the island's left
+        // edge). Up and down it cannot simply do the same: that time sits on the
+        // island's center line, and on the way in the island is as tall as the control
+        // center, so following it made the copy dip halfway down the panel and climb
+        // back. So the height is worked out from the island's own plan, for the form the
+        // island is HEADING to: `k` is how far the time has grown from its pill size to
+        // its hero size (it animates on the spring), and the island's settled height and
+        // the time's lift are read off the same `k`. Open island: the hero's place.
+        // Collapsing (the pointer left right after the press): the pill's middle, and the
+        // copy comes home to the pill with the real time. (With the hero's place fixed,
+        // it flew to where the big clock would have been and hung there, under the
+        // closing island, until the flight was over.)
+        const s0 = bar.heroPx / Theme.fsClock;
+        const k = Math.max(0, Math.min(1, (timeText.scale - 1) / Math.max(0.001, s0 - 1)));
+        // (only ever SHORTER than the plan: when the island closes past its resting
+        // height and springs back, its own time rides that on the center line, and so
+        // does the copy. Standing still, it let the bottom edge come up at it.)
+        const plan = bar.collapsedH + (bar.expandedH - bar.collapsedH) * k;
+        const hgt = Math.min(plan, notch.height);
+        const hy = morphHost.y + hgt / 2 + bar.timeLift * k - timeText.height * timeText.scale / 2;
+        flyClock.x = h.x + (cx - h.x) * flyT;
+        flyClock.y = hy + (cy - hy) * flyT;
+        flyClock.scale = timeText.scale + (s1 - timeText.scale) * flyT;
+    }
+    function flyStart(from) {
+        const r = controlCenter.clockSpot();
+        flySpot = Qt.point(r.x, r.y);
+        flyIn.stop(); flyBack.stop();
+        flyT = from;
+        flyUpdate();
+        clockFlying = true;
+    }
+    function flyClockToCc() { flyStart(0); flyIn.start(); }
+    function flyClockBack() { flyStart(1); flyBack.start(); }
+    // The trip is taken on EVERY way between the island and the control center, not only
+    // on a press of either clock: the shortcut, the pill, Escape, a click outside. The
+    // rule: when the time is on screen before and after, it travels, it does not fade
+    // out in one place and in at another. (From the pill it used to ride the island's
+    // center line down into the opening panel and fade there, like under any panel.)
+    // Only when the island's row is what the control center opens from or closes to:
+    // not from another panel, not under a level pill or a notification, not at a lock.
+    onCcWantedChanged: {
+        if (LockState.locked || LockState.unlocking) return;
+        if (ccWanted) { if (barRow.opacity > 0.5) flyClockToCc(); }
+        else {
+            // spelled out from the raw switches, not read off morphWanted / osdWanted /
+            // notifWanted or the other panels' *Wanted: all of those are bindings that
+            // have not caught up yet when this runs. (Another panel opening is what
+            // closes the control center, and read off launcherWanted and friends the
+            // answer was still "no panel", so the time flew home to the middle of the
+            // island and sat on top of the panel that had just taken it.)
+            const g = GlobalState;
+            const panel = Polkit.active || g.launcherOpen || g.wallpaperPickerOpen || g.themeSwitcherOpen || g.logoutOpen || g.calendarOpen;
+            const osd = OsdState.active && OsdState.screen === (modelData?.name ?? "");
+            const notif = onFocusedMon && Notifications.showing !== null;
+            if (!panel && !osd && !notif) flyClockBack();
+        }
+    }
+    // the way in is quicker than the way home: it is a small thing arriving, and at the
+    // island's own spring length it was still drifting after the panel had opened
+    readonly property int flyInMs: Math.round(Theme.dSpring * 0.6)
+    NumberAnimation {
+        id: flyIn
+        target: bar; property: "flyT"; to: 1
+        duration: Theme.dur(bar.flyInMs); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier
+        onFinished: bar.clockFlying = false
+    }
+    NumberAnimation {
+        id: flyBack
+        target: bar; property: "flyT"; to: 0
+        duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier
+        onFinished: bar.clockFlying = false
+    }
+    // both clocks move on their own springs while the island resizes, so the copy is
+    // re-placed on every frame, not only when flyT changes
+    FrameAnimation { running: bar.clockFlying; onTriggered: bar.flyUpdate() }
+    Text {
+        id: flyClock
+        z: 60
+        visible: bar.clockFlying
+        text: timeText.timeStr
+        font.family: Theme.fontDisplay
+        font.weight: Theme.wSemiBold
+        font.pixelSize: Theme.fsClock
+        color: Theme.inkPrimary
+        renderType: Text.QtRendering
+        // The island draws its time one character at a time (so digits can roll), and a
+        // colon drawn alone sits on the baseline. A whole "18:19" in one text gets the
+        // font's contextual colon, raised to the digits' middle: the copy landed with its
+        // colon a few pixels higher than the island's, and the colon dropped at the
+        // hand-over. With contextual alternates off the two are drawn the same.
+        font.features: { "calt": 0 }
+        transformOrigin: Item.TopLeft
+    }
+
     Item {
         id: morphHost
         anchors.top: parent.top
-        // game bar: floats below it. notch: flush. island: its gap. Written as ONE continuous
-        // expression off barT/flushT rather than branches + a Behavior, so it never steps.
-        anchors.topMargin: (notch.height + Theme.s2) * bar.barT + bar.topGap * (1 - bar.flushT)
+        // notch: flush. island: its gap. One continuous expression off flushT, so it never steps.
+        anchors.topMargin: bar.topGap * (1 - bar.flushT)
         anchors.horizontalCenter: parent.horizontalCenter
 
         // the height the open panel wants: single source of truth (the notch reads this
@@ -1131,45 +1114,39 @@ PanelWindow {
               : bar.ccWanted ? (controlCenter.implicitHeight + Theme.s4 * 2)
               : bar.wallpaperWanted ? (wallpaperContent.implicitHeight + Theme.s4 * 2)
               : bar.themeWanted ? (themeContent.implicitHeight + Theme.s4 * 2)
-              : bar.logoutWanted ? (logoutContent.implicitHeight + Theme.s4 * 2)
+              : bar.logoutWanted ? logoutContent.islandH
               : bar.calendarWanted ? (calendarContent.implicitHeight + Theme.s4 * 2)
               : 0
 
-        // game: own footprint (floats below). normal: ride the notch exactly (seamless
-        // in-place morph, the notch is the animated surface and this just follows it).
-        width: bar.barForm ? bar.morphW : notch.width
-        height: bar.barForm ? contentHeight : notch.height
-        Behavior on width  { enabled: bar.barForm; NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } }
-        Behavior on height { enabled: bar.barForm; NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } }
-
-        // own background: drawn ONLY in Game Mode (when floating below the bar). In
-        // normal mode the notch.fill behind us is the panel's background.
-        Rectangle {
-            id: morphFill
-            anchors.fill: parent
-            radius: Theme.rIslandOpen
-            color: Theme.base   // island body: solid black, like the notch fill
-            border.width: 1
-            border.color: Theme.hairline
-            antialiasing: true
-            visible: bar.barForm
-            opacity: bar.morphWanted ? 1 : 0
-            Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier } }
-            layer.enabled: Theme.shadows
-            layer.effect: MultiEffect {
-                shadowEnabled: true
-                shadowColor: Theme.shadow
-                shadowBlur: Theme.shadowBlur
-                shadowVerticalOffset: Theme.shadowY
-                blurMax: Theme.shadowBlurMax
-                autoPaddingEnabled: true
-            }
-        }
+        // ride the notch exactly (seamless in-place morph, the notch is the animated
+        // surface and this just follows it)
+        width: notch.width
+        height: notch.height
+        // ...and nothing of a panel shows outside it. The power menu lays its row out at
+        // full size from the first frame, centered, so while the island was still a pill
+        // on its way out the buttons and their label hung in the air around it, on the
+        // desktop, with no island behind them. The island's edge reveals a panel.
+        clip: true
 
         // swallow clicks inside the panel (so they don't reach the click-outside backdrop)
         MouseArea {
             anchors.fill: parent
             enabled: bar.morphWanted
+        }
+        // The control center's outer edge, the ring of padding between the island's edge
+        // and its controls on all four sides, goes back to the expanded island on a click
+        // (the calendar's header does the same). It lives here and not in the panel because
+        // that ring is the panel's inset, outside the panel's own clip. A click further in
+        // (the gaps between the controls) is left alone. Not while a sheet is open: that
+        // click belongs to the sheet's scrim.
+        MouseArea {
+            anchors.fill: parent
+            enabled: bar.ccWanted && controlCenter.view === "main"
+            onClicked: mouse => {
+                const m = Theme.s4;
+                const inside = mouse.x >= m && mouse.x <= width - m && mouse.y >= m && mouse.y <= height - m;
+                if (!inside) GlobalState.controlCenterBack();
+            }
         }
 
         LauncherContent {
@@ -1186,6 +1163,9 @@ PanelWindow {
             anchors.fill: parent
             anchors.margins: Theme.s4
             active: bar.ccWanted
+            clockFlying: bar.clockFlying
+            // its clock is the way back to the open island, the time flying home
+            onClockPressed: GlobalState.controlCenterBack()
             opacity: bar.ccWanted ? 1 : 0
             visible: opacity > 0
             Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier } }
@@ -1213,6 +1193,8 @@ PanelWindow {
             anchors.fill: parent
             anchors.margins: Theme.s4
             active: bar.logoutWanted
+            screenName: bar.modelData?.name ?? ""
+            pillH: bar.collapsedH
             opacity: bar.logoutWanted ? 1 : 0
             visible: opacity > 0
             Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier } }

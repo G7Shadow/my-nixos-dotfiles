@@ -25,6 +25,8 @@
         bluez
         cliphist
         wl-clipboard
+        libqalculate
+        pulseaudio
       ];
     };
 }

@@ -35,15 +35,14 @@ PanelWindow {
     // underneath. Without this the overlay would swallow the whole screen.
     mask: Region {}
 
-    // Game Mode squares everything off (window rounding goes to 0, the island flattens into
-    // a bar), so the display corners square off with it — animated, so they retract into the
-    // corners rather than blinking out, and grow back on the way out.
-    readonly property int targetR: (Config.screenCorners && !GameMode.enabled) ? Config.screenCornerRadius : 0
+    // animated, so toggling the corners off retracts them into the corners rather than
+    // blinking out, and grows them back on the way in
+    readonly property int targetR: Config.screenCorners ? Config.screenCornerRadius : 0
     property real r: targetR
     Behavior on r { NumberAnimation { duration: Theme.dur(Theme.dSpring); easing.type: Easing.Bezier; easing.bezierCurve: Theme.springBezier } }
 
     // one corner wedge: the area between the square corner and the arc that rounds it off.
-    // SVG arc with sweep=0 curves AROUND the centre at (r,r), i.e. concave from the corner,
+    // SVG arc with sweep=0 curves AROUND the center at (r,r), i.e. concave from the corner,
     // which leaves exactly the sliver that a rounded panel would hide.
     component Corner: Shape {
         id: cn

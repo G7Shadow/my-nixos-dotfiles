@@ -7,7 +7,7 @@ import Quickshell.Io
 // Quickshell has no native binding for monitor config, so we do it shell-native: read the
 // state out of `hyprctl -j monitors`, then apply a change by driving Hyprland straight via
 // `hyprctl eval 'hl.monitor{}'`. That's the Lua-config stand-in for `hyprctl keyword
-// monitor`, which this config's Lua parser flat-out rejects (same gotcha as GameMode). One
+// monitor`, which this config's Lua parser flat-out rejects. One
 // of the only three spots we're allowed to shell out to a Process.
 //
 // Every change repacks all the monitors left-to-right, gapless, in a collision-safe order
@@ -22,9 +22,26 @@ Singleton {
     property var monitors: []
     property bool busy: false
 
-    // scale presets we offer in the UI. If a scale wouldn't land on an integer logical
-    // size, Hyprland snaps it to the nearest one that does (and logs it), so these are safe.
-    readonly property var scaleOptions: [1.0, 1.25, 1.5, 1.75, 2.0]
+    // Scales offered per monitor. Hyprland only accepts a scale that divides BOTH pixel
+    // dimensions into whole logical pixels (it rounds to 1/120ths and searches for the
+    // nearest valid one otherwise, logging "invalid scale"), and a fixed preset list broke
+    // that: 1.5 on 2560x1440 is 1706.67 logical, 1.75 on 1920x1200 is 1097.14. So the
+    // candidates are the tidy 1/120 multiples below and each monitor keeps only the ones
+    // that divide it exactly, checked in integers (px * 120 % k) so no float can lie.
+    // 1920x1200 ends up with 1, 1.2, 1.25, 1.33, 1.5, 1.6, 2; 2560x1440 with 1, 1.25,
+    // 1.33, 1.6, 2 (no 1.5, no 1.75: neither divides 2560). Capped at 2x.
+    readonly property var scaleCandidates: [1.0, 1.2, 1.25, 4/3, 1.5, 1.6, 1.75, 2.0]
+    function scalesFor(m) {
+        if (!m || !m.width || !m.height) return [1.0, 2.0];
+        const out = [];
+        for (const s of scaleCandidates) {
+            const k = Math.round(s * 120);
+            if ((m.width * 120) % k === 0 && (m.height * 120) % k === 0) out.push(k / 120);
+        }
+        // the monitor's live scale is always a chip, even if Hyprland was handed an odd one
+        if (!out.some(s => Math.abs(s - m.scale) < 0.001)) { out.push(m.scale); out.sort((a, b) => a - b); }
+        return out;
+    }
 
     // the focused monitor (what the cc tile sums up), or the first one if nothing's focused
     readonly property var current: {

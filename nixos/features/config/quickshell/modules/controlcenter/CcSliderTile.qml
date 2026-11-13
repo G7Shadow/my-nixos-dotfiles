@@ -85,12 +85,17 @@ Item {
     readonly property bool fitsLabel: height >= vpad * 2 + headH + headGap + minTrack
     readonly property bool hasLabel: tall || (h === 1 && w >= 4 && fitsLabel)
     // the track takes whatever the title leaves, so there is never a pocket of dead air
-    // between the two; bare, it keeps its share of the box and centres
-    readonly property real trackH: hasLabel ? Math.max(minTrack, height - vpad * 2 - headH - headGap)
-                                            : Math.round(Math.max(18, Math.min(44, height * 0.53)))
-    readonly property real trackIcon: Math.round(Math.max(12, Math.min(26, trackH * 0.69)))
-    readonly property real chevD: Math.round(Math.max(20, Math.min(34, 26 * k)))
-    readonly property real chevG: Math.round(Math.max(11, Math.min(18, 14 * k)))
+    // between the two; bare, it keeps its share of the box and centers
+    // trackTrim thins the groove without moving anything else: the air it frees splits
+    // above and below the track (see the y below), so the title and the card stay put
+    readonly property int trackTrim: 1
+    readonly property real trackH: (hasLabel ? Math.max(minTrack, height - vpad * 2 - headH - headGap)
+                                             : Math.round(Math.max(18, Math.min(44, height * 0.53)))) - trackTrim
+    readonly property real trackIcon: Math.round(Math.max(12, Math.min(26, trackH * 0.69)) * Theme.iconK)
+    // the disc is exactly the groove's thickness and sits flush with the groove's right
+    // edge, so dropped into the track it would fill it as a circle
+    readonly property real chevD: Math.round(trackH)
+    readonly property real chevG: Math.round(Math.max(11, Math.min(18, 14 * k)) * Theme.iconK)
 
     Rectangle {
         anchors.fill: parent
@@ -99,7 +104,7 @@ Item {
     }
 
 
-    // Hairline rim (Tahoe's glass edge, without the glass): a 1px stroke in the ink colour at
+    // Hairline rim (Tahoe's glass edge, without the glass): a 1px stroke in the ink color at
     // hairline alpha, drawn ON TOP so hover veils and album art never soften it. It is what
     // separates a tile from the black island without any glow.
     Rectangle {
@@ -119,7 +124,7 @@ Item {
         height: tile.headH
         StyledText {
             anchors.left: parent.left
-            capCentreIn: parent
+            capCenterIn: parent
             variant: "label"
             font.weight: Theme.wMedium
             text: tile.label
@@ -129,7 +134,7 @@ Item {
             visible: tile.tall
             anchors.right: chevron.left
             anchors.rightMargin: Theme.s2
-            capCentreIn: parent
+            capCenterIn: parent
             variant: "caption"
             text: Math.round(tile.shown * 100) + "%"
             color: Theme.inkDim
@@ -148,7 +153,7 @@ Item {
         Icon {
             id: chevron
             anchors.right: parent.right
-            anchors.rightMargin: Math.round(tile.chevD * 0.23)
+            anchors.rightMargin: Math.round((tile.chevD - tile.chevG) / 2)   // disc (centered on this glyph) ends at the header's right = the track's right
             anchors.verticalCenter: parent.verticalCenter
             name: "chevron"
             size: tile.chevG
@@ -183,7 +188,7 @@ Item {
         // track stretched between them. Plain arithmetic has no such memory.
         // One-row card budget: 8 + 16 title + 26 track + 8 = the cell, with room to spare.
         height: tile.trackH
-        y: tile.hasLabel ? tile.vpad + tile.headH + tile.headGap : (parent.height - height) / 2
+        y: tile.hasLabel ? tile.vpad + tile.headH + tile.headGap + tile.trackTrim / 2 : (parent.height - height) / 2
 
         Rectangle {
             anchors.fill: parent

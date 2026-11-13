@@ -23,8 +23,16 @@ Column {
     // bind audio props for everything we list, only while visible (it costs a little)
     PwObjectTracker { objects: soundSheet.visible ? Pipewire.nodes.values.filter(n => n.audio) : [] }
 
-    ScriptModel { id: sinkModel;   values: Pipewire.nodes.values.filter(n => n.audio && n.isSink && !n.isStream) }
-    ScriptModel { id: sourceModel; values: Pipewire.nodes.values.filter(n => n.audio && !n.isSink && !n.isStream) }
+    // Only devices that are actually there (Audio drops unplugged jacks / dark HDMI ports)
+    // and that the user hasn't hidden; "show hidden" brings the hidden ones back, dimmed,
+    // so a right-click can unhide them.
+    property bool showHiddenOut: false
+    property bool showHiddenIn: false
+    readonly property int hiddenOut: Audio.presentSinks.length - Audio.shownSinks.length
+    readonly property int hiddenIn: Audio.presentSources.length - Audio.shownSources.length
+    onVisibleChanged: if (!visible) { showHiddenOut = false; showHiddenIn = false; }
+    ScriptModel { id: sinkModel;   values: soundSheet.showHiddenOut ? Audio.presentSinks : Audio.shownSinks }
+    ScriptModel { id: sourceModel; values: soundSheet.showHiddenIn ? Audio.presentSources : Audio.shownSources }
     ScriptModel { id: appModel;    values: Pipewire.nodes.values.filter(n => n.audio && n.isStream && n.isSink) }
 
     function glyphFor(n) {
@@ -49,12 +57,24 @@ Column {
         color: rMa.containsMouse ? Theme.fillHigh : Theme.fillLow
         Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
         opacity: entered
-        // delegate-owned entrance (patterns.md #5): a positioner `add` transition is cancelled
+        // delegate-owned entrance (patterns.md #5): a positioner `add` transition is canceled
         // by the next relayout and strands the row at opacity 0
         property real entered: 0
         Component.onCompleted: entered = 1
         Behavior on entered { NumberAnimation { duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier } }
-        MouseArea { id: rMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: r.pick() }
+        readonly property bool hiddenRow: Audio.isHidden(node)
+        // right-click hides a device from the sheet (or unhides a dimmed one); left picks it
+        MouseArea {
+            id: rMa
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            acceptedButtons: Qt.LeftButton | Qt.RightButton
+            onClicked: (m) => {
+                if (m.button === Qt.RightButton) { if (r.hiddenRow) Audio.unhide(r.node); else Audio.hide(r.node); }
+                else r.pick();
+            }
+        }
         CcSheetBits.Disc { tint: Theme.hue("sliders");
             id: rDisc
             anchors.left: parent.left; anchors.leftMargin: Theme.s2
@@ -66,13 +86,31 @@ Column {
         StyledText {
             anchors.left: rDisc.right; anchors.leftMargin: Theme.s3
             anchors.right: tick.left; anchors.rightMargin: Theme.s2
-            capCentreIn: parent
+            capCenterIn: parent
             elide: Text.ElideRight
             variant: "label"; font.weight: r.selected ? Theme.wMedium : Theme.wRegular
             text: Audio.nodeLabel(r.node)
-            color: Theme.inkPrimary
+            color: r.hiddenRow ? Theme.inkDim : Theme.inkPrimary
         }
-        Icon { id: tick; anchors.right: parent.right; anchors.rightMargin: Theme.s3; anchors.verticalCenter: parent.verticalCenter; name: "check"; size: 16; color: Theme.hue("sliders"); opacity: r.selected ? 1 : 0; Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dFast) } } }
+        Icon { id: tick; anchors.right: parent.right; anchors.rightMargin: Theme.s3; anchors.verticalCenter: parent.verticalCenter; name: "check"; size: Theme.icon(16); color: Theme.hue("sliders"); opacity: r.selected ? 1 : 0; Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dFast) } } }
+    }
+
+    // "2 hidden · Show" under a list, only when something is hidden
+    component HiddenToggle: Item {
+        property int count: 0
+        property bool open: false
+        signal toggled()
+        width: parent ? parent.width : 0
+        height: visible ? 24 : 0
+        visible: count > 0
+        StyledText {
+            anchors.right: parent.right; anchors.rightMargin: Theme.s2
+            capCenterIn: parent
+            variant: "caption"
+            color: htMa.containsMouse ? Theme.inkPrimary : Theme.inkDim
+            text: count + (count === 1 ? " hidden  \u00b7  " : " hidden  \u00b7  ") + (open ? "Hide" : "Show")
+            MouseArea { id: htMa; anchors.fill: parent; anchors.margins: -Theme.s2; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: parent.parent.toggled() }
+        }
     }
 
     // ── output ──
@@ -85,6 +123,7 @@ Column {
             model: sinkModel
             delegate: DeviceRow { required property var modelData; node: modelData; selected: modelData === Audio.sink; onPick: Audio.setSink(modelData) }
         }
+        HiddenToggle { count: soundSheet.hiddenOut; open: soundSheet.showHiddenOut; onToggled: soundSheet.showHiddenOut = !soundSheet.showHiddenOut }
     }
     CcSheetBits.Track { tint: Theme.hue("sliders");
         icon: Audio.muted ? "volumeMuted" : "volume"
@@ -95,7 +134,7 @@ Column {
     }
 
     // ── input ──
-    CcSheetBits.SectionLabel { text: "Input" }
+    CcSheetBits.SectionLabel { text: "Input"; gap: Theme.s4 }
     Column {
         width: parent.width
         spacing: Theme.s1
@@ -104,7 +143,8 @@ Column {
             model: sourceModel
             delegate: DeviceRow { required property var modelData; node: modelData; selected: modelData === Audio.source; onPick: Audio.setSource(modelData) }
         }
-        StyledText { visible: sourceModel.values.length === 0; variant: "label"; text: "No input devices"; color: Theme.inkDim; opacity: visible ? 1 : 0; Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier } } }
+        HiddenToggle { count: soundSheet.hiddenIn; open: soundSheet.showHiddenIn; onToggled: soundSheet.showHiddenIn = !soundSheet.showHiddenIn }
+        StyledText { variant: "label"; text: "No input devices"; color: Theme.inkDim; opacity: (sourceModel.values.length === 0) ? 1 : 0; visible: opacity > 0; Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier } } }
     }
     CcSheetBits.Track { tint: Theme.hue("sliders");
         visible: sourceModel.values.length > 0
@@ -116,7 +156,7 @@ Column {
     }
 
     // ── apps ──
-    CcSheetBits.SectionLabel { visible: appModel.values.length > 0; text: "Apps"; opacity: visible ? 1 : 0; Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier } } }
+    CcSheetBits.SectionLabel { text: "Apps"; gap: Theme.s4; opacity: (appModel.values.length > 0) ? 1 : 0; visible: opacity > 0; Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier } } }
     Column {
         width: parent.width
         spacing: Theme.s2
@@ -128,23 +168,26 @@ Column {
                 required property var modelData
                 readonly property var node: modelData
                 width: parent.width
-                height: 64
+                height: appCol.implicitHeight + Theme.s2 * 2
                 radius: Theme.rMd
                 color: Theme.fillLow
                 opacity: entered
-                // delegate-owned entrance (patterns.md #5): a positioner `add` transition is cancelled
+                // delegate-owned entrance (patterns.md #5): a positioner `add` transition is canceled
                 // by the next relayout and strands the row at opacity 0
                 property real entered: 0
                 Component.onCompleted: entered = 1
                 Behavior on entered { NumberAnimation { duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier } }
                 Column {
+                    id: appCol
                     anchors { left: parent.left; right: parent.right; top: parent.top; leftMargin: Theme.s3; rightMargin: Theme.s3; topMargin: Theme.s2 }
-                    spacing: 3
+                    // heading-to-track gap matches the Sound / Display grid tiles: their 16px
+                    // header, 6px headGap, plus the half trackTrim the groove sits down by
+                    spacing: 8
                     Item {
                         width: parent.width
-                        height: 18
-                        StyledText { anchors.left: parent.left; anchors.right: sub.left; anchors.rightMargin: Theme.s2; capCentreIn: parent; elide: Text.ElideRight; variant: "label"; font.weight: Theme.wMedium; text: soundSheet.appName(app.node); color: Theme.inkPrimary }
-                        StyledText { id: sub; anchors.right: parent.right; capCentreIn: parent; width: Math.min(implicitWidth, app.width * 0.5); elide: Text.ElideRight; variant: "caption"; text: soundSheet.mediaName(app.node) === soundSheet.appName(app.node) ? "" : soundSheet.mediaName(app.node); color: Theme.inkDim }
+                        height: 16
+                        StyledText { anchors.left: parent.left; anchors.right: sub.left; anchors.rightMargin: Theme.s2; capCenterIn: parent; elide: Text.ElideRight; variant: "label"; font.weight: Theme.wMedium; text: soundSheet.appName(app.node); color: Theme.inkPrimary }
+                        StyledText { id: sub; anchors.right: parent.right; capCenterIn: parent; width: Math.min(implicitWidth, app.width * 0.5); elide: Text.ElideRight; variant: "caption"; text: soundSheet.mediaName(app.node) === soundSheet.appName(app.node) ? "" : soundSheet.mediaName(app.node); color: Theme.inkDim }
                     }
                     CcSheetBits.Track { tint: Theme.hue("sliders");
                         icon: app.node.audio && app.node.audio.muted ? "volumeMuted" : "volume"

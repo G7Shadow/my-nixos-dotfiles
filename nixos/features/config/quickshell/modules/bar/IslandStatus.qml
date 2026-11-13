@@ -1,8 +1,8 @@
 import QtQuick
-import QtQuick.Effects
 import "../../theme"
 import "../../services"
 import "../../components"
+import "../../config"
 
 // Battery and Wi-Fi in the pill's own vocabulary (the workspace capsules on the left):
 // the network is the cellular glyph from the user's reference, four rising rounded bars,
@@ -15,7 +15,7 @@ import "../../components"
 // column, a size up. Each element (the four bars, the battery) owns a clock `t` between
 // the homes and glides from one to the other on its own spring, one after the other:
 // the battery leads the way out and the signal follows, so the row visibly travels from
-// the centre to the right edge and back, retracting from its far end. The signal moves
+// the center to the right edge and back, retracting from its far end. The signal moves
 // as ONE unit: its four bars gliding separately was too much motion to look at. The
 // parent hands over both homes in ITS coordinate space (this item fills the parent); the
 // spring's overshoot is the settle.
@@ -25,7 +25,7 @@ Item {
     property bool open: false        // which home is current
     property bool restOn: true       // the rest home is wanted at all (pill glyphs enabled)
     property bool openOn: true       // the open home is wanted at all
-    // rest home: the row's left edge and its vertical centre, and the pill's sizes
+    // rest home: the row's left edge and its vertical center, and the pill's sizes
     property real restX: 0
     property real restY: 0
     property real restCapH: 12
@@ -56,7 +56,7 @@ Item {
     // 0.16 (the empty capsule's trace) read as black on the signal bars: with no network
     // the glyph looked missing. The bars are thinner than a capsule, so they need more
     // alpha for the same presence.
-    readonly property color faint: Theme.alpha(lit, 0.34)
+    readonly property color faint: Theme.alpha(lit, Math.min(1, 0.34 * Theme.iconUnlit))
     readonly property bool wifiOn: Network.wifiEnabled && Network.isWifi && Network.connected
     readonly property bool wired: Network.isWired && Network.connected
     readonly property real signal: wifiOn ? Network.signalStrength : 0
@@ -83,8 +83,50 @@ Item {
         property real entered: 0
         Behavior on entered { NumberAnimation { duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier } }
         readonly property real tc: Math.max(0, Math.min(1, t))
-        opacity: entered * ((root.restOn ? 1 - tc : 0) + (root.openOn ? tc : 0))
+        // the rest home coming and going (the pill hides the glyphs until it is
+        // presented): each pops in on the spring as its room opens, the bars first then
+        // the battery; they LEAVE at once on a short fade, ahead of the island's edge
+        // closing over where they were. Opacity and a size pop ride one clock.
+        property real restT: root.restOn ? 1 : 0
+        Behavior on restT {
+            SequentialAnimation {
+                PauseAnimation { duration: root.restOn ? Theme.dur(root.stagger) * (root.count - 1 - el.order) : 0 }
+                NumberAnimation {
+                    duration: root.restOn ? Theme.dur(Theme.dSpring) : Theme.dur(Theme.dFast)
+                    easing.type: Easing.Bezier
+                    easing.bezierCurve: root.restOn ? Theme.springBezier : Theme.effectsBezier
+                }
+            }
+        }
+        opacity: entered * (Math.min(1, restT) * (1 - tc) + (root.openOn ? tc : 0))
         visible: opacity > 0.01
+        transform: Scale { origin.x: el.width / 2; origin.y: el.height / 2; xScale: (0.55 + 0.45 * el.restT) * (1 - el.tc) + el.tc; yScale: xScale }
+    }
+
+    // ── the hover plate: one quiet fill behind the whole group (bars + battery), the
+    // pill's own "this is pressable" cue; a click opens the control center. Sized from
+    // the elements' live boxes so it follows them between the two homes.
+    Rectangle {
+        id: plate
+        readonly property real padX: 6
+        readonly property real padY: 4
+        readonly property real edgeR: root.batt ? batt.x + batt.width : sig.x + sig.width
+        x: sig.x - padX
+        y: Math.min(sig.y, root.batt ? batt.y : sig.y) - padY
+        width: edgeR - sig.x + 2 * padX
+        height: Math.max(sig.height, root.batt ? batt.height : 0) + 2 * padY
+        radius: height / 2
+        color: plateMa.containsMouse ? Theme.fillLow : "transparent"   // the clock's hover fill; the capsules' plate matches
+        Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
+        opacity: sig.opacity
+        visible: sig.visible
+        MouseArea {
+            id: plateMa
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: GlobalState.toggleControlCenter()
+        }
     }
 
     // ── signal: the cellular bars, four rising rounded bars, one unit ──
@@ -112,57 +154,29 @@ Item {
         }
     }
 
-    // ── battery: iOS 27's ──
-    // A soft rounded body with no outline: a translucent track, the charge a solid fill
-    // from the left ending in a straight edge (clipped to the body's corners), a small
-    // terminal past the right end, no number. Accent; green while charging with a bolt
-    // over it; red when low.
+    // ── battery: iOS 27's, drawn by BatteryIcon ──
     Glide {
         id: batt
         order: 0
         visible: root.batt && opacity > 0.01
         readonly property real bodyW: mix(root.restBattW, root.openBattW)
         readonly property real bodyH: mix(root.restBattH, root.openBattH)
-        readonly property real corner: bodyH * 0.35
         // the LEVEL animates, not the fill's width: a Behavior on the width chased the
         // body as it resized between homes and the fill trailed the settle by its own
         // duration (seen: the charge creeping to its value a beat after the glide)
         property real level: Math.max(0, Math.min(1, Battery.percentage / 100))
         Behavior on level { NumberAnimation { duration: Theme.dur(Theme.dBase); easing.type: Theme.easeOut } }
-        readonly property color fillColor: Battery.low ? Theme.bad : Battery.charging ? Theme.good : root.lit
         width: bodyW + 3
         height: bodyH
         x: mix(root.restX + root.barsW(root.restBarW) + root.restGap, root.openX + root.barsW(root.openBarW) + root.openGap)
         y: mix(root.restY, root.openY) - height / 2
 
-        Rectangle {   // the body, masking the fill to its corners
-            id: body
-            width: batt.bodyW; height: batt.bodyH; radius: batt.corner
-            color: Theme.alpha(root.lit, 0.22)
-            clip: true
-            layer.enabled: true
-            layer.effect: MultiEffect { maskEnabled: true; maskSource: bodyMask; maskThresholdMin: 0.5; maskSpreadAtMin: 1.0 }
-            Rectangle {   // the charge
-                anchors.left: parent.left; anchors.top: parent.top; anchors.bottom: parent.bottom
-                width: parent.width * batt.level
-                color: batt.fillColor
-                Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
-            }
-        }
-        Rectangle { id: bodyMask; width: batt.bodyW; height: batt.bodyH; radius: batt.corner; visible: false; layer.enabled: true }
-        Icon {        // bolt while charging, fading in over the green rather than popping
-            opacity: Battery.charging ? 1 : 0
-            Behavior on opacity { NumberAnimation { duration: Theme.dur(Theme.dEffects); easing.type: Easing.Bezier; easing.bezierCurve: Theme.effectsBezier } }
-            visible: opacity > 0
-            anchors.centerIn: body
-            name: "bolt"; size: Math.round(batt.bodyH * 0.7)
-            color: Theme.onAccent
-        }
-        Rectangle {   // terminal
-            anchors.left: body.right; anchors.leftMargin: 1
-            anchors.verticalCenter: body.verticalCenter
-            width: 2; height: Math.round(batt.bodyH * 0.38); radius: 1
-            color: Theme.alpha(root.lit, 0.40)
+        BatteryIcon {
+            bodyWidth: batt.bodyW; bodyHeight: batt.bodyH
+            level: batt.level
+            charging: Battery.charging
+            low: Battery.low
+            tint: root.lit
         }
     }
 }

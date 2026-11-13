@@ -34,7 +34,7 @@ Item {
     readonly property bool isMode: OsdState.kind === "mode"
     readonly property real modeWidth: modeRow.implicitWidth   // so the pill can size to the label
 
-    // generic toggle-mode indicator: a ringed icon + label, centred
+    // generic toggle-mode indicator: a ringed icon + label, centered
     Row {
         id: modeRow
         anchors.centerIn: parent
@@ -47,7 +47,7 @@ Item {
             size: 18
         }
         StyledText {
-            capCentreIn: parent
+            capCenterIn: parent
             variant: "label"
             font.weight: Theme.wMedium
             text: OsdState.modeLabel
@@ -82,7 +82,7 @@ Item {
     StyledText {
         id: pct
         anchors.right: parent.right
-        capCentreIn: parent
+        capCenterIn: parent
         width: 38
         horizontalAlignment: Text.AlignRight
         variant: "caption"

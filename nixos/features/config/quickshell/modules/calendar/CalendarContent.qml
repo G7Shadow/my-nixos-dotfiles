@@ -34,10 +34,20 @@ Item {
 
     function close() { GlobalState.calendarOpen = false; }
 
-    // 42 cells (6 weeks, weeks start Sunday): { day, inMonth, today }
+    // The three calendar settings (Settings > Clock & Date). They had stopped reaching
+    // this file: weeks always began on Sunday, the day rows were a fixed 32px whatever the
+    // slider said (it moved the header instead), and the neighboring months were always
+    // drawn.
+    readonly property int firstDay: Math.max(0, Math.min(6, Config.weekStartsOn))   // 0 = Sunday
+    readonly property int cellH: Config.calendarCellHeight
+    readonly property bool showAdjacent: Config.calendarShowAdjacent
+    readonly property var dayLetters: ["S", "M", "T", "W", "T", "F", "S"]
+
+    // 42 cells (6 weeks, starting on `firstDay`): { day, inMonth, today }
     readonly property var cells: {
         const y = root.shownYear, m = root.shownMonth;
-        const startDow = new Date(y, m, 1).getDay();           // 0 = Sun
+        // how many cells of the first row belong to the month before
+        const startDow = (new Date(y, m, 1).getDay() - root.firstDay + 7) % 7;
         const daysInMonth = new Date(y, m + 1, 0).getDate();
         const daysInPrev = new Date(y, m, 0).getDate();
         const t = root.today;
@@ -73,9 +83,14 @@ Item {
         // header: ◀ Month Year ▶
         Item {
             width: parent.width
-            height: Config.calendarCellHeight
+            height: 32
 
-            // previous month. Identical to nextBtn below in look + behaviour (only the
+            // the empty part of the header (under the arrows and the title, which are
+            // declared after it and so take their own clicks) goes back to the expanded
+            // island the calendar was opened from
+            MouseArea { anchors.fill: parent; onClicked: GlobalState.calendarBack() }
+
+            // previous month. Identical to nextBtn below in look + behavior (only the
             // anchor side, arrow direction, and offset step differ).
             Rectangle {
                 id: prevBtn
@@ -84,7 +99,7 @@ Item {
                 width: 30; height: 30; radius: 15
                 color: prevMa.pressed ? Theme.hue("calendar") : prevMa.containsMouse ? Theme.fillHigh : Theme.fillLow
                 Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
-                Icon { anchors.centerIn: parent; name: "back"; size: 14; color: prevMa.pressed ? Theme.onAccent : Theme.inkPrimary }
+                Icon { anchors.centerIn: parent; name: "back"; size: Theme.icon(14); color: prevMa.pressed ? Theme.onAccent : Theme.inkPrimary }
                 MouseArea {
                     id: prevMa
                     anchors.fill: parent
@@ -121,7 +136,7 @@ Item {
                 width: 30; height: 30; radius: 15
                 color: nextMa.pressed ? Theme.hue("calendar") : nextMa.containsMouse ? Theme.fillHigh : Theme.fillLow
                 Behavior on color { ColorAnimation { duration: Theme.dur(Theme.dFast) } }
-                Icon { anchors.centerIn: parent; name: "back"; rotation: 180; size: 14; color: nextMa.pressed ? Theme.onAccent : Theme.inkPrimary }
+                Icon { anchors.centerIn: parent; name: "back"; rotation: 180; size: Theme.icon(14); color: nextMa.pressed ? Theme.onAccent : Theme.inkPrimary }
                 MouseArea {
                     id: nextMa
                     anchors.fill: parent
@@ -136,9 +151,10 @@ Item {
         Row {
             width: parent.width
             Repeater {
-                model: ["S", "M", "T", "W", "T", "F", "S"]
+                model: 7
                 delegate: Item {
-                    required property var modelData
+                    required property int index
+                    readonly property string modelData: root.dayLetters[(index + root.firstDay) % 7]
                     width: col.width / 7
                     height: 18
                     StyledText {
@@ -161,10 +177,15 @@ Item {
                 delegate: Item {
                     required property var modelData
                     width: col.width / 7
-                    height: 32
+                    height: root.cellH
+                    // a day of a neighboring month is dimmed, or left out altogether
+                    // (its cell stays, so the grid keeps its six rows and the island its
+                    // height from month to month)
+                    visible: modelData.inMonth || root.showAdjacent
                     Rectangle {
                         anchors.centerIn: parent
-                        width: 28; height: 28; radius: 14
+                        // the today mark fits the row, up to its usual 28
+                        width: Math.max(16, Math.min(28, root.cellH - 2)); height: width; radius: width / 2
                         color: modelData.today ? Theme.hue("calendar") : "transparent"
                         StyledText {
                             anchors.centerIn: parent

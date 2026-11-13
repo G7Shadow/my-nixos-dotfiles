@@ -27,6 +27,8 @@
         rubik
         inputs'.apple-fonts.packages.sf-pro
         inputs'.apple-fonts.packages.sf-pro-nerd
+        inputs'.apple-fonts.packages.sf-compact
+        inputs'.apple-fonts.packages.sf-compact-nerd
         inputs'.apple-fonts.packages.sf-mono
         inputs'.apple-fonts.packages.sf-mono-nerd
         noto-fonts-cjk-sans

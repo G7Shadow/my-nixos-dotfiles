@@ -47,7 +47,22 @@ wallust cs "$scheme" -s || { echo "wallust cs failed" >&2; exit 1; }
 # and restores the wallpaper last chosen for this theme (else its first one).
 cfg="$HOME/.config/quickshell/config.json"
 state="$HOME/.config/quickshell/wallpaper-state"
-wpdir="$HOME/.config/colorschemes/$name/wallpapers"
+wpdir="$(python3 - "$cfg" "$name" <<'PY' 2>/dev/null
+import json, os, sys
+try:
+    d = json.load(open(sys.argv[1]))
+except Exception:
+    d = {}
+root = os.path.expanduser(str(d.get("wallpaperDir") or "~/.config/colorschemes")).rstrip("/")
+if d.get("wallpaperPerTheme", True):
+    base = os.path.join(root, sys.argv[2])
+    nested = os.path.join(base, "wallpapers")
+    print(nested if os.path.isdir(nested) else base)
+else:
+    print(root)
+PY
+)"
+[ -d "$wpdir" ] || wpdir="$HOME/.config/colorschemes/$name/wallpapers"
 wp=""
 [ -f "$state" ] && wp="$(awk -F'\t' -v t="$name" '$1==t{print $2; exit}' "$state")"
 if [ -z "$wp" ] || [ ! -f "$wp" ]; then
