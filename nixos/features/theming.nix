@@ -25,6 +25,7 @@
         nerd-fonts.jetbrains-mono
         material-symbols
         rubik
+        (google-fonts.override { fonts = [ "Manrope" ]; })
         inputs'.apple-fonts.packages.sf-pro
         inputs'.apple-fonts.packages.sf-pro-nerd
         inputs'.apple-fonts.packages.sf-compact
