@@ -59,14 +59,6 @@
             };
             wantedBy = [ "graphical-session.target" ];
           };
-
-          thunar-volman = {
-            description = "Thunar removable drives manager";
-            startLimitBurst = 5;
-            startLimitIntervalSec = 10;
-            serviceConfig.ExecStart = "${pkgs.thunar-volman}/bin/thunar-volman";
-            wantedBy = [ "graphical-session.target" ];
-          };
         };
       };
     }

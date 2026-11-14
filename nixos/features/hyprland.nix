@@ -1,10 +1,7 @@
 { moduleWithSystem, ... }: {
   flake.nixosModules.hyprland = moduleWithSystem (
     { self', ... }:
-    { config, ... }:
-    let
-      user = config.preferences.user.name;
-    in
+    { ... }:
     {
       programs.hyprland = {
         enable = true;
@@ -12,7 +9,9 @@
         withUWSM = true;
       };
 
-      hjem.users."${user}".packages = [ self'.packages.hyprglass ];
+      # Username-independent path for the plugin loaded in
+      # nixos/features/config/hypr/modules/hyprglass.lua.
+      environment.etc."hypr/hyprglass.so".source = "${self'.packages.hyprglass}/lib/hyprglass.so";
 
       security.polkit.enable = true;
       services.dbus.enable = true;

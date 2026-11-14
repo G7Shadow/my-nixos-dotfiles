@@ -1,4 +1,13 @@
-hl.plugin.load("/etc/profiles/per-user/jeremyl/lib/hyprglass.so")
+local plugin = "/etc/hypr/hyprglass.so"
+
+-- The plugin is installed by environment.etc (nixos/features/hyprland.nix).
+-- Skip loading if the file is missing, e.g. before the first switch that
+-- creates it, so a config reload never fails.
+local handle = io.open(plugin, "rb")
+if handle then
+  handle:close()
+  hl.plugin.load(plugin)
+end
 
 if hl.plugin.hyprglass then
   local hg = hl.plugin.hyprglass

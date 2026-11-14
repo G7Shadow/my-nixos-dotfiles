@@ -30,6 +30,11 @@
         hashedPasswordFile = "/persist/passwd";
       };
 
+      # Creates the i2c group and the /dev/i2c-* udev rules referenced by the
+      # "i2c" group above. Without it ddcutil cannot control external monitor
+      # brightness (EACCES on /dev/i2c-*).
+      hardware.i2c.enable = true;
+
       nix.settings.experimental-features = [
         "nix-command"
         "flakes"
