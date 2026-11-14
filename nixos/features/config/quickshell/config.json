@@ -56,7 +56,7 @@
     "motionFast": 150,
     "motionSpring": 420,
     "nightLightEnd": 360,
-    "nightLightSchedule": true,
+    "nightLightSchedule": false,
     "nightLightStart": 1050,
     "nightLightTemp": 4000,
     "notchFlare": 16,

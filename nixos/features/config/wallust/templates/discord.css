@@ -10,8 +10,8 @@ body { --colors: on; }
   --text-1: #{{ foreground | strip }};
   --text-2: #{{ foreground | strip }};
   --text-3: #{{ color7 | strip }};
-  --text-4: #{{ color8 | strip }};
-  --text-5: #{{ color8 | strip }};
+  --text-4: #{{ color7 | strip }};
+  --text-5: #{{ color7 | darken(0.18) | strip }};
 
   --hover: color-mix(in srgb, var(--text-1) 14%, transparent);
   --active: color-mix(in srgb, var(--text-1) 22%, transparent);

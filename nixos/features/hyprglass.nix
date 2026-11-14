@@ -5,15 +5,16 @@
     {
       packages.hyprglass = pkgs.hyprlandPlugins.mkHyprlandPlugin {
         pluginName = "hyprglass";
-        version = "0.7.0";
+        version = "1.1.1";
 
         src = pkgs.fetchFromGitHub {
           owner = "hyprnux";
           repo = "hyprglass";
-          rev = "v0.7.0";
-          hash = "sha256-x/584kY+XXlU/OWKtZAFo89VtowjLXs1DiP9PC0o0Os=";
+          rev = "v1.1.1";
+          hash = "sha256-cQmVmmdaITss2hO6aidKOtq6GtEe85fmgrPcrn1eIUg=";
         };
 
+        nativeBuildInputs = [ pkgs.wayland-scanner ];
         buildInputs = [ pkgs.pixman ];
 
         installPhase = ''

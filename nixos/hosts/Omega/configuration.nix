@@ -10,7 +10,7 @@
     ];
   };
 
-  flake.nixosModules.hostOmega = { config, pkgs, ... }: {
+  flake.nixosModules.hostOmega = { config, pkgs, lib, ... }: {
     imports = [
       self.nixosModules.base
 
@@ -31,14 +31,25 @@
     boot = {
       loader.systemd-boot.enable = true;
       loader.systemd-boot.configurationLimit = 5;
-      loader.timeout = 60;
+      loader.timeout = 3;
       loader.efi.canTouchEfiVariables = true;
       supportedFilesystems = [ "ntfs" ];
+    };
+
+    zramSwap = {
+      enable = true;
+      memoryPercent = 50;
+    };
+
+    boot.kernel.sysctl = {
+      "vm.swappiness" = 100;
+      "vm.page-cluster" = 0;
     };
 
     networking = {
       hostName = "Omega";
       networkmanager.enable = true;
+      modemmanager.enable = false;
     };
 
     hardware.bluetooth.enable = true;
@@ -77,6 +88,18 @@
       fstrim.enable = true;
       udisks2.enable = true;
       dbus.enable = true;
+      thermald.enable = lib.mkForce false;
+      qemuGuest.enable = lib.mkForce false;
+      spice-vdagentd.enable = lib.mkForce false;
+    };
+
+    powerManagement.powertop.enable = lib.mkForce false;
+
+    systemd.services = {
+      NetworkManager-wait-online.enable = false;
+      libvirtd.wantedBy = lib.mkForce [ ];
+      libvirt-guests.wantedBy = lib.mkForce [ ];
+      libvirt-default-network.wantedBy = lib.mkForce [ "libvirtd.service" ];
     };
 
     nix.gc = {
